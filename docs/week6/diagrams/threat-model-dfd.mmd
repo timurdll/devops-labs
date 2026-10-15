@@ -1,0 +1,66 @@
+%% Week 6 · STRIDE threat model of the delivery pipeline as a data-flow diagram.
+%% Dashed boxes = trust boundaries (TB). Flows F1–F12 carry the threat IDs of the STRIDE matrix
+%% (docs/week6/README.md §3). S=Spoofing T=Tampering R=Repudiation I=Info disclosure D=DoS E=Elevation
+flowchart LR
+    DEV(["Developer"])
+    FORK(["External contributor<br/>(fork)"])
+
+    subgraph TB1["TB-1 · Developer workstation"]
+        WS["Local clone<br/>git + GitHub credentials"]
+    end
+
+    subgraph TB2["TB-2 · GitHub control plane (SaaS)"]
+        REPO[("Repository<br/>source · ci.yml · .trivyignore.yaml")]
+        GOV["Branch protection<br/>required checks · CODEOWNERS"]
+        SEC[("Secrets store +<br/>OIDC token issuer")]
+    end
+
+    subgraph TB3["TB-3 · Ephemeral Actions runner"]
+        RUN["Workflow jobs<br/>(ci.yml)"]
+        TOOLS["Pinned scanners<br/>gitleaks · semgrep · trivy"]
+    end
+
+    subgraph TB4["TB-4 · Third-party supply chain"]
+        ACT[("Marketplace<br/>actions")]
+        NPM[("npm registry")]
+        BASE[("Base images<br/>Docker Hub · gcr.io")]
+        FEED[("Trivy DB ·<br/>Semgrep rules")]
+    end
+
+    subgraph TB5["TB-5 · Artifact & trust services"]
+        GHCR[("GHCR<br/>image registry")]
+        SIG[("Sigstore<br/>Fulcio · Rekor")]
+    end
+
+    subgraph TB6["TB-6 · Runtime"]
+        K8S["Kubernetes cluster"]
+    end
+
+    DEV --> WS
+    WS -- "F1 git push · T-02 T-06" --> REPO
+    FORK -- "F2 pull_request · T-09" --> REPO
+    GOV -. "F3 merge rules · T-10" .-> REPO
+    REPO -- "F4 trigger + checkout · T-03 T-10 T-13" --> RUN
+    ACT -- "F5 uses: action@SHA · T-01" --> RUN
+    NPM -- "F6 npm ci · T-04" --> RUN
+    BASE -- "F7 FROM image@digest · T-05" --> RUN
+    FEED -- "F8 vuln DB / rules · T-14" --> TOOLS
+    RUN <-- "F9 scan results" --> TOOLS
+    SEC -- "F10 GITHUB_TOKEN · id-token · T-03" --> RUN
+    RUN -- "F11 docker push · T-07 T-08 T-12" --> GHCR
+    RUN -- "F12 sign / attest · T-11" --> SIG
+    GHCR -- "F13 pull by digest · T-08" --> K8S
+    SIG -. "verify signature" .-> K8S
+
+    classDef ext fill:#f4f4f2,stroke:#6b6b66,color:#1d1d1b
+    classDef proc fill:#eef4fb,stroke:#2f5d8a,color:#1d1d1b
+    classDef store fill:#fff6e0,stroke:#b07d10,color:#1d1d1b
+    class DEV,FORK ext
+    class WS,RUN,TOOLS,GOV,K8S proc
+    class REPO,SEC,ACT,NPM,BASE,FEED,GHCR,SIG store
+    style TB1 fill:#ffffff,stroke:#b42318,stroke-width:2px,stroke-dasharray:6 4
+    style TB2 fill:#ffffff,stroke:#b42318,stroke-width:2px,stroke-dasharray:6 4
+    style TB3 fill:#ffffff,stroke:#b42318,stroke-width:2px,stroke-dasharray:6 4
+    style TB4 fill:#ffffff,stroke:#b42318,stroke-width:2px,stroke-dasharray:6 4
+    style TB5 fill:#ffffff,stroke:#b42318,stroke-width:2px,stroke-dasharray:6 4
+    style TB6 fill:#ffffff,stroke:#b42318,stroke-width:2px,stroke-dasharray:6 4

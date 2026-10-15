@@ -1,0 +1,313 @@
+ShopLite local CI run — 2026-10-15 10:44:40 UTC — Darwin arm64
+
+━━━ G1 secret scan (gitleaks) ━━━
+10:44AM INF 0 commits scanned.
+10:44AM INF scanned ~2758808 bytes (2.76 MB) in 1.64s
+10:44AM INF no leaks found
+
+━━━ G2 lint code (eslint) ━━━
+• eslint services/catalog
+• eslint services/orders
+
+━━━ G2 lint infra (hadolint/kubeconform/actionlint) ━━━
+• hadolint services/catalog/Dockerfile
+• hadolint services/orders/Dockerfile
+• hadolint services/web/Dockerfile
+• kubeconform (Kubernetes 1.37.0, strict)
+Summary: 28 resources found in 1 file - Valid: 28, Invalid: 0, Errors: 0, Skipped: 0
+• actionlint .github/workflows/ci.yml
+
+━━━ G3 unit tests + coverage ━━━
+• node --test services/catalog
+
+> shoplite-catalog@1.0.1 test
+> node --test --experimental-test-coverage --test-coverage-include='src/app.js' --test-coverage-lines=80 --test-coverage-branches=70 'test/**/*.test.js'
+
+✔ GET /healthz returns 200 (38.304375ms)
+✔ GET /readyz reflects database state (2.311792ms)
+✔ GET /api/catalog/products lists products (2.393333ms)
+✔ GET /api/catalog/products/:id returns one product or 404 (1.602125ms)
+✔ trailing slash is tolerated and unknown routes are 404 (1.132125ms)
+✔ repository errors become 500 without leaking details (2.718625ms)
+ℹ tests 6
+ℹ suites 0
+ℹ pass 6
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 145.507
+ℹ start of coverage report
+ℹ ----------------------------------------------------------
+ℹ file      | line % | branch % | funcs % | uncovered lines
+ℹ ----------------------------------------------------------
+ℹ src       |        |          |         | 
+ℹ  app.js   | 100.00 |    95.00 |  100.00 | 
+ℹ ----------------------------------------------------------
+ℹ all files | 100.00 |    95.00 |  100.00 | 
+ℹ ----------------------------------------------------------
+ℹ end of coverage report
+• node --test services/orders
+
+> shoplite-orders@1.0.1 test
+> node --test --experimental-test-coverage --test-coverage-include='src/app.js' --test-coverage-lines=80 --test-coverage-branches=70 'test/**/*.test.js'
+
+✔ validateOrder accepts valid input and rejects invalid input (1.049083ms)
+✔ health and readiness endpoints (27.622291ms)
+✔ POST /api/orders creates an order priced by the catalog (7.485084ms)
+✔ POST /api/orders maps business errors to 4xx (3.149541ms)
+✔ catalog outage returns 502 and unknown routes return 404 (1.811042ms)
+ℹ tests 5
+ℹ suites 0
+ℹ pass 5
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 117.548625
+ℹ start of coverage report
+ℹ ----------------------------------------------------------
+ℹ file      | line % | branch % | funcs % | uncovered lines
+ℹ ----------------------------------------------------------
+ℹ src       |        |          |         | 
+ℹ  app.js   | 100.00 |    95.83 |  100.00 | 
+ℹ ----------------------------------------------------------
+ℹ all files | 100.00 |    95.83 |  100.00 | 
+ℹ ----------------------------------------------------------
+ℹ end of coverage report
+
+━━━ G4 SAST (semgrep) ━━━
+               
+               
+┌─────────────┐
+│ Scan Status │
+└─────────────┘
+  Scanning 93 files tracked by git with 152 Code rules:
+                                                                                                                        
+  Language      Rules   Files          Origin      Rules                                                                
+ ─────────────────────────────        ───────────────────                                                               
+  <multilang>      36      93          Community     149                                                                
+  yaml             23      18          Custom          3                                                                
+  js               71      10                                                                                           
+  dockerfile        6       3                                                                                           
+  python            1       1                                                                                           
+                                                                                                                        
+                
+                
+┌──────────────┐
+│ Scan Summary │
+└──────────────┘
+✅ Scan completed successfully.
+ • Findings: 0 (0 blocking)
+ • Rules run: 136
+ • Targets scanned: 93
+ • Parsed lines: ~99.9%
+ • Scan skipped: 
+   ◦ Files matching .semgrepignore patterns: 2
+ • Scan was limited to files tracked by git
+ • For a detailed list of skipped files and lines, run semgrep with the --verbose flag
+Ran 136 rules on 93 files: 0 findings.
+(need more rules? `semgrep login` for additional free Semgrep Registry rules)
+
+If Semgrep missed a finding, please send us feedback to let us know!
+See https://semgrep.dev/docs/reporting-false-negatives/
+
+━━━ G5 dependency audit (npm audit) ━━━
+• npm audit services/catalog
+audited 93 packages in 2s
+
+93 packages have verified registry signatures
+
+16 packages have verified attestations
+
+found 0 vulnerabilities
+• npm audit services/orders
+audited 93 packages in 1s
+
+93 packages have verified registry signatures
+
+16 packages have verified attestations
+
+found 0 vulnerabilities
+
+━━━ G7 IaC misconfiguration (trivy config) ━━━
+2026-10-15T10:45:05Z	INFO	[misconfig] Misconfiguration scanning is enabled
+2026-10-15T10:45:05Z	INFO	[checks-client] Using existing checks from cache	path="/root/.cache/trivy/policy/content"
+2026-10-15T10:45:06Z	INFO	Detected config files	num=12
+
+Report Summary
+
+┌───────────────────────────────┬────────────┬───────────────────┐
+│            Target             │    Type    │ Misconfigurations │
+├───────────────────────────────┼────────────┼───────────────────┤
+│ k8s/platform/traefik.yaml     │ kubernetes │         0         │
+├───────────────────────────────┼────────────┼───────────────────┤
+│ k8s/shop/catalog.yaml         │ kubernetes │         0         │
+├───────────────────────────────┼────────────┼───────────────────┤
+│ k8s/shop/configmaps.yaml      │ kubernetes │         0         │
+├───────────────────────────────┼────────────┼───────────────────┤
+│ k8s/shop/ingress.yaml         │ kubernetes │         0         │
+├───────────────────────────────┼────────────┼───────────────────┤
+│ k8s/shop/namespace.yaml       │ kubernetes │         0         │
+├───────────────────────────────┼────────────┼───────────────────┤
+│ k8s/shop/networkpolicies.yaml │ kubernetes │         0         │
+├───────────────────────────────┼────────────┼───────────────────┤
+│ k8s/shop/orders.yaml          │ kubernetes │         0         │
+├───────────────────────────────┼────────────┼───────────────────┤
+│ k8s/shop/postgres.yaml        │ kubernetes │         0         │
+├───────────────────────────────┼────────────┼───────────────────┤
+│ k8s/shop/web.yaml             │ kubernetes │         0         │
+├───────────────────────────────┼────────────┼───────────────────┤
+│ services/catalog/Dockerfile   │ dockerfile │         0         │
+├───────────────────────────────┼────────────┼───────────────────┤
+│ services/orders/Dockerfile    │ dockerfile │         0         │
+├───────────────────────────────┼────────────┼───────────────────┤
+│ services/web/Dockerfile       │ dockerfile │         0         │
+└───────────────────────────────┴────────────┴───────────────────┘
+Legend:
+- '-': Not scanned
+- '0': Clean (no security findings detected)
+
+
+━━━ G6 build + image scan (trivy image) ━━━
+• docker build shoplite/catalog:1.0.1
+sha256:1f9e624d196923aee5d7bac1e2fa4b722b47c9e0bbd1e5aff3e8218b6b04842f
+• trivy gate shoplite/catalog:1.0.1 (fixable HIGH,CRITICAL ⇒ fail)
+2026-10-15T10:45:11Z	INFO	[vuln] Vulnerability scanning is enabled
+2026-10-15T10:45:11Z	INFO	[secret] Secret scanning is enabled
+2026-10-15T10:45:11Z	INFO	[secret] If your scanning is slow, please try '--scanners vuln' to disable secret scanning
+2026-10-15T10:45:11Z	INFO	[secret] Please see https://trivy.dev/docs/v0.75/guide/scanner/secret#recommendation for faster secret detection
+2026-10-15T10:45:12Z	INFO	Detected OS	family="debian" version="13.7"
+2026-10-15T10:45:12Z	INFO	[debian] Detecting vulnerabilities...	os_version="13" pkg_num=14
+2026-10-15T10:45:12Z	INFO	Number of language-specific files	num=1
+2026-10-15T10:45:12Z	INFO	[node-pkg] Detecting vulnerabilities...
+2026-10-15T10:45:12Z	WARN	Using severities from other vendors for some vulnerabilities. Read https://trivy.dev/docs/v0.75/guide/scanner/vulnerability#severity-selection for details.
+
+Report Summary
+
+┌────────────────────────────────────────────────────┬──────────┬─────────────────┬─────────┐
+│                       Target                       │   Type   │ Vulnerabilities │ Secrets │
+├────────────────────────────────────────────────────┼──────────┼─────────────────┼─────────┤
+│ shoplite/catalog:1.0.1 (debian 13.7)               │  debian  │        0        │    -    │
+├────────────────────────────────────────────────────┼──────────┼─────────────────┼─────────┤
+│ app/node_modules/pg-cloudflare/package.json        │ node-pkg │        0        │    -    │
+├────────────────────────────────────────────────────┼──────────┼─────────────────┼─────────┤
+│ app/node_modules/pg-connection-string/package.json │ node-pkg │        0        │    -    │
+├────────────────────────────────────────────────────┼──────────┼─────────────────┼─────────┤
+│ app/node_modules/pg-int8/package.json              │ node-pkg │        0        │    -    │
+├────────────────────────────────────────────────────┼──────────┼─────────────────┼─────────┤
+│ app/node_modules/pg-pool/package.json              │ node-pkg │        0        │    -    │
+├────────────────────────────────────────────────────┼──────────┼─────────────────┼─────────┤
+│ app/node_modules/pg-protocol/package.json          │ node-pkg │        0        │    -    │
+├────────────────────────────────────────────────────┼──────────┼─────────────────┼─────────┤
+│ app/node_modules/pg-types/package.json             │ node-pkg │        0        │    -    │
+├────────────────────────────────────────────────────┼──────────┼─────────────────┼─────────┤
+│ app/node_modules/pg/package.json                   │ node-pkg │        0        │    -    │
+├────────────────────────────────────────────────────┼──────────┼─────────────────┼─────────┤
+│ app/node_modules/pgpass/package.json               │ node-pkg │        0        │    -    │
+├────────────────────────────────────────────────────┼──────────┼─────────────────┼─────────┤
+│ app/node_modules/postgres-array/package.json       │ node-pkg │        0        │    -    │
+├────────────────────────────────────────────────────┼──────────┼─────────────────┼─────────┤
+│ app/node_modules/postgres-bytea/package.json       │ node-pkg │        0        │    -    │
+├────────────────────────────────────────────────────┼──────────┼─────────────────┼─────────┤
+│ app/node_modules/postgres-date/package.json        │ node-pkg │        0        │    -    │
+├────────────────────────────────────────────────────┼──────────┼─────────────────┼─────────┤
+│ app/node_modules/postgres-interval/package.json    │ node-pkg │        0        │    -    │
+├────────────────────────────────────────────────────┼──────────┼─────────────────┼─────────┤
+│ app/node_modules/split2/package.json               │ node-pkg │        0        │    -    │
+├────────────────────────────────────────────────────┼──────────┼─────────────────┼─────────┤
+│ app/node_modules/xtend/package.json                │ node-pkg │        0        │    -    │
+├────────────────────────────────────────────────────┼──────────┼─────────────────┼─────────┤
+│ app/package.json                                   │ node-pkg │        0        │    -    │
+└────────────────────────────────────────────────────┴──────────┴─────────────────┴─────────┘
+Legend:
+- '-': Not scanned
+- '0': Clean (no security findings detected)
+
+• docker build shoplite/orders:1.0.1
+sha256:25e4f55378982f75aeda7dc65c5aa315e45718a8048b1aceba7503828709e60e
+• trivy gate shoplite/orders:1.0.1 (fixable HIGH,CRITICAL ⇒ fail)
+2026-10-15T10:45:16Z	INFO	[vuln] Vulnerability scanning is enabled
+2026-10-15T10:45:16Z	INFO	[secret] Secret scanning is enabled
+2026-10-15T10:45:16Z	INFO	[secret] If your scanning is slow, please try '--scanners vuln' to disable secret scanning
+2026-10-15T10:45:16Z	INFO	[secret] Please see https://trivy.dev/docs/v0.75/guide/scanner/secret#recommendation for faster secret detection
+2026-10-15T10:45:17Z	INFO	Detected OS	family="debian" version="13.7"
+2026-10-15T10:45:17Z	INFO	[debian] Detecting vulnerabilities...	os_version="13" pkg_num=14
+2026-10-15T10:45:17Z	INFO	Number of language-specific files	num=1
+2026-10-15T10:45:17Z	INFO	[node-pkg] Detecting vulnerabilities...
+2026-10-15T10:45:17Z	WARN	Using severities from other vendors for some vulnerabilities. Read https://trivy.dev/docs/v0.75/guide/scanner/vulnerability#severity-selection for details.
+
+Report Summary
+
+┌────────────────────────────────────────────────────┬──────────┬─────────────────┬─────────┐
+│                       Target                       │   Type   │ Vulnerabilities │ Secrets │
+├────────────────────────────────────────────────────┼──────────┼─────────────────┼─────────┤
+│ shoplite/orders:1.0.1 (debian 13.7)                │  debian  │        0        │    -    │
+├────────────────────────────────────────────────────┼──────────┼─────────────────┼─────────┤
+│ app/node_modules/pg-cloudflare/package.json        │ node-pkg │        0        │    -    │
+├────────────────────────────────────────────────────┼──────────┼─────────────────┼─────────┤
+│ app/node_modules/pg-connection-string/package.json │ node-pkg │        0        │    -    │
+├────────────────────────────────────────────────────┼──────────┼─────────────────┼─────────┤
+│ app/node_modules/pg-int8/package.json              │ node-pkg │        0        │    -    │
+├────────────────────────────────────────────────────┼──────────┼─────────────────┼─────────┤
+│ app/node_modules/pg-pool/package.json              │ node-pkg │        0        │    -    │
+├────────────────────────────────────────────────────┼──────────┼─────────────────┼─────────┤
+│ app/node_modules/pg-protocol/package.json          │ node-pkg │        0        │    -    │
+├────────────────────────────────────────────────────┼──────────┼─────────────────┼─────────┤
+│ app/node_modules/pg-types/package.json             │ node-pkg │        0        │    -    │
+├────────────────────────────────────────────────────┼──────────┼─────────────────┼─────────┤
+│ app/node_modules/pg/package.json                   │ node-pkg │        0        │    -    │
+├────────────────────────────────────────────────────┼──────────┼─────────────────┼─────────┤
+│ app/node_modules/pgpass/package.json               │ node-pkg │        0        │    -    │
+├────────────────────────────────────────────────────┼──────────┼─────────────────┼─────────┤
+│ app/node_modules/postgres-array/package.json       │ node-pkg │        0        │    -    │
+├────────────────────────────────────────────────────┼──────────┼─────────────────┼─────────┤
+│ app/node_modules/postgres-bytea/package.json       │ node-pkg │        0        │    -    │
+├────────────────────────────────────────────────────┼──────────┼─────────────────┼─────────┤
+│ app/node_modules/postgres-date/package.json        │ node-pkg │        0        │    -    │
+├────────────────────────────────────────────────────┼──────────┼─────────────────┼─────────┤
+│ app/node_modules/postgres-interval/package.json    │ node-pkg │        0        │    -    │
+├────────────────────────────────────────────────────┼──────────┼─────────────────┼─────────┤
+│ app/node_modules/split2/package.json               │ node-pkg │        0        │    -    │
+├────────────────────────────────────────────────────┼──────────┼─────────────────┼─────────┤
+│ app/node_modules/xtend/package.json                │ node-pkg │        0        │    -    │
+├────────────────────────────────────────────────────┼──────────┼─────────────────┼─────────┤
+│ app/package.json                                   │ node-pkg │        0        │    -    │
+└────────────────────────────────────────────────────┴──────────┴─────────────────┴─────────┘
+Legend:
+- '-': Not scanned
+- '0': Clean (no security findings detected)
+
+• docker build shoplite/web:1.0.1
+sha256:ca41ec91733eee1ee362358c364eaf4d8db12da26d8793358a6492bd52b5e52d
+• trivy gate shoplite/web:1.0.1 (fixable HIGH,CRITICAL ⇒ fail)
+2026-10-15T10:45:22Z	INFO	[vuln] Vulnerability scanning is enabled
+2026-10-15T10:45:22Z	INFO	[secret] Secret scanning is enabled
+2026-10-15T10:45:22Z	INFO	[secret] If your scanning is slow, please try '--scanners vuln' to disable secret scanning
+2026-10-15T10:45:22Z	INFO	[secret] Please see https://trivy.dev/docs/v0.75/guide/scanner/secret#recommendation for faster secret detection
+2026-10-15T10:45:22Z	INFO	Detected OS	family="alpine" version="3.24.2"
+2026-10-15T10:45:22Z	INFO	[alpine] Detecting vulnerabilities...	os_version="3.24" repository="3.24" pkg_num=70
+2026-10-15T10:45:22Z	INFO	Number of language-specific files	num=0
+2026-10-15T10:45:22Z	WARN	Using severities from other vendors for some vulnerabilities. Read https://trivy.dev/docs/v0.75/guide/scanner/vulnerability#severity-selection for details.
+
+Report Summary
+
+┌────────────────────────────────────┬────────┬─────────────────┬─────────┐
+│               Target               │  Type  │ Vulnerabilities │ Secrets │
+├────────────────────────────────────┼────────┼─────────────────┼─────────┤
+│ shoplite/web:1.0.1 (alpine 3.24.2) │ alpine │        0        │    -    │
+└────────────────────────────────────┴────────┴─────────────────┴─────────┘
+Legend:
+- '-': Not scanned
+- '0': Clean (no security findings detected)
+
+
+━━━ SUMMARY ━━━
+PASS  G1 secret scan (gitleaks)  (3s)
+PASS  G2 lint code (eslint)  (2s)
+PASS  G2 lint infra (hadolint/kubeconform/actionlint)  (5s)
+PASS  G3 unit tests + coverage  (1s)
+PASS  G4 SAST (semgrep)  (7s)
+PASS  G5 dependency audit (npm audit)  (7s)
+PASS  G7 IaC misconfiguration (trivy config)  (1s)
+PASS  G6 build + image scan (trivy image)  (18s)

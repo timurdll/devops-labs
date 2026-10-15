@@ -1,0 +1,163 @@
+
+Report Summary
+
+┌────────────────────────────────────────────────────┬──────────┬─────────────────┐
+│                       Target                       │   Type   │ Vulnerabilities │
+├────────────────────────────────────────────────────┼──────────┼─────────────────┤
+│ shoplite/orders:1.0.1 (debian 13.7)                │  debian  │       31        │
+├────────────────────────────────────────────────────┼──────────┼─────────────────┤
+│ app/node_modules/pg-cloudflare/package.json        │ node-pkg │        0        │
+├────────────────────────────────────────────────────┼──────────┼─────────────────┤
+│ app/node_modules/pg-connection-string/package.json │ node-pkg │        0        │
+├────────────────────────────────────────────────────┼──────────┼─────────────────┤
+│ app/node_modules/pg-int8/package.json              │ node-pkg │        0        │
+├────────────────────────────────────────────────────┼──────────┼─────────────────┤
+│ app/node_modules/pg-pool/package.json              │ node-pkg │        0        │
+├────────────────────────────────────────────────────┼──────────┼─────────────────┤
+│ app/node_modules/pg-protocol/package.json          │ node-pkg │        0        │
+├────────────────────────────────────────────────────┼──────────┼─────────────────┤
+│ app/node_modules/pg-types/package.json             │ node-pkg │        0        │
+├────────────────────────────────────────────────────┼──────────┼─────────────────┤
+│ app/node_modules/pg/package.json                   │ node-pkg │        0        │
+├────────────────────────────────────────────────────┼──────────┼─────────────────┤
+│ app/node_modules/pgpass/package.json               │ node-pkg │        0        │
+├────────────────────────────────────────────────────┼──────────┼─────────────────┤
+│ app/node_modules/postgres-array/package.json       │ node-pkg │        0        │
+├────────────────────────────────────────────────────┼──────────┼─────────────────┤
+│ app/node_modules/postgres-bytea/package.json       │ node-pkg │        0        │
+├────────────────────────────────────────────────────┼──────────┼─────────────────┤
+│ app/node_modules/postgres-date/package.json        │ node-pkg │        0        │
+├────────────────────────────────────────────────────┼──────────┼─────────────────┤
+│ app/node_modules/postgres-interval/package.json    │ node-pkg │        0        │
+├────────────────────────────────────────────────────┼──────────┼─────────────────┤
+│ app/node_modules/split2/package.json               │ node-pkg │        0        │
+├────────────────────────────────────────────────────┼──────────┼─────────────────┤
+│ app/node_modules/xtend/package.json                │ node-pkg │        0        │
+├────────────────────────────────────────────────────┼──────────┼─────────────────┤
+│ app/package.json                                   │ node-pkg │        0        │
+└────────────────────────────────────────────────────┴──────────┴─────────────────┘
+Legend:
+- '-': Not scanned
+- '0': Clean (no security findings detected)
+
+
+shoplite/orders:1.0.1 (debian 13.7)
+===================================
+Total: 31 (UNKNOWN: 0, LOW: 8, MEDIUM: 23, HIGH: 0, CRITICAL: 0)
+
+┌─────────────┬──────────────────┬──────────┬──────────┬─────────────────────────────┬───────────────┬──────────────────────────────────────────────────────────────┐
+│   Library   │  Vulnerability   │ Severity │  Status  │      Installed Version      │ Fixed Version │                            Title                             │
+├─────────────┼──────────────────┼──────────┼──────────┼─────────────────────────────┼───────────────┼──────────────────────────────────────────────────────────────┤
+│ gcc-14-base │ CVE-2026-102010  │ MEDIUM   │ affected │ 14.2.0-19                   │               │ gcc-toolset-15-gcc: gcc: gcc-toolset-16: gcc: Denial of      │
+│             │                  │          │          │                             │               │ Service via use-after-free in binary heap...                 │
+│             │                  │          │          │                             │               │ https://avd.aquasec.com/nvd/cve-2026-102010                  │
+│             ├──────────────────┤          │          │                             ├───────────────┼──────────────────────────────────────────────────────────────┤
+│             │ CVE-2026-95619   │          │          │                             │               │ gcc: libstdc++ integer overflow in `new` operator            │
+│             │                  │          │          │                             │               │ https://avd.aquasec.com/nvd/cve-2026-95619                   │
+├─────────────┼──────────────────┤          │          ├─────────────────────────────┼───────────────┼──────────────────────────────────────────────────────────────┤
+│ libc6       │ CVE-2026-18374   │          │          │ 2.41-12+deb13u4             │               │ glibc: glibc: Heap buffer overflow via attacker-controlled   │
+│             │                  │          │          │                             │               │ fopen mode string                                            │
+│             │                  │          │          │                             │               │ https://avd.aquasec.com/nvd/cve-2026-18374                   │
+│             ├──────────────────┤          │          │                             ├───────────────┼──────────────────────────────────────────────────────────────┤
+│             │ CVE-2026-19499   │          │          │                             │               │ glibc: Buffer Overflow in strfmon right-justification        │
+│             │                  │          │          │                             │               │ padding                                                      │
+│             │                  │          │          │                             │               │ https://avd.aquasec.com/nvd/cve-2026-19499                   │
+│             ├──────────────────┤          │          │                             ├───────────────┼──────────────────────────────────────────────────────────────┤
+│             │ CVE-2026-19542   │          │          │                             │               │ glibc: Fix out-of-bounds array write in tdelete              │
+│             │                  │          │          │                             │               │ https://avd.aquasec.com/nvd/cve-2026-19542                   │
+│             ├──────────────────┤          │          │                             ├───────────────┼──────────────────────────────────────────────────────────────┤
+│             │ CVE-2026-5435    │          │          │                             │               │ glibc: glibc: Out-of-bounds write via TSIG record processing │
+│             │                  │          │          │                             │               │ https://avd.aquasec.com/nvd/cve-2026-5435                    │
+│             ├──────────────────┤          │          │                             ├───────────────┼──────────────────────────────────────────────────────────────┤
+│             │ CVE-2026-6238    │          │          │                             │               │ glibc: glibc: Application crash or uninitialized memory read │
+│             │                  │          │          │                             │               │ via crafted DNS response...                                  │
+│             │                  │          │          │                             │               │ https://avd.aquasec.com/nvd/cve-2026-6238                    │
+│             ├──────────────────┤          │          │                             ├───────────────┼──────────────────────────────────────────────────────────────┤
+│             │ CVE-2026-6368    │          │          │                             │               │ glibc: glibc: Process abort due to invalid memory in wordexp │
+│             │                  │          │          │                             │               │ https://avd.aquasec.com/nvd/cve-2026-6368                    │
+│             ├──────────────────┤          │          │                             ├───────────────┼──────────────────────────────────────────────────────────────┤
+│             │ CVE-2026-6791    │          │          │                             │               │ glibc: Glibc: Denial of Service via stack exhaustion during  │
+│             │                  │          │          │                             │               │ tilde expansion                                              │
+│             │                  │          │          │                             │               │ https://avd.aquasec.com/nvd/cve-2026-6791                    │
+│             ├──────────────────┤          │          │                             ├───────────────┼──────────────────────────────────────────────────────────────┤
+│             │ CVE-2026-77117   │          │          │                             │               │ glibc: Non-progress DoS in SHIFT_JISX0213 -&gt               │
+│             │                  │          │          │                             │               │ https://avd.aquasec.com/nvd/cve-2026-77117                   │
+│             ├──────────────────┤          │          │                             ├───────────────┼──────────────────────────────────────────────────────────────┤
+│             │ CVE-2026-80489   │          │          │                             │               │ glibc: Non-progress DoS in EUC_JISX0213 -> UCS-4 conversion  │
+│             │                  │          │          │                             │               │ state                                                        │
+│             │                  │          │          │                             │               │ https://avd.aquasec.com/nvd/cve-2026-80489                   │
+│             ├──────────────────┤          │          │                             ├───────────────┼──────────────────────────────────────────────────────────────┤
+│             │ CVE-2026-8674    │          │          │                             │               │ glibc: glibc DNS stub resolver: Denial of Service via long   │
+│             │                  │          │          │                             │               │ search domain...                                             │
+│             │                  │          │          │                             │               │ https://avd.aquasec.com/nvd/cve-2026-8674                    │
+│             ├──────────────────┤          │          │                             ├───────────────┼──────────────────────────────────────────────────────────────┤
+│             │ CVE-2026-86805   │          │          │                             │               │ glibc: glibc: Privilege escalation and arbitrary code        │
+│             │                  │          │          │                             │               │ execution via TOCTOU race condition...                       │
+│             │                  │          │          │                             │               │ https://avd.aquasec.com/nvd/cve-2026-86805                   │
+│             ├──────────────────┤          │          │                             ├───────────────┼──────────────────────────────────────────────────────────────┤
+│             │ CVE-2026-89092   │          │          │                             │               │ glibc: nscd stack overflow leads to degraded DNS resolution  │
+│             │                  │          │          │                             │               │ https://avd.aquasec.com/nvd/cve-2026-89092                   │
+│             ├──────────────────┤          │          │                             ├───────────────┼──────────────────────────────────────────────────────────────┤
+│             │ CVE-2026-95818   │          │          │                             │               │ glibc: glibc: Local attacker can cause denial of service and │
+│             │                  │          │          │                             │               │ information disclosure...                                    │
+│             │                  │          │          │                             │               │ https://avd.aquasec.com/nvd/cve-2026-95818                   │
+│             ├──────────────────┼──────────┤          │                             ├───────────────┼──────────────────────────────────────────────────────────────┤
+│             │ CVE-2010-4756    │ LOW      │          │                             │               │ glibc: glob implementation can cause excessive CPU and       │
+│             │                  │          │          │                             │               │ memory consumption due to...                                 │
+│             │                  │          │          │                             │               │ https://avd.aquasec.com/nvd/cve-2010-4756                    │
+│             ├──────────────────┤          │          │                             ├───────────────┼──────────────────────────────────────────────────────────────┤
+│             │ CVE-2018-20796   │          │          │                             │               │ glibc: uncontrolled recursion in function                    │
+│             │                  │          │          │                             │               │ check_dst_limits_calc_pos_1 in posix/regexec.c               │
+│             │                  │          │          │                             │               │ https://avd.aquasec.com/nvd/cve-2018-20796                   │
+│             ├──────────────────┤          │          │                             ├───────────────┼──────────────────────────────────────────────────────────────┤
+│             │ CVE-2019-1010022 │          │          │                             │               │ glibc: stack guard protection bypass                         │
+│             │                  │          │          │                             │               │ https://avd.aquasec.com/nvd/cve-2019-1010022                 │
+│             ├──────────────────┤          │          │                             ├───────────────┼──────────────────────────────────────────────────────────────┤
+│             │ CVE-2019-1010023 │          │          │                             │               │ glibc: running ldd on malicious ELF leads to code execution  │
+│             │                  │          │          │                             │               │ because of...                                                │
+│             │                  │          │          │                             │               │ https://avd.aquasec.com/nvd/cve-2019-1010023                 │
+│             ├──────────────────┤          │          │                             ├───────────────┼──────────────────────────────────────────────────────────────┤
+│             │ CVE-2019-1010024 │          │          │                             │               │ glibc: ASLR bypass using cache of thread stack and heap      │
+│             │                  │          │          │                             │               │ https://avd.aquasec.com/nvd/cve-2019-1010024                 │
+│             ├──────────────────┤          │          │                             ├───────────────┼──────────────────────────────────────────────────────────────┤
+│             │ CVE-2019-1010025 │          │          │                             │               │ glibc: information disclosure of heap addresses of           │
+│             │                  │          │          │                             │               │ pthread_created thread                                       │
+│             │                  │          │          │                             │               │ https://avd.aquasec.com/nvd/cve-2019-1010025                 │
+│             ├──────────────────┤          │          │                             ├───────────────┼──────────────────────────────────────────────────────────────┤
+│             │ CVE-2019-9192    │          │          │                             │               │ glibc: uncontrolled recursion in function                    │
+│             │                  │          │          │                             │               │ check_dst_limits_calc_pos_1 in posix/regexec.c               │
+│             │                  │          │          │                             │               │ https://avd.aquasec.com/nvd/cve-2019-9192                    │
+│             ├──────────────────┤          │          │                             ├───────────────┼──────────────────────────────────────────────────────────────┤
+│             │ CVE-2026-97399   │          │          │                             │               │ glibc: glibc: Denial of Service via out-of-bounds read in    │
+│             │                  │          │          │                             │               │ strncasecmp                                                  │
+│             │                  │          │          │                             │               │ https://avd.aquasec.com/nvd/cve-2026-97399                   │
+├─────────────┼──────────────────┼──────────┤          ├─────────────────────────────┼───────────────┼──────────────────────────────────────────────────────────────┤
+│ libgcc-s1   │ CVE-2026-102010  │ MEDIUM   │          │ 14.2.0-19                   │               │ gcc-toolset-15-gcc: gcc: gcc-toolset-16: gcc: Denial of      │
+│             │                  │          │          │                             │               │ Service via use-after-free in binary heap...                 │
+│             │                  │          │          │                             │               │ https://avd.aquasec.com/nvd/cve-2026-102010                  │
+│             ├──────────────────┤          │          │                             ├───────────────┼──────────────────────────────────────────────────────────────┤
+│             │ CVE-2026-95619   │          │          │                             │               │ gcc: libstdc++ integer overflow in `new` operator            │
+│             │                  │          │          │                             │               │ https://avd.aquasec.com/nvd/cve-2026-95619                   │
+├─────────────┼──────────────────┤          │          │                             ├───────────────┼──────────────────────────────────────────────────────────────┤
+│ libgomp1    │ CVE-2026-102010  │          │          │                             │               │ gcc-toolset-15-gcc: gcc: gcc-toolset-16: gcc: Denial of      │
+│             │                  │          │          │                             │               │ Service via use-after-free in binary heap...                 │
+│             │                  │          │          │                             │               │ https://avd.aquasec.com/nvd/cve-2026-102010                  │
+│             ├──────────────────┤          │          │                             ├───────────────┼──────────────────────────────────────────────────────────────┤
+│             │ CVE-2026-95619   │          │          │                             │               │ gcc: libstdc++ integer overflow in `new` operator            │
+│             │                  │          │          │                             │               │ https://avd.aquasec.com/nvd/cve-2026-95619                   │
+├─────────────┼──────────────────┤          │          │                             ├───────────────┼──────────────────────────────────────────────────────────────┤
+│ libstdc++6  │ CVE-2026-102010  │          │          │                             │               │ gcc-toolset-15-gcc: gcc: gcc-toolset-16: gcc: Denial of      │
+│             │                  │          │          │                             │               │ Service via use-after-free in binary heap...                 │
+│             │                  │          │          │                             │               │ https://avd.aquasec.com/nvd/cve-2026-102010                  │
+│             ├──────────────────┤          │          │                             ├───────────────┼──────────────────────────────────────────────────────────────┤
+│             │ CVE-2026-95619   │          │          │                             │               │ gcc: libstdc++ integer overflow in `new` operator            │
+│             │                  │          │          │                             │               │ https://avd.aquasec.com/nvd/cve-2026-95619                   │
+├─────────────┼──────────────────┤          │          ├─────────────────────────────┼───────────────┼──────────────────────────────────────────────────────────────┤
+│ zlib1g      │ CVE-2026-27171   │          │          │ 1:1.3.dfsg+really1.3.1-1+b1 │               │ zlib: zlib: Denial of Service via infinite loop in CRC32     │
+│             │                  │          │          │                             │               │ combine functions...                                         │
+│             │                  │          │          │                             │               │ https://avd.aquasec.com/nvd/cve-2026-27171                   │
+│             ├──────────────────┤          │          │                             ├───────────────┼──────────────────────────────────────────────────────────────┤
+│             │ CVE-2026-85091   │          │          │                             │               │ zlib versions 1.3.1.2 through 1.3.2 contain a heap buffer    │
+│             │                  │          │          │                             │               │ overflow vul ......                                          │
+│             │                  │          │          │                             │               │ https://avd.aquasec.com/nvd/cve-2026-85091                   │
+└─────────────┴──────────────────┴──────────┴──────────┴─────────────────────────────┴───────────────┴──────────────────────────────────────────────────────────────┘

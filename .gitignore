@@ -1,0 +1,5 @@
+node_modules/
+coverage/
+k8s/shop/secrets/db.env
+*.sarif
+.DS_Store

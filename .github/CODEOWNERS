@@ -1,0 +1,7 @@
+# Changes to the delivery pipeline, security policy and cluster config need review by the owner
+# (enforced together with branch protection on `main`: PR required, status checks green).
+# In an organisation, add a security team here, e.g. `/.github/ @org/security`.
+*                     @timurdll
+/.github/             @timurdll
+/.trivyignore.yaml    @timurdll
+/k8s/                 @timurdll

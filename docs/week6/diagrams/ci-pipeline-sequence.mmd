@@ -1,0 +1,61 @@
+%% Week 6 · UML sequence diagram of the ShopLite delivery pipeline (.github/workflows/ci.yml)
+%% Every gate states its pass / fail criterion. Render: scripts/render-diagrams.sh
+sequenceDiagram
+    autonumber
+    actor Dev as Developer
+    participant GH as GitHub repo<br/>(branch protection)
+    participant GA as Actions runner<br/>(ephemeral VM)
+    participant SG as Static gates<br/>G1–G5, G7
+    participant BX as Docker Buildx
+    participant TV as Trivy · G6
+    participant RG as GHCR registry
+    participant SS as Sigstore<br/>(Fulcio + Rekor)
+
+    Dev->>GH: git push feature branch, open PR → main
+    GH->>GA: run ci.yml (pull_request) · token = contents:read
+    par G1 secrets
+        GA->>SG: gitleaks — full git history
+        SG-->>GA: PASS 0 leaks · FAIL ≥ 1 leak
+    and G2 lint
+        GA->>SG: eslint · hadolint · kubeconform -strict · actionlint
+        SG-->>GA: PASS 0 errors/warnings
+    and G3 tests
+        GA->>SG: node --test with coverage
+        SG-->>GA: PASS all green, lines ≥ 80 %, branches ≥ 70 %
+    and G4 SAST
+        GA->>SG: semgrep (public packs + .semgrep/ project rules)
+        SG-->>GA: PASS 0 ERROR/WARNING findings
+    and G5 dependencies
+        GA->>SG: npm audit signatures · npm audit --audit-level=high
+        SG-->>GA: PASS signatures valid, 0 high/critical advisories
+    and G7 IaC
+        GA->>SG: trivy config (K8s YAML, Dockerfiles)
+        SG-->>GA: PASS 0 HIGH/CRITICAL misconfigurations
+    end
+
+    alt any static gate failed
+        GA-->>GH: check failed → merge blocked
+        GH-->>Dev: logs + SARIF findings on the PR
+    else all static gates passed
+        loop matrix: catalog, orders, web
+            GA->>BX: build --load (base image pinned by digest)
+            BX-->>GA: ghcr.io/owner/shoplite-svc:sha-1a2b3c4
+            GA->>TV: trivy image --severity HIGH,CRITICAL --ignore-unfixed --exit-code 1
+            alt fixable HIGH/CRITICAL CVE or embedded secret
+                TV-->>GA: exit 1 → G6 FAIL (report uploaded as artifact)
+            else clean
+                TV-->>GA: exit 0 → G6 PASS + JSON report + CycloneDX SBOM
+            end
+        end
+        GA-->>GH: all checks green
+        GH-->>Dev: PR mergeable (1 approval + CODEOWNERS)
+    end
+
+    Dev->>GH: merge → push to main
+    GH->>GA: run ci.yml (push) — G1…G7 again on the merge commit
+    Note over GA,SS: G8 publish runs only for main / v* tags — never for pull requests
+    GA->>RG: docker push of the image that was scanned (no rebuild)
+    RG-->>GA: manifest digest sha256:…
+    GA->>SS: cosign sign + cosign attest SBOM (keyless, GitHub OIDC)
+    SS-->>GA: short-lived cert + Rekor transparency-log entry
+    GA-->>Dev: signed, scanned image ready to deploy (by digest)

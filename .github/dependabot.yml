@@ -1,0 +1,28 @@
+# Keeps pinned SHAs/digests fresh without giving up pinning (STRIDE T-04, T-05).
+# cooldown: a new upstream release must be ≥ 7 days old before Dependabot proposes it —
+# most hijacked releases (event-stream, Shai-Hulud, trivy-action) were detected within days.
+version: 2
+updates:
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+    cooldown:
+      default-days: 7
+  - package-ecosystem: npm
+    directories: ["/services/catalog", "/services/orders"]
+    schedule:
+      interval: weekly
+    cooldown:
+      default-days: 7
+    groups:
+      production:
+        dependency-type: production
+      development:
+        dependency-type: development
+  - package-ecosystem: docker
+    directories: ["/services/catalog", "/services/orders", "/services/web"]
+    schedule:
+      interval: weekly
+    cooldown:
+      default-days: 7

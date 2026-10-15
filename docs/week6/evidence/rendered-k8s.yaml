@@ -1,0 +1,913 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  labels:
+    pod-security.kubernetes.io/enforce: restricted
+    pod-security.kubernetes.io/enforce-version: latest
+  name: ingress-traefik
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  labels:
+    app.kubernetes.io/part-of: shoplite
+    pod-security.kubernetes.io/enforce: restricted
+    pod-security.kubernetes.io/enforce-version: latest
+  name: shop
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: traefik
+  namespace: ingress-traefik
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: traefik-ingress
+  namespace: shop
+rules:
+- apiGroups:
+  - ""
+  resources:
+  - services
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - ""
+  resources:
+  - secrets
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - discovery.k8s.io
+  resources:
+  - endpointslices
+  verbs:
+  - list
+  - watch
+- apiGroups:
+  - networking.k8s.io
+  resources:
+  - ingresses
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - networking.k8s.io
+  resources:
+  - ingresses/status
+  verbs:
+  - update
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: traefik-cluster-read
+rules:
+- apiGroups:
+  - networking.k8s.io
+  resources:
+  - ingressclasses
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - ""
+  resources:
+  - nodes
+  verbs:
+  - get
+  - list
+  - watch
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: traefik-ingress
+  namespace: shop
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: traefik-ingress
+subjects:
+- kind: ServiceAccount
+  name: traefik
+  namespace: ingress-traefik
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: traefik-cluster-read
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: traefik-cluster-read
+subjects:
+- kind: ServiceAccount
+  name: traefik
+  namespace: ingress-traefik
+---
+apiVersion: v1
+data:
+  PGDATABASE: catalog
+  PGHOST: postgres.shop.svc.cluster.local
+  PGPORT: "5432"
+  PGUSER: catalog
+kind: ConfigMap
+metadata:
+  labels:
+    app.kubernetes.io/name: catalog
+    app.kubernetes.io/part-of: shoplite
+  name: catalog-config
+  namespace: shop
+---
+apiVersion: v1
+data:
+  CATALOG_TIMEOUT_MS: "2000"
+  CATALOG_URL: http://catalog.shop.svc.cluster.local
+  PGDATABASE: orders
+  PGHOST: postgres.shop.svc.cluster.local
+  PGPORT: "5432"
+  PGUSER: orders
+kind: ConfigMap
+metadata:
+  labels:
+    app.kubernetes.io/name: orders
+    app.kubernetes.io/part-of: shoplite
+  name: orders-config
+  namespace: shop
+---
+apiVersion: v1
+data:
+  10-service-databases.sh: |
+    #!/bin/sh
+    # Database-per-service: each microservice gets its own database and login role.
+    # Passwords are read from the Secret mounted at /run/secrets/db (never from env or args).
+    set -eu
+    psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --dbname postgres \
+      -v catalog_pw="$(cat /run/secrets/db/CATALOG_DB_PASSWORD)" \
+      -v orders_pw="$(cat /run/secrets/db/ORDERS_DB_PASSWORD)" <<'EOSQL'
+    CREATE ROLE catalog LOGIN PASSWORD :'catalog_pw';
+    CREATE DATABASE catalog OWNER catalog;
+    REVOKE ALL ON DATABASE catalog FROM PUBLIC;
+    CREATE ROLE orders LOGIN PASSWORD :'orders_pw';
+    CREATE DATABASE orders OWNER orders;
+    REVOKE ALL ON DATABASE orders FROM PUBLIC;
+    EOSQL
+kind: ConfigMap
+metadata:
+  labels:
+    app.kubernetes.io/name: postgres
+    app.kubernetes.io/part-of: shoplite
+  name: postgres-init
+  namespace: shop
+---
+apiVersion: v1
+data:
+  config.json: |
+    {
+      "shopName": "ShopLite (kind)",
+      "currency": "USD",
+      "banner": "Week 7 lab: served through Traefik Ingress -> ClusterIP Services -> Pods",
+      "environment": "dev / kind-shoplite"
+    }
+kind: ConfigMap
+metadata:
+  labels:
+    app.kubernetes.io/name: web
+    app.kubernetes.io/part-of: shoplite
+  name: web-config
+  namespace: shop
+---
+apiVersion: v1
+data:
+  CATALOG_DB_PASSWORD: <redacted>
+  ORDERS_DB_PASSWORD: <redacted>
+  POSTGRES_PASSWORD: <redacted>
+kind: Secret
+metadata:
+  labels:
+    app.kubernetes.io/part-of: shoplite
+  name: db-credentials-d72dg62d64
+  namespace: shop
+type: Opaque
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app.kubernetes.io/name: traefik
+  name: traefik
+  namespace: ingress-traefik
+spec:
+  ports:
+  - name: web
+    nodePort: 30080
+    port: 80
+    targetPort: web
+  selector:
+    app.kubernetes.io/name: traefik
+  type: NodePort
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app.kubernetes.io/name: catalog
+    app.kubernetes.io/part-of: shoplite
+  name: catalog
+  namespace: shop
+spec:
+  ports:
+  - name: http
+    port: 80
+    targetPort: http
+  selector:
+    app.kubernetes.io/name: catalog
+  type: ClusterIP
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app.kubernetes.io/name: orders
+    app.kubernetes.io/part-of: shoplite
+  name: orders
+  namespace: shop
+spec:
+  ports:
+  - name: http
+    port: 80
+    targetPort: http
+  selector:
+    app.kubernetes.io/name: orders
+  type: ClusterIP
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app.kubernetes.io/component: database
+    app.kubernetes.io/name: postgres
+    app.kubernetes.io/part-of: shoplite
+  name: postgres
+  namespace: shop
+spec:
+  clusterIP: None
+  ports:
+  - name: postgres
+    port: 5432
+    targetPort: postgres
+  selector:
+    app.kubernetes.io/name: postgres
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app.kubernetes.io/name: web
+    app.kubernetes.io/part-of: shoplite
+  name: web
+  namespace: shop
+spec:
+  ports:
+  - name: http
+    port: 80
+    targetPort: http
+  selector:
+    app.kubernetes.io/name: web
+  type: ClusterIP
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app.kubernetes.io/component: ingress-controller
+    app.kubernetes.io/name: traefik
+  name: traefik
+  namespace: ingress-traefik
+spec:
+  replicas: 2
+  revisionHistoryLimit: 3
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: traefik
+  strategy:
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+    type: RollingUpdate
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/component: ingress-controller
+        app.kubernetes.io/name: traefik
+    spec:
+      containers:
+      - args:
+        - --entryPoints.web.address=:8000
+        - --entryPoints.web.transport.lifeCycle.requestAcceptGraceTimeout=5s
+        - --entryPoints.web.transport.lifeCycle.graceTimeOut=10s
+        - --entryPoints.traefik.address=:9000
+        - --ping=true
+        - --ping.entryPoint=traefik
+        - --providers.kubernetesingress=true
+        - --providers.kubernetesingress.ingressclass=traefik
+        - --providers.kubernetesingress.namespaces=shop
+        - --providers.kubernetesingress.ingressendpoint.ip=127.0.0.1
+        - --accesslog=true
+        - --log.level=INFO
+        - --global.checknewversion=false
+        - --global.sendanonymoususage=false
+        image: traefik:v3.7.14@sha256:575fa15b135078fe5e50aa847987d96dbddd7b093c172429618404df73f3fa7c
+        imagePullPolicy: IfNotPresent
+        livenessProbe:
+          httpGet:
+            path: /ping
+            port: admin
+          periodSeconds: 10
+        name: traefik
+        ports:
+        - containerPort: 8000
+          name: web
+        - containerPort: 9000
+          name: admin
+        readinessProbe:
+          httpGet:
+            path: /ping
+            port: admin
+          periodSeconds: 5
+        resources:
+          limits:
+            cpu: 500m
+            memory: 256Mi
+          requests:
+            cpu: 50m
+            memory: 64Mi
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
+          readOnlyRootFilesystem: true
+      enableServiceLinks: false
+      securityContext:
+        runAsGroup: 65532
+        runAsNonRoot: true
+        runAsUser: 65532
+        seccompProfile:
+          type: RuntimeDefault
+      serviceAccountName: traefik
+      terminationGracePeriodSeconds: 30
+      topologySpreadConstraints:
+      - labelSelector:
+          matchLabels:
+            app.kubernetes.io/name: traefik
+        matchLabelKeys:
+        - pod-template-hash
+        maxSkew: 1
+        nodeTaintsPolicy: Honor
+        topologyKey: kubernetes.io/hostname
+        whenUnsatisfiable: DoNotSchedule
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app.kubernetes.io/component: api
+    app.kubernetes.io/name: catalog
+    app.kubernetes.io/part-of: shoplite
+  name: catalog
+  namespace: shop
+spec:
+  replicas: 2
+  revisionHistoryLimit: 3
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: catalog
+  strategy:
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+    type: RollingUpdate
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/component: api
+        app.kubernetes.io/name: catalog
+        tier: backend
+    spec:
+      automountServiceAccountToken: false
+      containers:
+      - env:
+        - name: POD_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
+        - name: PGPASSWORD
+          valueFrom:
+            secretKeyRef:
+              key: CATALOG_DB_PASSWORD
+              name: db-credentials-d72dg62d64
+        envFrom:
+        - configMapRef:
+            name: catalog-config
+        image: shoplite/catalog:1.0.1
+        imagePullPolicy: IfNotPresent
+        lifecycle:
+          preStop:
+            sleep:
+              seconds: 5
+        livenessProbe:
+          httpGet:
+            path: /healthz
+            port: http
+          periodSeconds: 10
+        name: catalog
+        ports:
+        - containerPort: 8080
+          name: http
+        readinessProbe:
+          httpGet:
+            path: /readyz
+            port: http
+          periodSeconds: 5
+        resources:
+          limits:
+            cpu: 500m
+            memory: 256Mi
+          requests:
+            cpu: 50m
+            memory: 64Mi
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
+          readOnlyRootFilesystem: true
+      enableServiceLinks: false
+      securityContext:
+        runAsGroup: 65532
+        runAsNonRoot: true
+        runAsUser: 65532
+        seccompProfile:
+          type: RuntimeDefault
+      terminationGracePeriodSeconds: 30
+      topologySpreadConstraints:
+      - labelSelector:
+          matchLabels:
+            app.kubernetes.io/name: catalog
+        matchLabelKeys:
+        - pod-template-hash
+        maxSkew: 1
+        nodeTaintsPolicy: Honor
+        topologyKey: kubernetes.io/hostname
+        whenUnsatisfiable: DoNotSchedule
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app.kubernetes.io/component: api
+    app.kubernetes.io/name: orders
+    app.kubernetes.io/part-of: shoplite
+  name: orders
+  namespace: shop
+spec:
+  replicas: 2
+  revisionHistoryLimit: 3
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: orders
+  strategy:
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+    type: RollingUpdate
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/component: api
+        app.kubernetes.io/name: orders
+        tier: backend
+    spec:
+      automountServiceAccountToken: false
+      containers:
+      - env:
+        - name: POD_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
+        - name: PGPASSWORD
+          valueFrom:
+            secretKeyRef:
+              key: ORDERS_DB_PASSWORD
+              name: db-credentials-d72dg62d64
+        envFrom:
+        - configMapRef:
+            name: orders-config
+        image: shoplite/orders:1.0.1
+        imagePullPolicy: IfNotPresent
+        lifecycle:
+          preStop:
+            sleep:
+              seconds: 5
+        livenessProbe:
+          httpGet:
+            path: /healthz
+            port: http
+          periodSeconds: 10
+        name: orders
+        ports:
+        - containerPort: 8080
+          name: http
+        readinessProbe:
+          httpGet:
+            path: /readyz
+            port: http
+          periodSeconds: 5
+        resources:
+          limits:
+            cpu: 500m
+            memory: 256Mi
+          requests:
+            cpu: 50m
+            memory: 64Mi
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
+          readOnlyRootFilesystem: true
+      enableServiceLinks: false
+      securityContext:
+        runAsGroup: 65532
+        runAsNonRoot: true
+        runAsUser: 65532
+        seccompProfile:
+          type: RuntimeDefault
+      terminationGracePeriodSeconds: 30
+      topologySpreadConstraints:
+      - labelSelector:
+          matchLabels:
+            app.kubernetes.io/name: orders
+        matchLabelKeys:
+        - pod-template-hash
+        maxSkew: 1
+        nodeTaintsPolicy: Honor
+        topologyKey: kubernetes.io/hostname
+        whenUnsatisfiable: DoNotSchedule
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app.kubernetes.io/component: frontend
+    app.kubernetes.io/name: web
+    app.kubernetes.io/part-of: shoplite
+  name: web
+  namespace: shop
+spec:
+  replicas: 2
+  revisionHistoryLimit: 3
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: web
+  strategy:
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+    type: RollingUpdate
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/component: frontend
+        app.kubernetes.io/name: web
+        tier: frontend
+    spec:
+      automountServiceAccountToken: false
+      containers:
+      - image: shoplite/web:1.0.1
+        imagePullPolicy: IfNotPresent
+        lifecycle:
+          preStop:
+            sleep:
+              seconds: 5
+        livenessProbe:
+          httpGet:
+            path: /healthz
+            port: http
+          periodSeconds: 10
+        name: web
+        ports:
+        - containerPort: 8080
+          name: http
+        readinessProbe:
+          httpGet:
+            path: /healthz
+            port: http
+          periodSeconds: 5
+        resources:
+          limits:
+            cpu: 200m
+            memory: 128Mi
+          requests:
+            cpu: 20m
+            memory: 32Mi
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
+          readOnlyRootFilesystem: true
+        volumeMounts:
+        - mountPath: /usr/share/nginx/html/config
+          name: web-config
+          readOnly: true
+        - mountPath: /tmp
+          name: tmp
+      enableServiceLinks: false
+      securityContext:
+        runAsGroup: 101
+        runAsNonRoot: true
+        runAsUser: 101
+        seccompProfile:
+          type: RuntimeDefault
+      terminationGracePeriodSeconds: 30
+      topologySpreadConstraints:
+      - labelSelector:
+          matchLabels:
+            app.kubernetes.io/name: web
+        matchLabelKeys:
+        - pod-template-hash
+        maxSkew: 1
+        nodeTaintsPolicy: Honor
+        topologyKey: kubernetes.io/hostname
+        whenUnsatisfiable: DoNotSchedule
+      volumes:
+      - configMap:
+          name: web-config
+        name: web-config
+      - emptyDir:
+          sizeLimit: 32Mi
+        name: tmp
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  labels:
+    app.kubernetes.io/component: database
+    app.kubernetes.io/name: postgres
+    app.kubernetes.io/part-of: shoplite
+  name: postgres
+  namespace: shop
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: postgres
+  serviceName: postgres
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/component: database
+        app.kubernetes.io/name: postgres
+        tier: data
+    spec:
+      automountServiceAccountToken: false
+      containers:
+      - env:
+        - name: POSTGRES_USER
+          value: postgres
+        - name: POSTGRES_PASSWORD_FILE
+          value: /run/secrets/db/POSTGRES_PASSWORD
+        - name: PGDATA
+          value: /var/lib/postgresql/data/pgdata
+        image: postgres:17-alpine@sha256:b0f9560a2de083e2cc7382e75f808c7381a32852a7ec49117deedb300e552b24
+        imagePullPolicy: IfNotPresent
+        livenessProbe:
+          exec:
+            command:
+            - pg_isready
+            - -U
+            - postgres
+            - -h
+            - 127.0.0.1
+          initialDelaySeconds: 30
+          periodSeconds: 10
+        name: postgres
+        ports:
+        - containerPort: 5432
+          name: postgres
+        readinessProbe:
+          exec:
+            command:
+            - pg_isready
+            - -U
+            - postgres
+            - -h
+            - 127.0.0.1
+          periodSeconds: 5
+        resources:
+          limits:
+            cpu: "1"
+            memory: 512Mi
+          requests:
+            cpu: 100m
+            memory: 256Mi
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
+          readOnlyRootFilesystem: true
+        volumeMounts:
+        - mountPath: /var/lib/postgresql/data
+          name: data
+        - mountPath: /run/secrets/db
+          name: db-credentials
+          readOnly: true
+        - mountPath: /docker-entrypoint-initdb.d
+          name: init-scripts
+          readOnly: true
+        - mountPath: /var/run/postgresql
+          name: run
+        - mountPath: /tmp
+          name: tmp
+      enableServiceLinks: false
+      securityContext:
+        fsGroup: 70
+        runAsGroup: 70
+        runAsNonRoot: true
+        runAsUser: 70
+        seccompProfile:
+          type: RuntimeDefault
+      terminationGracePeriodSeconds: 30
+      volumes:
+      - name: db-credentials
+        secret:
+          defaultMode: 288
+          secretName: db-credentials-d72dg62d64
+      - configMap:
+          defaultMode: 365
+          name: postgres-init
+        name: init-scripts
+      - emptyDir:
+          medium: Memory
+          sizeLimit: 16Mi
+        name: run
+      - emptyDir:
+          sizeLimit: 64Mi
+        name: tmp
+  volumeClaimTemplates:
+  - metadata:
+      name: data
+    spec:
+      accessModes:
+      - ReadWriteOnce
+      resources:
+        requests:
+          storage: 1Gi
+      storageClassName: standard
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  labels:
+    app.kubernetes.io/name: shop-ingress
+    app.kubernetes.io/part-of: shoplite
+  name: shop
+  namespace: shop
+spec:
+  ingressClassName: traefik
+  rules:
+  - host: shop.local
+    http:
+      paths:
+      - backend:
+          service:
+            name: catalog
+            port:
+              name: http
+        path: /api/catalog
+        pathType: Prefix
+      - backend:
+          service:
+            name: orders
+            port:
+              name: http
+        path: /api/orders
+        pathType: Prefix
+      - backend:
+          service:
+            name: web
+            port:
+              name: http
+        path: /
+        pathType: Prefix
+---
+apiVersion: networking.k8s.io/v1
+kind: IngressClass
+metadata:
+  annotations:
+    ingressclass.kubernetes.io/is-default-class: "false"
+  name: traefik
+spec:
+  controller: traefik.io/ingress-controller
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  labels:
+    app.kubernetes.io/part-of: shoplite
+  name: allow-apps-to-postgres
+  namespace: shop
+spec:
+  ingress:
+  - from:
+    - podSelector:
+        matchExpressions:
+        - key: app.kubernetes.io/name
+          operator: In
+          values:
+          - catalog
+          - orders
+    ports:
+    - port: 5432
+      protocol: TCP
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: postgres
+  policyTypes:
+  - Ingress
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  labels:
+    app.kubernetes.io/part-of: shoplite
+  name: allow-from-ingress-controller
+  namespace: shop
+spec:
+  ingress:
+  - from:
+    - namespaceSelector:
+        matchLabels:
+          kubernetes.io/metadata.name: ingress-traefik
+      podSelector:
+        matchLabels:
+          app.kubernetes.io/name: traefik
+    ports:
+    - port: 8080
+      protocol: TCP
+  podSelector:
+    matchExpressions:
+    - key: app.kubernetes.io/name
+      operator: In
+      values:
+      - web
+      - catalog
+      - orders
+  policyTypes:
+  - Ingress
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  labels:
+    app.kubernetes.io/part-of: shoplite
+  name: allow-orders-to-catalog
+  namespace: shop
+spec:
+  ingress:
+  - from:
+    - podSelector:
+        matchLabels:
+          app.kubernetes.io/name: orders
+    ports:
+    - port: 8080
+      protocol: TCP
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: catalog
+  policyTypes:
+  - Ingress
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  labels:
+    app.kubernetes.io/part-of: shoplite
+  name: default-deny-ingress
+  namespace: shop
+spec:
+  podSelector: {}
+  policyTypes:
+  - Ingress

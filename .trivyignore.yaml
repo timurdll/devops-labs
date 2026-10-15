@@ -1,0 +1,10 @@
+# Risk-accepted Trivy findings. Every entry must name the exact file, carry a justification
+# and an expiry date, and is reviewed via CODEOWNERS like any other code change.
+misconfigurations:
+  - id: KSV-0109
+    paths:
+      - k8s/shop/configmaps.yaml
+    statement: >-
+      False positive. ConfigMap `postgres-init` contains the SQL keyword PASSWORD, not a password:
+      the values are read at runtime from the `db-credentials` Secret mounted at /run/secrets/db.
+    expired_at: 2027-03-31

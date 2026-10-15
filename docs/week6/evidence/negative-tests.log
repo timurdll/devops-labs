@@ -1,0 +1,92 @@
+Negative tests — 2026-10-15 10:21 UTC. Every gate below is expected to FAIL (exit 1).
+
+━━━ T1 · G1 gitleaks: commit contains a (fake) GitHub token ━━━
+Finding:     ...s = { githubToken: 'REDACTED' };
+Secret:      REDACTED
+RuleID:      github-pat
+Entropy:     4.734184
+File:        src/config.js
+Line:        2
+Fingerprint: src/config.js:github-pat:2
+
+10:21AM INF 0 commits scanned.
+10:21AM INF scanned ~2323 bytes (2.32 KB) in 38.8ms
+10:21AM WRN leaks found: 1
+>>> gitleaks exit code: 1
+
+━━━ T2 · G4 semgrep, public packs only (p/javascript, p/nodejs) ━━━
+               
+               
+┌─────────────┐
+│ Scan Status │
+└─────────────┘
+  Scanning 4 files tracked by git with 74 Code rules:
+  Scanning 3 files with 68 js rules.
+                
+                
+┌──────────────┐
+│ Scan Summary │
+└──────────────┘
+✅ Scan completed successfully.
+ • Findings: 0 (0 blocking)
+ • Rules run: 68
+ • Targets scanned: 3
+ • Parsed lines: ~100.0%
+ • Scan was limited to files tracked by git
+ • For a detailed list of skipped files and lines, run semgrep with the --verbose flag
+Ran 68 rules on 3 files: 0 findings.
+(need more rules? `semgrep login` for additional free Semgrep Registry rules)
+
+If Semgrep missed a finding, please send us feedback to let us know!
+See https://semgrep.dev/docs/reporting-false-negatives/
+>>> semgrep exit code: 0   (0 = FALSE NEGATIVE: public rules miss these sinks in plain node:http code)
+
+━━━ T3 · G4 semgrep, public packs + project rules (.semgrep/) — the configuration used in ci.yml ━━━
+               
+               
+┌─────────────┐
+│ Scan Status │
+└─────────────┘
+  Scanning 4 files tracked by git with 77 Code rules:
+  Scanning 3 files with 71 js rules.
+                   
+                   
+┌─────────────────┐
+│ 3 Code Findings │
+└─────────────────┘
+                  
+    src/handler.js
+   ❯❯❱ semgrep-rules.shoplite-no-dynamic-code
+          ❰❰ Blocking ❱❱
+          eval()/Function() execute arbitrary code (CWE-95). There is no safe use in this codebase.
+                                                                                                   
+            5┆ res.end(String(eval(expr)));            // code injection
+   
+   ❯❯❱ semgrep-rules.shoplite-child-process-non-literal
+          ❰❰ Blocking ❱❱
+          child_process called with a non-literal command — OS command injection (CWE-78).
+                                                                                          
+            6┆ exec('ls ' + req.headers['x-dir']);     // command injection
+               
+    src/repo.js
+   ❯❯❱ semgrep-rules.shoplite-sql-string-building
+          ❰❰ Blocking ❱❱
+          SQL text built from variables — use pg placeholders ($1, $2 …) and a values array (CWE-89).
+                                                                                                     
+            2┆ module.exports = (pool, req) => pool.query(`SELECT * FROM products WHERE sku =
+               '${req.headers['x-sku']}'`);                                                  
+
+                
+                
+┌──────────────┐
+│ Scan Summary │
+└──────────────┘
+✅ Scan completed successfully.
+ • Findings: 3 (3 blocking)
+ • Rules run: 71
+ • Targets scanned: 3
+ • Parsed lines: ~100.0%
+ • Scan was limited to files tracked by git
+ • For a detailed list of skipped files and lines, run semgrep with the --verbose flag
+Ran 71 rules on 3 files: 3 findings.
+>>> semgrep exit code: 1

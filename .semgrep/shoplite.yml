@@ -1,0 +1,43 @@
+# Project-specific SAST rules. The public p/javascript + p/nodejs packs did not flag
+# eval()/exec() on request data in a plain node:http service (see docs/week6/evidence/negative-tests.log),
+# so the dangerous sinks this codebase could plausibly hit are banned explicitly.
+rules:
+  - id: shoplite-no-dynamic-code
+    languages: [javascript]
+    severity: ERROR
+    message: eval()/Function() execute arbitrary code (CWE-95). There is no safe use in this codebase.
+    metadata: { cwe: "CWE-95", owasp: "A03:2021 Injection" }
+    pattern-either:
+      - pattern: eval(...)
+      - pattern: new Function(...)
+      - pattern: Function(...)
+      - pattern: setTimeout("...", ...)
+
+  - id: shoplite-child-process-non-literal
+    languages: [javascript]
+    severity: ERROR
+    message: child_process called with a non-literal command — OS command injection (CWE-78).
+    metadata: { cwe: "CWE-78", owasp: "A03:2021 Injection" }
+    patterns:
+      - pattern-either:
+          - pattern-inside: |
+              const { ..., $FN, ... } = require('node:child_process');
+              ...
+          - pattern-inside: |
+              const { ..., $FN, ... } = require('child_process');
+              ...
+      - metavariable-regex:
+          metavariable: $FN
+          regex: ^(exec|execSync|spawn|spawnSync|execFile|execFileSync)$
+      - pattern: $FN($CMD, ...)
+      - pattern-not: $FN("...", ...)
+
+  - id: shoplite-sql-string-building
+    languages: [javascript]
+    severity: ERROR
+    message: SQL text built from variables — use pg placeholders ($1, $2 …) and a values array (CWE-89).
+    metadata: { cwe: "CWE-89", owasp: "A03:2021 Injection" }
+    pattern-either:
+      - pattern: $DB.query(`...${$X}...`, ...)
+      - pattern: $DB.query("..." + $X, ...)
+      - pattern: $DB.query($X + "...", ...)

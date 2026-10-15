@@ -1,0 +1,56 @@
+%% Week 6 · CI/CD pipeline flowchart: jobs of ci.yml as quality gates with pass/fail branches
+flowchart LR
+    ev(["git push / pull_request<br/>→ main"])
+
+    subgraph S["Static gates · parallel jobs · token: contents:read"]
+        direction TB
+        G1["G1 · gitleaks<br/>0 secrets in history"]
+        G2["G2 · eslint · hadolint<br/>kubeconform · actionlint<br/>0 errors"]
+        G3["G3 · node --test<br/>lines ≥ 80 % · branches ≥ 70 %"]
+        G4["G4 · semgrep SAST<br/>0 ERROR/WARNING"]
+        G5["G5 · npm audit<br/>signatures OK · 0 high"]
+        G7["G7 · trivy config<br/>0 HIGH/CRIT misconfig"]
+    end
+
+    J{"all static<br/>gates green?"}
+
+    subgraph I["G6 · image job · matrix catalog / orders / web"]
+        direction TB
+        B["docker buildx build --load<br/>base image pinned by digest"]
+        T{"Trivy image:<br/>fixable HIGH/CRITICAL<br/>or secret found?"}
+        R["JSON report +<br/>CycloneDX SBOM<br/>→ artifacts"]
+        B --> T
+        T -- "no" --> R
+    end
+
+    E{"event = push to<br/>main or v* tag?"}
+
+    subgraph P["G8 · publish · packages:write, id-token:write"]
+        direction TB
+        PU["docker push<br/>tags sha-xxxxxxx, main, semver"]
+        SI["cosign sign +<br/>attest SBOM (keyless)"]
+        PU --> SI
+    end
+
+    FAIL(["❌ pipeline failed<br/>merge / release blocked"])
+    PR(["✅ PR mergeable"])
+    OK(["✅ signed image<br/>ready to deploy"])
+
+    ev --> G1 & G2 & G3 & G4 & G5 & G7
+    G1 & G2 & G3 & G4 & G5 & G7 --> J
+    J -- "no" --> FAIL
+    J -- "yes" --> B
+    T -- "yes · exit 1" --> FAIL
+    R --> E
+    E -- "no · PR" --> PR
+    E -- "yes" --> PU
+    SI --> OK
+
+    classDef gate fill:#eef4fb,stroke:#2f5d8a,color:#1d1d1b
+    classDef decision fill:#fff6e0,stroke:#b07d10,color:#1d1d1b
+    classDef bad fill:#fde8e8,stroke:#b42318,color:#7a1610
+    classDef good fill:#e7f6ec,stroke:#1f7a3f,color:#14532d
+    class G1,G2,G3,G4,G5,G7,B,R,PU,SI gate
+    class J,T,E decision
+    class FAIL bad
+    class PR,OK good
