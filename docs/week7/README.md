@@ -1,5 +1,7 @@
 # Week 7 (Lab 3): Kubernetes Cluster Topology & Microservices Architecture
 
+Word version of this report: [`Week7-Lab3-Report.docx`](Week7-Lab3-Report.docx).
+
 **System:** ShopLite, made of 3 microservices (`web`, `catalog`, `orders`) and PostgreSQL, deployed to a local 3-node **kind** cluster (Kubernetes v1.37). The images are the ones that passed the Week 6 pipeline.
 
 | Deliverable (from the assignment) | Where it is |

@@ -4,8 +4,8 @@ A small microservice shop used as the system under test for the Software Archite
 
 | Lab | Topic | Report |
 |---|---|---|
-| **Week 6 · Lab 2** | CI/CD architecture & DevSecOps threat modeling (quality gates, STRIDE, Trivy) | [docs/week6/README.md](docs/week6/README.md) |
-| **Week 7 · Lab 3** | Kubernetes cluster topology & microservices architecture (kind, Ingress, ConfigMaps/Secrets) | [docs/week7/README.md](docs/week7/README.md) |
+| **Week 6 · Lab 2** | CI/CD architecture & DevSecOps threat modeling (quality gates, STRIDE, Trivy) | [docs/week6/README.md](docs/week6/README.md) · [.docx](docs/week6/Week6-Lab2-Report.docx) |
+| **Week 7 · Lab 3** | Kubernetes cluster topology & microservices architecture (kind, Ingress, ConfigMaps/Secrets) | [docs/week7/README.md](docs/week7/README.md) · [.docx](docs/week7/Week7-Lab3-Report.docx) |
 
 ## Repository layout
 

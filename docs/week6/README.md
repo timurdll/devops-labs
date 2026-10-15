@@ -168,9 +168,11 @@ The 43 HIGH findings came from 10 packages: `curl`/`libcurl` 8.17.0 (20), `libuu
 
 ## 6. Verification
 
-### 6.1 Local run of all gates
+### 6.1 Pipeline runs
 
-The workflow was not executed on GitHub Actions: no remote repository exists for this lab. Instead, `actionlint` validated it, and every gate was run locally by [`scripts/ci-local.sh`](../../scripts/ci-local.sh) using the identical pinned tool images. Full log: [`evidence/ci-local-run.log`](evidence/ci-local-run.log).
+The workflow is committed to this repository and was triggered by the push of commit `0091d67` ([run 38738427951](https://github.com/timurdll/devops-labs/actions/runs/38738427951)). **None of that run's jobs started.** GitHub reported *"The job was not started because your account is locked due to a billing issue"*. This is an account-level restriction on GitHub Actions, not a pipeline result: no gate executed. Once the lock is cleared, the run can be repeated with `gh run rerun 38738427951`.
+
+The workflow was validated with `actionlint`, and every gate was run locally by [`scripts/ci-local.sh`](../../scripts/ci-local.sh) using the **same pinned tool images**. Full log: [`evidence/ci-local-run.log`](evidence/ci-local-run.log). Word version of this report: [`Week6-Lab2-Report.docx`](Week6-Lab2-Report.docx).
 
 ```
 ━━━ SUMMARY ━━━
