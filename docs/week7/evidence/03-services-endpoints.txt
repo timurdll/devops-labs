@@ -1,0 +1,27 @@
+
+$ kubectl -n shop get services -o wide
+NAME       TYPE        CLUSTER-IP      EXTERNAL-IP   PORT(S)    AGE   SELECTOR
+catalog    ClusterIP   10.96.214.240   <none>        80/TCP     93m   app.kubernetes.io/name=catalog
+orders     ClusterIP   10.96.251.142   <none>        80/TCP     93m   app.kubernetes.io/name=orders
+postgres   ClusterIP   None            <none>        5432/TCP   93m   app.kubernetes.io/name=postgres
+web        ClusterIP   10.96.125.85    <none>        80/TCP     93m   app.kubernetes.io/name=web
+
+$ kubectl -n shop get endpointslices -o wide
+NAME             ADDRESSTYPE   PORTS   ENDPOINTS                 AGE
+catalog-fjwl2    IPv4          8080    10.244.2.41,10.244.1.26   93m
+orders-9ln7n     IPv4          8080    10.244.2.42,10.244.1.27   93m
+postgres-pjrqd   IPv4          5432    10.244.1.10               93m
+web-nvlfm        IPv4          8080    10.244.2.43,10.244.1.28   93m
+
+$ kubectl -n ingress-traefik get service traefik -o wide
+NAME      TYPE       CLUSTER-IP      EXTERNAL-IP   PORT(S)        AGE   SELECTOR
+traefik   NodePort   10.96.168.124   <none>        80:30080/TCP   95m   app.kubernetes.io/name=traefik
+
+# CoreDNS view from inside the namespace: ClusterIP Services resolve to a virtual IP,
+# the headless postgres Service resolves straight to the pod IP.
+$ busybox: nslookup <svc>.shop.svc.cluster.local
+catalog.shop.svc.cluster.local           -> 10.96.214.240
+orders.shop.svc.cluster.local            -> 10.96.251.142
+web.shop.svc.cluster.local               -> 10.96.125.85
+postgres.shop.svc.cluster.local          -> 10.244.1.10
+postgres-0.postgres.shop.svc.cluster.local -> 10.244.1.10

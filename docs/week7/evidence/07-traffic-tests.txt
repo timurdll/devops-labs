@@ -1,0 +1,59 @@
+# Requests enter at 127.0.0.1:8080 (kind port-map) → node :30080 (NodePort) → Traefik → Service → Pod
+
+$ curl -s -o /dev/null -w 'GET /                      → %{http_code}  %{content_type}\n' -H 'Host: shop.local' http://127.0.0.1:8080/
+GET /                      → 200  text/html
+
+$ curl -s -H 'Host: shop.local' http://127.0.0.1:8080/config/config.json
+{
+  "shopName": "ShopLite (kind)",
+  "currency": "USD",
+  "banner": "Week 7 lab: served through Traefik Ingress -> ClusterIP Services -> Pods",
+  "environment": "dev / kind-shoplite"
+}
+
+$ curl -s -H 'Host: shop.local' http://127.0.0.1:8080/api/catalog/products/1
+{"servedBy":"catalog-865f56b9d7-cntbb","item":{"id":1,"sku":"SKU-001","name":"Mechanical keyboard","priceCents":8900,"stock":25}}
+# Load balancing: 8 requests to /api/catalog/products, pod that answered (X-Served-By)
+
+$ for i in $(seq 8); do curl -s -D - -o /dev/null -H 'Host: shop.local' http://127.0.0.1:8080/api/catalog/products | grep -i x-served-by; done | sort | uniq -c
+   4 X-Served-By: catalog-865f56b9d7-5xz7n
+   4 X-Served-By: catalog-865f56b9d7-cntbb
+
+# East-west: POST /api/orders → orders pod → catalog Service (ClusterIP) → catalog pod → postgres
+
+$ for p in 1 2 3 4; do curl -s -H 'Host: shop.local' -H 'Content-Type: application/json' -d "{\"productId\":$p,\"quantity\":1}" http://127.0.0.1:8080/api/orders; echo; done
+{"servedBy":"orders-7bf64477d6-p9vzn","catalogServedBy":"catalog-865f56b9d7-cntbb","order":{"id":17,"productId":1,"quantity":1,"totalCents":8900,"createdAt":"2026-10-15T11:57:46.096Z"}}
+{"servedBy":"orders-7bf64477d6-zk82g","catalogServedBy":"catalog-865f56b9d7-cntbb","order":{"id":18,"productId":2,"quantity":1,"totalCents":12900,"createdAt":"2026-10-15T11:57:46.123Z"}}
+{"servedBy":"orders-7bf64477d6-p9vzn","catalogServedBy":"catalog-865f56b9d7-cntbb","order":{"id":19,"productId":3,"quantity":1,"totalCents":31900,"createdAt":"2026-10-15T11:57:46.138Z"}}
+{"servedBy":"orders-7bf64477d6-zk82g","catalogServedBy":"catalog-865f56b9d7-cntbb","order":{"id":20,"productId":4,"quantity":1,"totalCents":19900,"createdAt":"2026-10-15T11:57:46.151Z"}}
+
+$ curl -s -H 'Host: shop.local' http://127.0.0.1:8080/api/orders | head -c 400; echo
+{"servedBy":"orders-7bf64477d6-p9vzn","items":[{"id":20,"productId":4,"quantity":1,"totalCents":19900,"createdAt":"2026-10-15T11:57:46.151Z"},{"id":19,"productId":3,"quantity":1,"totalCents":31900,"createdAt":"2026-10-15T11:57:46.138Z"},{"id":18,"productId":2,"quantity":1,"totalCents":12900,"createdAt":"2026-10-15T11:57:46.123Z"},{"id":17,"productId":1,"quantity":1,"totalCents":8900,"createdAt":"2
+
+# Negative routing cases
+
+$ curl -s -o /dev/null -w 'unknown Host header  → %{http_code}\n' -H 'Host: other.local' http://127.0.0.1:8080/api/catalog/products
+unknown Host header  → 404
+
+$ curl -s -o /dev/null -w 'unknown API path     → %{http_code}\n' -H 'Host: shop.local' http://127.0.0.1:8080/api/catalog/nope
+unknown API path     → 404
+
+$ curl -s -o /dev/null -w 'invalid order        → %{http_code}\n' -H 'Host: shop.local' -H 'Content-Type: application/json' -d '{"productId":1,"quantity":0}' http://127.0.0.1:8080/api/orders
+invalid order        → 422
+
+# Traefik access log: router chosen by Host/Path match and the pod endpoint it proxied to
+
+$ kubectl -n ingress-traefik logs deploy/traefik --tail=12 | grep -E 'shop|" 404 '
+Found 2 pods, using pod/traefik-6bb9986886-7lt2z
+172.27.0.3 - - [15/Oct/2026:10:36:31 +0000] "GET /api/catalog/products HTTP/1.1" 200 375 "-" "-" 1261 "shop-shop-shop-local-api-catalog@kubernetes" "http://10.244.2.41:8080" 0ms
+172.27.0.3 - - [15/Oct/2026:10:36:31 +0000] "POST /api/orders HTTP/1.1" 201 185 "-" "-" 1262 "shop-shop-shop-local-api-orders@kubernetes" "http://10.244.1.27:8080" 33ms
+172.27.0.3 - - [15/Oct/2026:10:36:31 +0000] "POST /api/orders HTTP/1.1" 201 186 "-" "-" 1263 "shop-shop-shop-local-api-orders@kubernetes" "http://10.244.2.42:8080" 28ms
+172.27.0.3 - - [15/Oct/2026:10:36:31 +0000] "POST /api/orders HTTP/1.1" 201 186 "-" "-" 1264 "shop-shop-shop-local-api-orders@kubernetes" "http://10.244.1.27:8080" 3ms
+172.27.0.3 - - [15/Oct/2026:10:36:47 +0000] "GET / HTTP/1.1" 200 1007 "-" "-" 1265 "shop-shop-shop-local@kubernetes" "http://10.244.2.43:8080" 1ms
+172.27.0.3 - - [15/Oct/2026:11:57:45 +0000] "GET / HTTP/1.1" 200 1007 "-" "-" 1266 "shop-shop-shop-local@kubernetes" "http://10.244.1.28:8080" 2ms
+172.27.0.3 - - [15/Oct/2026:11:57:45 +0000] "GET /api/catalog/products HTTP/1.1" 200 375 "-" "-" 1267 "shop-shop-shop-local-api-catalog@kubernetes" "http://10.244.1.26:8080" 1ms
+172.27.0.3 - - [15/Oct/2026:11:57:46 +0000] "GET /api/catalog/products HTTP/1.1" 200 375 "-" "-" 1268 "shop-shop-shop-local-api-catalog@kubernetes" "http://10.244.2.41:8080" 1ms
+172.27.0.3 - - [15/Oct/2026:11:57:46 +0000] "GET /api/catalog/products HTTP/1.1" 200 375 "-" "-" 1269 "shop-shop-shop-local-api-catalog@kubernetes" "http://10.244.1.26:8080" 1ms
+172.27.0.3 - - [15/Oct/2026:11:57:46 +0000] "GET /api/catalog/products HTTP/1.1" 200 375 "-" "-" 1270 "shop-shop-shop-local-api-catalog@kubernetes" "http://10.244.2.41:8080" 1ms
+172.27.0.3 - - [15/Oct/2026:11:57:46 +0000] "GET /api/catalog/products HTTP/1.1" 404 19 "-" "-" 1271 "-" "-" 0ms
+172.27.0.3 - - [15/Oct/2026:11:57:46 +0000] "POST /api/orders HTTP/1.1" 422 57 "-" "-" 1272 "shop-shop-shop-local-api-orders@kubernetes" "http://10.244.2.42:8080" 1ms

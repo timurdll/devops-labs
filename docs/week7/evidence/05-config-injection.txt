@@ -1,0 +1,62 @@
+
+$ kubectl -n shop get configmaps,secrets
+NAME                         DATA   AGE
+configmap/catalog-config     4      93m
+configmap/kube-root-ca.crt   1      93m
+configmap/orders-config      6      93m
+configmap/postgres-init      1      93m
+configmap/web-config         1      93m
+
+NAME                               TYPE     DATA   AGE
+secret/db-credentials-d72dg62d64   Opaque   3      93m
+
+$ kubectl -n shop describe secret/db-credentials-d72dg62d64
+Name:         db-credentials-d72dg62d64
+Namespace:    shop
+Labels:       app.kubernetes.io/part-of=shoplite
+Annotations:  <none>
+
+Type:  Opaque
+
+Data
+====
+CATALOG_DB_PASSWORD:  32 bytes
+ORDERS_DB_PASSWORD:   32 bytes
+POSTGRES_PASSWORD:    32 bytes
+
+# Env inside an orders pod (ConfigMap → envFrom, Secret → secretKeyRef). Values of *PASSWORD* masked.
+
+$ kubectl -n shop exec deploy/orders -- /nodejs/bin/node -e "for (const k of Object.keys(process.env).filter(k => /^(PG|CATALOG_|POD_)/.test(k)).sort()) console.log(k + '=' + (/PASSWORD/.test(k) ? '******** (' + process.env[k].length + ' chars, from Secret)' : process.env[k]))"
+CATALOG_TIMEOUT_MS=2000
+CATALOG_URL=http://catalog.shop.svc.cluster.local
+PGDATABASE=orders
+PGHOST=postgres.shop.svc.cluster.local
+PGPASSWORD=******** (32 chars, from Secret)
+PGPORT=5432
+PGUSER=orders
+POD_NAME=orders-7bf64477d6-p9vzn
+
+# ConfigMap mounted as a file in the web pod
+
+$ kubectl -n shop exec deploy/web -- ls -l /usr/share/nginx/html/config/
+total 0
+lrwxrwxrwx    1 root     root            18 Oct 15 10:36 config.json -> ..data/config.json
+
+$ kubectl -n shop exec deploy/web -- cat /usr/share/nginx/html/config/config.json
+{
+  "shopName": "ShopLite (kind)",
+  "currency": "USD",
+  "banner": "Week 7 lab: served through Traefik Ingress -> ClusterIP Services -> Pods",
+  "environment": "dev / kind-shoplite"
+}
+
+# Secret mounted as files in postgres (0440, group 70) — listed, not printed
+
+$ kubectl -n shop exec postgres-0 -- ls -lL /run/secrets/db/
+total 12
+-r--r-----    1 root     postgres        32 Oct 15 10:28 CATALOG_DB_PASSWORD
+-r--r-----    1 root     postgres        32 Oct 15 10:28 ORDERS_DB_PASSWORD
+-r--r-----    1 root     postgres        32 Oct 15 10:28 POSTGRES_PASSWORD
+
+$ kubectl -n shop exec postgres-0 -- sh -c 'env | grep -c PASSWORD= || true'
+0

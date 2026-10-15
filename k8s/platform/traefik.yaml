@@ -1,0 +1,200 @@
+# Ingress controller: Traefik v3 (Kubernetes Ingress provider).
+# ingress-nginx was retired by the Kubernetes project in March 2026 (no more security patches),
+# so this lab uses Traefik, which implements the same networking.k8s.io/v1 Ingress API.
+#
+# Least privilege: Traefik only watches the `shop` namespace. Namespaced objects are granted
+# through a Role in `shop`; the ClusterRole covers only cluster-scoped kinds (IngressClass, Node).
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: ingress-traefik
+  labels:
+    pod-security.kubernetes.io/enforce: restricted
+    pod-security.kubernetes.io/enforce-version: latest
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: traefik
+  namespace: ingress-traefik
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: traefik-cluster-read
+rules:
+  - apiGroups: ["networking.k8s.io"]
+    resources: ["ingressclasses"]
+    verbs: ["get", "list", "watch"]
+  - apiGroups: [""]
+    resources: ["nodes"]
+    verbs: ["get", "list", "watch"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: traefik-cluster-read
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: traefik-cluster-read
+subjects:
+  - kind: ServiceAccount
+    name: traefik
+    namespace: ingress-traefik
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: traefik-ingress
+  namespace: shop
+rules:
+  - apiGroups: [""]
+    resources: ["services"]
+    verbs: ["get", "list", "watch"]
+  - apiGroups: [""]
+    resources: ["secrets"] # only needed for TLS sections of Ingress objects
+    verbs: ["get", "list", "watch"]
+  - apiGroups: ["discovery.k8s.io"]
+    resources: ["endpointslices"]
+    verbs: ["list", "watch"]
+  - apiGroups: ["networking.k8s.io"]
+    resources: ["ingresses"]
+    verbs: ["get", "list", "watch"]
+  - apiGroups: ["networking.k8s.io"]
+    resources: ["ingresses/status"]
+    verbs: ["update"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: traefik-ingress
+  namespace: shop
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: traefik-ingress
+subjects:
+  - kind: ServiceAccount
+    name: traefik
+    namespace: ingress-traefik
+---
+apiVersion: networking.k8s.io/v1
+kind: IngressClass
+metadata:
+  name: traefik
+  annotations:
+    ingressclass.kubernetes.io/is-default-class: "false"
+spec:
+  controller: traefik.io/ingress-controller
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: traefik
+  namespace: ingress-traefik
+  labels:
+    app.kubernetes.io/name: traefik
+    app.kubernetes.io/component: ingress-controller
+spec:
+  replicas: 2
+  revisionHistoryLimit: 3
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: traefik
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: traefik
+        app.kubernetes.io/component: ingress-controller
+    spec:
+      serviceAccountName: traefik
+      enableServiceLinks: false
+      terminationGracePeriodSeconds: 30
+      topologySpreadConstraints:
+        # Hard rule: replicas of one revision on different nodes. matchLabelKeys scopes the
+        # skew to the current ReplicaSet (old pods during a rollout don't count); Honor skips
+        # the tainted control-plane node as a placement domain.
+        - maxSkew: 1
+          topologyKey: kubernetes.io/hostname
+          whenUnsatisfiable: DoNotSchedule
+          nodeTaintsPolicy: Honor
+          matchLabelKeys: ["pod-template-hash"]
+          labelSelector:
+            matchLabels:
+              app.kubernetes.io/name: traefik
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 65532
+        runAsGroup: 65532
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: traefik
+          image: traefik:v3.7.14@sha256:575fa15b135078fe5e50aa847987d96dbddd7b093c172429618404df73f3fa7c
+          imagePullPolicy: IfNotPresent
+          args:
+            - --entryPoints.web.address=:8000
+            # keep accepting requests for 5 s after SIGTERM while kube-proxy drops this pod from the NodePort
+            - --entryPoints.web.transport.lifeCycle.requestAcceptGraceTimeout=5s
+            - --entryPoints.web.transport.lifeCycle.graceTimeOut=10s
+            - --entryPoints.traefik.address=:9000
+            - --ping=true
+            - --ping.entryPoint=traefik
+            - --providers.kubernetesingress=true
+            - --providers.kubernetesingress.ingressclass=traefik
+            - --providers.kubernetesingress.namespaces=shop
+            - --providers.kubernetesingress.ingressendpoint.ip=127.0.0.1
+            - --accesslog=true
+            - --log.level=INFO
+            - --global.checknewversion=false
+            - --global.sendanonymoususage=false
+          ports:
+            - name: web
+              containerPort: 8000
+            - name: admin
+              containerPort: 9000
+          readinessProbe:
+            httpGet:
+              path: /ping
+              port: admin
+            periodSeconds: 5
+          livenessProbe:
+            httpGet:
+              path: /ping
+              port: admin
+            periodSeconds: 10
+          resources:
+            requests:
+              cpu: 50m
+              memory: 64Mi
+            limits:
+              cpu: 500m
+              memory: 256Mi
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: ["ALL"]
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: traefik
+  namespace: ingress-traefik
+  labels:
+    app.kubernetes.io/name: traefik
+spec:
+  type: NodePort
+  selector:
+    app.kubernetes.io/name: traefik
+  ports:
+    - name: web
+      port: 80
+      targetPort: web
+      nodePort: 30080

@@ -1,0 +1,45 @@
+
+$ kubectl get storageclass
+NAME                 PROVISIONER             RECLAIMPOLICY   VOLUMEBINDINGMODE      ALLOWVOLUMEEXPANSION   AGE
+standard (default)   rancher.io/local-path   Delete          WaitForFirstConsumer   false                  101m
+
+$ kubectl -n shop get pvc -o wide
+NAME              STATUS   VOLUME                                     CAPACITY   ACCESS MODES   STORAGECLASS   VOLUMEATTRIBUTESCLASS   AGE   VOLUMEMODE
+data-postgres-0   Bound    pvc-06806ee8-ed08-4f11-b8f3-5ca5bccfbfb7   1Gi        RWO            standard       <unset>                 93m   Filesystem
+
+$ kubectl get pv
+NAME                                       CAPACITY   ACCESS MODES   RECLAIM POLICY   STATUS   CLAIM                  STORAGECLASS   VOLUMEATTRIBUTESCLASS   REASON   AGE
+pvc-06806ee8-ed08-4f11-b8f3-5ca5bccfbfb7   1Gi        RWO            Delete           Bound    shop/data-postgres-0   standard       <unset>                          93m
+
+# Database-per-service inside the StatefulSet
+
+$ kubectl -n shop exec postgres-0 -- psql -U postgres -c '\l catalog' -c '\l orders' -c '\du'
+                                                  List of databases
+  Name   |  Owner  | Encoding | Locale Provider |  Collate   |   Ctype    | Locale | ICU Rules |  Access privileges  
+---------+---------+----------+-----------------+------------+------------+--------+-----------+---------------------
+ catalog | catalog | UTF8     | libc            | en_US.utf8 | en_US.utf8 |        |           | catalog=CTc/catalog
+(1 row)
+
+                                                List of databases
+  Name  | Owner  | Encoding | Locale Provider |  Collate   |   Ctype    | Locale | ICU Rules | Access privileges 
+--------+--------+----------+-----------------+------------+------------+--------+-----------+-------------------
+ orders | orders | UTF8     | libc            | en_US.utf8 | en_US.utf8 |        |           | orders=CTc/orders
+(1 row)
+
+                             List of roles
+ Role name |                         Attributes                         
+-----------+------------------------------------------------------------
+ catalog   | 
+ orders    | 
+ postgres  | Superuser, Create role, Create DB, Replication, Bypass RLS
+
+
+$ kubectl -n shop exec postgres-0 -- psql -U postgres -d catalog -c 'SELECT id, sku, name, price_cents, stock FROM products ORDER BY id'
+ id |   sku   |            name             | price_cents | stock 
+----+---------+-----------------------------+-------------+-------
+  1 | SKU-001 | Mechanical keyboard         |        8900 |    25
+  2 | SKU-002 | USB-C dock                  |       12900 |    10
+  3 | SKU-003 | 27" monitor                 |       31900 |     5
+  4 | SKU-004 | Noise-cancelling headphones |       19900 |    12
+(4 rows)
+

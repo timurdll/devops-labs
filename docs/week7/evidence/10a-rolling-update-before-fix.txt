@@ -1,0 +1,50 @@
+# Rolling update under load — 2026-10-15 10:28 UTC
+# Change: enableServiceLinks=false on every pod template (new ReplicaSets for catalog/orders/web, new StatefulSet revision).
+# Strategy: maxSurge=1, maxUnavailable=0 + readiness probes. A client loop hits /, /api/catalog/products, /api/orders during the rollout.
+
+$ kubectl apply -k k8s/
+deployment.apps/traefik configured
+deployment.apps/catalog configured
+deployment.apps/orders configured
+deployment.apps/web configured
+statefulset.apps/postgres configured
+$ kubectl -n shop rollout status deploy/catalog
+Waiting for deployment "catalog" rollout to finish: 1 out of 2 new replicas have been updated...
+Waiting for deployment "catalog" rollout to finish: 1 out of 2 new replicas have been updated...
+Waiting for deployment "catalog" rollout to finish: 1 out of 2 new replicas have been updated...
+Waiting for deployment "catalog" rollout to finish: 1 out of 2 new replicas have been updated...
+Waiting for deployment "catalog" rollout to finish: 1 out of 2 new replicas have been updated...
+Waiting for deployment "catalog" rollout to finish: 1 old replicas are pending termination...
+Waiting for deployment "catalog" rollout to finish: 1 old replicas are pending termination...
+Waiting for deployment "catalog" rollout to finish: 1 old replicas are pending termination...
+Waiting for deployment "catalog" rollout to finish: 1 old replicas are pending termination...
+deployment "catalog" successfully rolled out
+$ kubectl -n shop rollout status deploy/orders
+Waiting for deployment "orders" rollout to finish: 1 old replicas are pending termination...
+Waiting for deployment "orders" rollout to finish: 1 old replicas are pending termination...
+deployment "orders" successfully rolled out
+$ kubectl -n shop rollout status deploy/web
+deployment "web" successfully rolled out
+$ kubectl -n shop rollout status statefulset/postgres
+partitioned roll out complete: 1 new pods have been updated...
+
+# HTTP status codes observed by the client during the rollout
+  31 000
+ 747 200
+   1 500
+  55 502
+
+$ kubectl -n shop rollout history deploy/catalog
+deployment.apps/catalog 
+REVISION  CHANGE-CAUSE
+1         <none>
+2         <none>
+
+$ kubectl -n shop get rs
+NAME                 DESIRED   CURRENT   READY   AGE
+catalog-6888c84f57   2         2         2       11s
+catalog-84b4c8559c   0         0         0       4m19s
+orders-676f89bf9c    0         0         0       4m19s
+orders-6885cddfc     2         2         2       10s
+web-84c878b88d       0         0         0       4m18s
+web-dcb76c94d        2         2         2       10s

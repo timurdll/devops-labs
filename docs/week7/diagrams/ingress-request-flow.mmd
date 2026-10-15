@@ -1,0 +1,41 @@
+%% Week 7 · Request traffic flow: POST /api/orders from the client to the database and back.
+%% North-south: Host/Path match → Ingress → Service → EndpointSlice → Pod
+%% East-west:   orders → catalog via ClusterIP (CoreDNS + kube-proxy), orders → postgres via headless DNS
+sequenceDiagram
+    autonumber
+    actor C as Client<br/>(curl / browser)
+    participant N as kind node<br/>127.0.0.1:8080 → :30080
+    participant T as Traefik pod<br/>ns ingress-traefik
+    participant K as kube-apiserver
+    participant O as orders pod<br/>ns shop :8080
+    participant D as CoreDNS
+    participant P as kube-proxy<br/>(iptables)
+    participant CT as catalog pod<br/>:8080
+    participant PG as postgres-0<br/>:5432
+
+    rect rgb(244, 244, 242)
+    Note over T,K: Control loop (continuous, not per request)
+    K-->>T: watch Ingress "shop": Host shop.local, Prefix /api/orders → Service orders, port "http"
+    K-->>T: watch EndpointSlice of orders: ready = 10.244.1.x:8080, 10.244.2.x:8080
+    end
+
+    C->>N: POST /api/orders · Host: shop.local · {"productId":1,"quantity":1}
+    N->>T: NodePort 30080 → kube-proxy DNAT → Traefik :8000 (L4)
+    T->>T: router match: Host == shop.local ✓ · longest Prefix = /api/orders ✓
+    Note right of T: Ingress → Service → EndpointSlice is resolved inside Traefik:<br/>it proxies to a pod IP directly (L7 round-robin), no ClusterIP hop
+    T->>O: POST /api/orders → 10.244.x.x:8080 (allowed by NetworkPolicy allow-from-ingress-controller)
+
+    O->>D: A? catalog.shop.svc.cluster.local
+    D-->>O: 10.96.214.240 (ClusterIP VIP)
+    O->>P: GET /api/catalog/products/1 → 10.96.214.240:80
+    P->>CT: DNAT → ready endpoint 10.244.x.x:8080 (chosen per TCP connection)
+    Note right of P: allowed by NetworkPolicy allow-orders-to-catalog
+    CT-->>O: 200 {item: priceCents 8900, stock 25} · X-Served-By: catalog-…
+
+    O->>D: A? postgres.shop.svc.cluster.local (headless Service)
+    D-->>O: 10.244.1.10 (pod IP of postgres-0, no VIP)
+    O->>PG: INSERT INTO orders … RETURNING id (allowed by allow-apps-to-postgres)
+    PG-->>O: id = 9
+    O-->>T: 201 Created {order, servedBy: orders-…, catalogServedBy: catalog-…}
+    T-->>C: 201 Created
+    Note over C,T: Traefik access log: router shop-shop-shop-local-api-orders@kubernetes → http://10.244.x.x:8080

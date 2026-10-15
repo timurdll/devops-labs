@@ -1,0 +1,51 @@
+
+$ kubectl -n shop get deployments,replicasets,statefulsets -o wide
+NAME                      READY   UP-TO-DATE   AVAILABLE   AGE   CONTAINERS   IMAGES                   SELECTOR
+deployment.apps/catalog   2/2     2            2           93m   catalog      shoplite/catalog:1.0.1   app.kubernetes.io/name=catalog
+deployment.apps/orders    2/2     2            2           93m   orders       shoplite/orders:1.0.1    app.kubernetes.io/name=orders
+deployment.apps/web       2/2     2            2           93m   web          shoplite/web:1.0.1       app.kubernetes.io/name=web
+
+NAME                                 DESIRED   CURRENT   READY   AGE   CONTAINERS   IMAGES                   SELECTOR
+replicaset.apps/catalog-548f7f457d   0         0         0       88m   catalog      shoplite/catalog:1.0.1   app.kubernetes.io/name=catalog,pod-template-hash=548f7f457d
+replicaset.apps/catalog-59f58775f4   0         0         0       83m   catalog      shoplite/catalog:1.0.1   app.kubernetes.io/name=catalog,pod-template-hash=59f58775f4
+replicaset.apps/catalog-6c59676d     0         0         0       82m   catalog      shoplite/catalog:1.0.1   app.kubernetes.io/name=catalog,pod-template-hash=6c59676d
+replicaset.apps/catalog-865f56b9d7   2         2         2       81m   catalog      shoplite/catalog:1.0.1   app.kubernetes.io/name=catalog,pod-template-hash=865f56b9d7
+replicaset.apps/orders-689596c68c    0         0         0       82m   orders       shoplite/orders:1.0.1    app.kubernetes.io/name=orders,pod-template-hash=689596c68c
+replicaset.apps/orders-7bf64477d6    2         2         2       81m   orders       shoplite/orders:1.0.1    app.kubernetes.io/name=orders,pod-template-hash=7bf64477d6
+replicaset.apps/orders-7c8978645     0         0         0       83m   orders       shoplite/orders:1.0.1    app.kubernetes.io/name=orders,pod-template-hash=7c8978645
+replicaset.apps/orders-7fbc9b4fdd    0         0         0       88m   orders       shoplite/orders:1.0.1    app.kubernetes.io/name=orders,pod-template-hash=7fbc9b4fdd
+replicaset.apps/web-595fbfb9fd       0         0         0       83m   web          shoplite/web:1.0.1       app.kubernetes.io/name=web,pod-template-hash=595fbfb9fd
+replicaset.apps/web-5bc5f9b587       2         2         2       81m   web          shoplite/web:1.0.1       app.kubernetes.io/name=web,pod-template-hash=5bc5f9b587
+replicaset.apps/web-77b98f58         0         0         0       82m   web          shoplite/web:1.0.1       app.kubernetes.io/name=web,pod-template-hash=77b98f58
+replicaset.apps/web-fc865db75        0         0         0       88m   web          shoplite/web:1.0.1       app.kubernetes.io/name=web,pod-template-hash=fc865db75
+
+NAME                        READY   AGE   CONTAINERS   IMAGES
+statefulset.apps/postgres   1/1     93m   postgres     postgres:17-alpine@sha256:b0f9560a2de083e2cc7382e75f808c7381a32852a7ec49117deedb300e552b24
+
+$ kubectl -n shop get pods -o wide -L app.kubernetes.io/name,tier
+NAME                       READY   STATUS    RESTARTS   AGE   IP            NODE               NOMINATED NODE   READINESS GATES   NAME       TIER
+catalog-865f56b9d7-5xz7n   1/1     Running   0          81m   10.244.2.41   shoplite-worker    <none>           <none>            catalog    backend
+catalog-865f56b9d7-cntbb   1/1     Running   0          81m   10.244.1.26   shoplite-worker2   <none>           <none>            catalog    backend
+orders-7bf64477d6-p9vzn    1/1     Running   0          81m   10.244.2.42   shoplite-worker    <none>           <none>            orders     backend
+orders-7bf64477d6-zk82g    1/1     Running   0          81m   10.244.1.27   shoplite-worker2   <none>           <none>            orders     backend
+postgres-0                 1/1     Running   0          89m   10.244.1.10   shoplite-worker2   <none>           <none>            postgres   data
+web-5bc5f9b587-7nww7       1/1     Running   0          81m   10.244.2.43   shoplite-worker    <none>           <none>            web        frontend
+web-5bc5f9b587-fvr7j       1/1     Running   0          81m   10.244.1.28   shoplite-worker2   <none>           <none>            web        frontend
+
+$ kubectl -n ingress-traefik get deploy,pods -o wide
+NAME                      READY   UP-TO-DATE   AVAILABLE   AGE   CONTAINERS   IMAGES                                                                                    SELECTOR
+deployment.apps/traefik   2/2     2            2           95m   traefik      traefik:v3.7.14@sha256:575fa15b135078fe5e50aa847987d96dbddd7b093c172429618404df73f3fa7c   app.kubernetes.io/name=traefik
+
+NAME                           READY   STATUS    RESTARTS   AGE   IP            NODE               NOMINATED NODE   READINESS GATES
+pod/traefik-6bb9986886-7lt2z   1/1     Running   0          81m   10.244.2.40   shoplite-worker    <none>           <none>
+pod/traefik-6bb9986886-m2zbl   1/1     Running   0          81m   10.244.1.25   shoplite-worker2   <none>           <none>
+
+$ kubectl -n shop get pods -o custom-columns='POD:.metadata.name,NODE:.spec.nodeName,OWNER:.metadata.ownerReferences[0].kind/.metadata.ownerReferences[0].name,UID:.spec.securityContext.runAsUser,RO_ROOTFS:.spec.containers[0].securityContext.readOnlyRootFilesystem,IMAGE:.spec.containers[0].image'
+POD                        NODE               OWNER    UID     RO_ROOTFS   IMAGE
+catalog-865f56b9d7-5xz7n   shoplite-worker    <none>   65532   true        shoplite/catalog:1.0.1
+catalog-865f56b9d7-cntbb   shoplite-worker2   <none>   65532   true        shoplite/catalog:1.0.1
+orders-7bf64477d6-p9vzn    shoplite-worker    <none>   65532   true        shoplite/orders:1.0.1
+orders-7bf64477d6-zk82g    shoplite-worker2   <none>   65532   true        shoplite/orders:1.0.1
+postgres-0                 shoplite-worker2   <none>   70      true        postgres:17-alpine@sha256:b0f9560a2de083e2cc7382e75f808c7381a32852a7ec49117deedb300e552b24
+web-5bc5f9b587-7nww7       shoplite-worker    <none>   101     true        shoplite/web:1.0.1
+web-5bc5f9b587-fvr7j       shoplite-worker2   <none>   101     true        shoplite/web:1.0.1

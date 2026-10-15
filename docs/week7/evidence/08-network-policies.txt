@@ -1,0 +1,17 @@
+
+$ kubectl -n shop get networkpolicies
+NAME                            POD-SELECTOR                                     AGE
+allow-apps-to-postgres          app.kubernetes.io/name=postgres                  93m
+allow-from-ingress-controller   app.kubernetes.io/name in (catalog,orders,web)   93m
+allow-orders-to-catalog         app.kubernetes.io/name=catalog                   93m
+default-deny-ingress            <none>                                           93m
+
+# Reachability matrix (expected: only Traefik→apps, orders→catalog, apps→postgres)
+orders  → catalog:80       (allowed)                    CONNECTED
+catalog → postgres:5432    (allowed)                    CONNECTED
+web     → catalog:80       (denied)                     BLOCKED (timeout)
+web     → postgres:5432    (denied)                     BLOCKED (timeout)
+catalog → orders:80        (denied)                     BLOCKED (timeout)
+web     → web (self, control: wget/nc present)          CONNECTED
+default-ns pod → Traefik → web     (control, allowed) CONNECTED
+default-ns pod → catalog.shop:80   (denied)             BLOCKED (timeout)

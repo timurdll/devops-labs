@@ -1,0 +1,44 @@
+%% Week 7 · How one HTTP request is translated across cluster boundaries
+%% (Host/Path matching → Ingress → ClusterIP Service → Pod endpoint)
+flowchart LR
+    REQ["HTTP request<br/>Host: shop.local<br/>GET /api/catalog/products/1"]
+
+    subgraph EDGE["Cluster edge"]
+        NP["127.0.0.1:8080 → node :30080<br/>Service traefik · NodePort"]
+        TR["Traefik pod :8000<br/>IngressClass traefik"]
+    end
+
+    subgraph ING["Ingress shop · ns shop"]
+        H{"Host ==<br/>shop.local ?"}
+        P{"longest Prefix<br/>match"}
+    end
+
+    subgraph SVC["ClusterIP Services · port 80 → targetPort http (8080)"]
+        S1["catalog"]
+        S2["orders"]
+        S3["web"]
+    end
+
+    subgraph EPS["EndpointSlices · ready pod IPs"]
+        E1["catalog pod @ worker<br/>catalog pod @ worker2"]
+        E2["orders pod @ worker<br/>orders pod @ worker2"]
+        E3["web pod @ worker<br/>web pod @ worker2"]
+    end
+
+    X404(["404 page not found<br/>(no router matched)"])
+
+    REQ --> NP --> TR --> H
+    H -- "no" --> X404
+    H -- "yes" --> P
+    P -- "/api/catalog" --> S1 --> E1
+    P -- "/api/orders" --> S2 --> E2
+    P -- "/ (everything else)" --> S3 --> E3
+
+    classDef edge fill:#eef4fb,stroke:#2f5d8a,color:#1d1d1b
+    classDef dec fill:#fff6e0,stroke:#b07d10,color:#1d1d1b
+    classDef svc fill:#e7f6ec,stroke:#1f7a3f,color:#14532d
+    classDef bad fill:#fde8e8,stroke:#b42318,color:#7a1610
+    class NP,TR edge
+    class H,P dec
+    class S1,S2,S3,E1,E2,E3 svc
+    class X404 bad

@@ -1,0 +1,23 @@
+# Rolling restart under load — 2026-10-15 10:35 UTC
+# Pods: preStop sleep 5s; Traefik x2 with requestAcceptGraceTimeout=5s; maxSurge=1/maxUnavailable=0.
+
+$ kubectl -n ingress-traefik rollout restart deploy/traefik && kubectl -n ingress-traefik rollout status deploy/traefik
+deployment.apps/traefik restarted
+deployment "traefik" successfully rolled out
+
+$ kubectl -n shop rollout restart deploy/catalog && kubectl -n shop rollout status deploy/catalog
+deployment.apps/catalog restarted
+deployment "catalog" successfully rolled out
+
+$ kubectl -n shop rollout restart deploy/orders && kubectl -n shop rollout status deploy/orders
+deployment.apps/orders restarted
+deployment "orders" successfully rolled out
+
+$ kubectl -n shop rollout restart deploy/web && kubectl -n shop rollout status deploy/web
+deployment.apps/web restarted
+deployment "web" successfully rolled out
+
+# HTTP status codes seen by the client during the four rollouts
+3440 200
+
+Total requests: 3440, non-2xx: 0

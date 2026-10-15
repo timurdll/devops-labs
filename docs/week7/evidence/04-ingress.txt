@@ -1,0 +1,26 @@
+
+$ kubectl get ingressclass
+NAME      CONTROLLER                      PARAMETERS   AGE
+traefik   traefik.io/ingress-controller   <none>       95m
+
+$ kubectl -n shop get ingress -o wide
+NAME   CLASS     HOSTS        ADDRESS     PORTS   AGE
+shop   traefik   shop.local   127.0.0.1   80      93m
+
+$ kubectl -n shop describe ingress shop
+Name:             shop
+Labels:           app.kubernetes.io/name=shop-ingress
+                  app.kubernetes.io/part-of=shoplite
+Namespace:        shop
+Address:          127.0.0.1
+Ingress Class:    traefik
+Default backend:  <default>
+Rules:
+  Host        Path  Backends
+  ----        ----  --------
+  shop.local  
+              /api/catalog   catalog:http (10.244.2.41:8080,10.244.1.26:8080)
+              /api/orders    orders:http (10.244.2.42:8080,10.244.1.27:8080)
+              /              web:http (10.244.2.43:8080,10.244.1.28:8080)
+Annotations:  <none>
+Events:       <none>

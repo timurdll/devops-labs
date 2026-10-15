@@ -1,0 +1,34 @@
+# Designed topology (docs/week7/diagrams) vs. runtime state — 2026-10-15 11:58 UTC
+CHECK                                          EXPECTED                     ACTUAL                       OK
+nodes Ready                                    3                            3                            ✓
+deploy/catalog ready replicas                  2/2                          2/2                          ✓
+deploy/catalog pods on distinct nodes          2                            2                            ✓
+svc/catalog type:port→targetPort             ClusterIP:80→http          ClusterIP:80→http          ✓
+svc/catalog ready endpoints                    2                            2                            ✓
+deploy/orders ready replicas                   2/2                          2/2                          ✓
+deploy/orders pods on distinct nodes           2                            2                            ✓
+svc/orders type:port→targetPort              ClusterIP:80→http          ClusterIP:80→http          ✓
+svc/orders ready endpoints                     2                            2                            ✓
+deploy/web ready replicas                      2/2                          2/2                          ✓
+deploy/web pods on distinct nodes              2                            2                            ✓
+svc/web type:port→targetPort                 ClusterIP:80→http          ClusterIP:80→http          ✓
+svc/web ready endpoints                        2                            2                            ✓
+statefulset/postgres ready                     1/1                          1/1                          ✓
+svc/postgres headless                          None                         None                         ✓
+pvc/data-postgres-0                            Bound:1Gi                    Bound:1Gi                    ✓
+deploy/traefik ready                           2/2                          2/2                          ✓
+deploy/traefik pods on distinct nodes          2                            2                            ✓
+svc/traefik NodePort                           NodePort:30080               NodePort:30080               ✓
+ingress/shop class                             traefik                      traefik                      ✓
+ingress/shop host                              shop.local                   shop.local                   ✓
+ingress/shop paths                             /api/catalog,/api/orders,/   /api/catalog,/api/orders,/   ✓
+ingress/shop status address                    127.0.0.1                    127.0.0.1                    ✓
+configmaps (app)                               4                            4                            ✓
+secret db-credentials-<hash> keys              3                            3                            ✓
+networkpolicies                                4                            4                            ✓
+namespace shop PSA enforce                     restricted                   restricted                   ✓
+HTTP GET / via ingress                         200                          200                          ✓
+HTTP GET /api/catalog/products                 200                          200                          ✓
+HTTP GET /api/orders                           200                          200                          ✓
+
+RESULT: 30 passed, 0 failed

@@ -1,0 +1,103 @@
+# kubectl cluster status — captured 2026-10-15 11:57 UTC
+
+$ kubectl get nodes -o wide
+NAME                     STATUS   ROLES           AGE    VERSION   INTERNAL-IP   EXTERNAL-IP   OS-IMAGE                       KERNEL-VERSION             CONTAINER-RUNTIME
+shoplite-control-plane   Ready    control-plane   101m   v1.37.0   172.27.0.3    <none>        Debian GNU/Linux 13 (trixie)   6.11.11-linuxkit (arm64)   containerd://2.3.4
+shoplite-worker          Ready    <none>          101m   v1.37.0   172.27.0.2    <none>        Debian GNU/Linux 13 (trixie)   6.11.11-linuxkit (arm64)   containerd://2.3.4
+shoplite-worker2         Ready    <none>          101m   v1.37.0   172.27.0.4    <none>        Debian GNU/Linux 13 (trixie)   6.11.11-linuxkit (arm64)   containerd://2.3.4
+
+$ kubectl get all -n ingress-traefik -o wide
+NAME                           READY   STATUS    RESTARTS   AGE   IP            NODE               NOMINATED NODE   READINESS GATES
+pod/traefik-6bb9986886-7lt2z   1/1     Running   0          81m   10.244.2.40   shoplite-worker    <none>           <none>
+pod/traefik-6bb9986886-m2zbl   1/1     Running   0          81m   10.244.1.25   shoplite-worker2   <none>           <none>
+
+NAME              TYPE       CLUSTER-IP      EXTERNAL-IP   PORT(S)        AGE   SELECTOR
+service/traefik   NodePort   10.96.168.124   <none>        80:30080/TCP   95m   app.kubernetes.io/name=traefik
+
+NAME                      READY   UP-TO-DATE   AVAILABLE   AGE   CONTAINERS   IMAGES                                                                                    SELECTOR
+deployment.apps/traefik   2/2     2            2           95m   traefik      traefik:v3.7.14@sha256:575fa15b135078fe5e50aa847987d96dbddd7b093c172429618404df73f3fa7c   app.kubernetes.io/name=traefik
+
+NAME                                 DESIRED   CURRENT   READY   AGE   CONTAINERS   IMAGES                                                                                    SELECTOR
+replicaset.apps/traefik-66dbcdcf68   0         0         0       88m   traefik      traefik:v3.7.14@sha256:575fa15b135078fe5e50aa847987d96dbddd7b093c172429618404df73f3fa7c   app.kubernetes.io/name=traefik,pod-template-hash=66dbcdcf68
+replicaset.apps/traefik-6bb6d7b5db   0         0         0       83m   traefik      traefik:v3.7.14@sha256:575fa15b135078fe5e50aa847987d96dbddd7b093c172429618404df73f3fa7c   app.kubernetes.io/name=traefik,pod-template-hash=6bb6d7b5db
+replicaset.apps/traefik-6bb9986886   2         2         2       81m   traefik      traefik:v3.7.14@sha256:575fa15b135078fe5e50aa847987d96dbddd7b093c172429618404df73f3fa7c   app.kubernetes.io/name=traefik,pod-template-hash=6bb9986886
+replicaset.apps/traefik-79489d666b   0         0         0       82m   traefik      traefik:v3.7.14@sha256:575fa15b135078fe5e50aa847987d96dbddd7b093c172429618404df73f3fa7c   app.kubernetes.io/name=traefik,pod-template-hash=79489d666b
+
+$ kubectl get all -n shop -o wide
+NAME                           READY   STATUS    RESTARTS   AGE   IP            NODE               NOMINATED NODE   READINESS GATES
+pod/catalog-865f56b9d7-5xz7n   1/1     Running   0          81m   10.244.2.41   shoplite-worker    <none>           <none>
+pod/catalog-865f56b9d7-cntbb   1/1     Running   0          81m   10.244.1.26   shoplite-worker2   <none>           <none>
+pod/orders-7bf64477d6-p9vzn    1/1     Running   0          81m   10.244.2.42   shoplite-worker    <none>           <none>
+pod/orders-7bf64477d6-zk82g    1/1     Running   0          81m   10.244.1.27   shoplite-worker2   <none>           <none>
+pod/postgres-0                 1/1     Running   0          89m   10.244.1.10   shoplite-worker2   <none>           <none>
+pod/web-5bc5f9b587-7nww7       1/1     Running   0          81m   10.244.2.43   shoplite-worker    <none>           <none>
+pod/web-5bc5f9b587-fvr7j       1/1     Running   0          81m   10.244.1.28   shoplite-worker2   <none>           <none>
+
+NAME               TYPE        CLUSTER-IP      EXTERNAL-IP   PORT(S)    AGE   SELECTOR
+service/catalog    ClusterIP   10.96.214.240   <none>        80/TCP     93m   app.kubernetes.io/name=catalog
+service/orders     ClusterIP   10.96.251.142   <none>        80/TCP     93m   app.kubernetes.io/name=orders
+service/postgres   ClusterIP   None            <none>        5432/TCP   93m   app.kubernetes.io/name=postgres
+service/web        ClusterIP   10.96.125.85    <none>        80/TCP     93m   app.kubernetes.io/name=web
+
+NAME                      READY   UP-TO-DATE   AVAILABLE   AGE   CONTAINERS   IMAGES                   SELECTOR
+deployment.apps/catalog   2/2     2            2           93m   catalog      shoplite/catalog:1.0.1   app.kubernetes.io/name=catalog
+deployment.apps/orders    2/2     2            2           93m   orders       shoplite/orders:1.0.1    app.kubernetes.io/name=orders
+deployment.apps/web       2/2     2            2           93m   web          shoplite/web:1.0.1       app.kubernetes.io/name=web
+
+NAME                                 DESIRED   CURRENT   READY   AGE   CONTAINERS   IMAGES                   SELECTOR
+replicaset.apps/catalog-548f7f457d   0         0         0       88m   catalog      shoplite/catalog:1.0.1   app.kubernetes.io/name=catalog,pod-template-hash=548f7f457d
+replicaset.apps/catalog-59f58775f4   0         0         0       83m   catalog      shoplite/catalog:1.0.1   app.kubernetes.io/name=catalog,pod-template-hash=59f58775f4
+replicaset.apps/catalog-6c59676d     0         0         0       82m   catalog      shoplite/catalog:1.0.1   app.kubernetes.io/name=catalog,pod-template-hash=6c59676d
+replicaset.apps/catalog-865f56b9d7   2         2         2       81m   catalog      shoplite/catalog:1.0.1   app.kubernetes.io/name=catalog,pod-template-hash=865f56b9d7
+replicaset.apps/orders-689596c68c    0         0         0       82m   orders       shoplite/orders:1.0.1    app.kubernetes.io/name=orders,pod-template-hash=689596c68c
+replicaset.apps/orders-7bf64477d6    2         2         2       81m   orders       shoplite/orders:1.0.1    app.kubernetes.io/name=orders,pod-template-hash=7bf64477d6
+replicaset.apps/orders-7c8978645     0         0         0       83m   orders       shoplite/orders:1.0.1    app.kubernetes.io/name=orders,pod-template-hash=7c8978645
+replicaset.apps/orders-7fbc9b4fdd    0         0         0       88m   orders       shoplite/orders:1.0.1    app.kubernetes.io/name=orders,pod-template-hash=7fbc9b4fdd
+replicaset.apps/web-595fbfb9fd       0         0         0       83m   web          shoplite/web:1.0.1       app.kubernetes.io/name=web,pod-template-hash=595fbfb9fd
+replicaset.apps/web-5bc5f9b587       2         2         2       81m   web          shoplite/web:1.0.1       app.kubernetes.io/name=web,pod-template-hash=5bc5f9b587
+replicaset.apps/web-77b98f58         0         0         0       82m   web          shoplite/web:1.0.1       app.kubernetes.io/name=web,pod-template-hash=77b98f58
+replicaset.apps/web-fc865db75        0         0         0       88m   web          shoplite/web:1.0.1       app.kubernetes.io/name=web,pod-template-hash=fc865db75
+
+NAME                        READY   AGE   CONTAINERS   IMAGES
+statefulset.apps/postgres   1/1     93m   postgres     postgres:17-alpine@sha256:b0f9560a2de083e2cc7382e75f808c7381a32852a7ec49117deedb300e552b24
+
+$ kubectl get ingressclass,ingress -A
+NAME                                     CONTROLLER                      PARAMETERS   AGE
+ingressclass.networking.k8s.io/traefik   traefik.io/ingress-controller   <none>       95m
+
+NAMESPACE   NAME                             CLASS     HOSTS        ADDRESS     PORTS   AGE
+shop        ingress.networking.k8s.io/shop   traefik   shop.local   127.0.0.1   80      93m
+
+$ kubectl get configmap,secret,pvc,networkpolicy -n shop
+NAME                         DATA   AGE
+configmap/catalog-config     4      93m
+configmap/kube-root-ca.crt   1      93m
+configmap/orders-config      6      93m
+configmap/postgres-init      1      93m
+configmap/web-config         1      93m
+
+NAME                               TYPE     DATA   AGE
+secret/db-credentials-d72dg62d64   Opaque   3      93m
+
+NAME                                    STATUS   VOLUME                                     CAPACITY   ACCESS MODES   STORAGECLASS   VOLUMEATTRIBUTESCLASS   AGE
+persistentvolumeclaim/data-postgres-0   Bound    pvc-06806ee8-ed08-4f11-b8f3-5ca5bccfbfb7   1Gi        RWO            standard       <unset>                 93m
+
+NAME                                                            POD-SELECTOR                                     AGE
+networkpolicy.networking.k8s.io/allow-apps-to-postgres          app.kubernetes.io/name=postgres                  93m
+networkpolicy.networking.k8s.io/allow-from-ingress-controller   app.kubernetes.io/name in (catalog,orders,web)   93m
+networkpolicy.networking.k8s.io/allow-orders-to-catalog         app.kubernetes.io/name=catalog                   93m
+networkpolicy.networking.k8s.io/default-deny-ingress            <none>                                           93m
+
+$ kubectl get pv,storageclass
+NAME                                                        CAPACITY   ACCESS MODES   RECLAIM POLICY   STATUS   CLAIM                  STORAGECLASS   VOLUMEATTRIBUTESCLASS   REASON   AGE
+persistentvolume/pvc-06806ee8-ed08-4f11-b8f3-5ca5bccfbfb7   1Gi        RWO            Delete           Bound    shop/data-postgres-0   standard       <unset>                          93m
+
+NAME                                             PROVISIONER             RECLAIMPOLICY   VOLUMEBINDINGMODE      ALLOWVOLUMEEXPANSION   AGE
+storageclass.storage.k8s.io/standard (default)   rancher.io/local-path   Delete          WaitForFirstConsumer   false                  101m
+
+$ kubectl get endpointslices -n shop
+NAME             ADDRESSTYPE   PORTS   ENDPOINTS                 AGE
+catalog-fjwl2    IPv4          8080    10.244.2.41,10.244.1.26   93m
+orders-9ln7n     IPv4          8080    10.244.2.42,10.244.1.27   93m
+postgres-pjrqd   IPv4          5432    10.244.1.10               93m
+web-nvlfm        IPv4          8080    10.244.2.43,10.244.1.28   93m
