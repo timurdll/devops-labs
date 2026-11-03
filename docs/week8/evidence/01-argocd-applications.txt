@@ -1,0 +1,24 @@
+# Argo CD — 2026-11-03 19:03:46 +05
+NAME                                                READY   STATUS    RESTARTS   AGE     IP            NODE               NOMINATED NODE   READINESS GATES
+argocd-application-controller-0                     1/1     Running   0          4m53s   10.244.1.11   shoplite-worker2   <none>           <none>
+argocd-applicationset-controller-86bcdc46cf-mtqfw   1/1     Running   0          4m36s   10.244.1.13   shoplite-worker2   <none>           <none>
+argocd-dex-server-7f65987db5-rgdpv                  1/1     Running   0          4m36s   10.244.2.10   shoplite-worker    <none>           <none>
+argocd-notifications-controller-6885f68ddd-pj7ff    1/1     Running   0          4m36s   10.244.2.11   shoplite-worker    <none>           <none>
+argocd-redis-7d5d5cb5b6-tgdtk                       1/1     Running   0          4m36s   10.244.1.12   shoplite-worker2   <none>           <none>
+argocd-repo-server-6dd5876bb6-mw722                 1/1     Running   0          4m35s   10.244.1.14   shoplite-worker2   <none>           <none>
+argocd-server-659d844b96-mw7g7                      1/1     Running   0          4m35s   10.244.2.12   shoplite-worker    <none>           <none>
+
+NAME                              AGE
+appproject.argoproj.io/default    5m37s
+appproject.argoproj.io/platform   3m29s
+appproject.argoproj.io/shoplite   3m29s
+
+NAME                                  AGE
+applicationset.argoproj.io/shoplite   3m25s
+
+APP                PROJECT    SYNC     HEALTH    AUTO-SYNC                        REVISION                                   PATH
+platform           platform   Synced   Healthy   map[prune:false selfHeal:true]   98636da3089a8bcf9bc54ac61ae1ef019e367386   k8s/platform
+root               default    Synced   Healthy   map[prune:true selfHeal:true]    98636da3089a8bcf9bc54ac61ae1ef019e367386   gitops/apps
+shoplite-dev       shoplite   Synced   Healthy   map[prune:true selfHeal:true]    98636da3089a8bcf9bc54ac61ae1ef019e367386   charts/shoplite
+shoplite-prod      shoplite   Synced   Healthy   <none>                           98636da3089a8bcf9bc54ac61ae1ef019e367386   charts/shoplite
+shoplite-staging   shoplite   Synced   Healthy   map[prune:true selfHeal:true]    98636da3089a8bcf9bc54ac61ae1ef019e367386   charts/shoplite

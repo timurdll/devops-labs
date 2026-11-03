@@ -1,0 +1,32 @@
+%% Hierarchical decomposition of charts/shoplite: metadata, parameter contract, templates, objects.
+flowchart LR
+    chart["<b>charts/shoplite</b><br/>chart 0.1.0 · app 1.0.1"]
+
+    chart --> meta["Chart.yaml<br/>version · appVersion · kubeVersion ≥ 1.33"]
+    chart --> vals["values.yaml<br/><i>layer 1 · defaults</i>"]
+    chart --> schema["values.schema.json<br/>contract: types, enums, patterns,<br/>additionalProperties: false"]
+    chart --> tpl["templates/"]
+    schema -. validates .-> vals
+
+    tpl --> helpers["_helpers.tpl<br/>shoplite.labels · shoplite.image<br/>shoplite.serviceEnv · shoplite.svcHost<br/>shoplite.postgresInitScript"]
+    tpl --> tcm["configmaps.yaml"]
+    tpl --> tsvc["services.yaml<br/><i>range .Values.services</i>"]
+    tpl --> tpg["postgres.yaml"]
+    tpl --> ting["ingress.yaml"]
+    tpl --> tnp["networkpolicies.yaml"]
+    tpl --> notes["NOTES.txt"]
+
+    tcm --> o1["ConfigMap catalog-config · orders-config<br/>web-config (config.json) · postgres-init"]
+    tsvc --> o2["× catalog · orders · web<br/>Deployment + Service (+ PDB if replicas > 1)"]
+    tpg --> o3["Service (headless) + StatefulSet<br/>+ volumeClaimTemplate"]
+    ting --> o4["Ingress host = ingress.host<br/>paths from services.*.ingressPath"]
+    tnp --> o5["default-deny + ingress-controller<br/>+ allow-to-catalog + apps-to-postgres"]
+
+    helpers -.-> tcm & tsvc & tpg & ting & tnp
+
+    classDef file fill:#eef4fb,stroke:#2f5d8a;
+    classDef contract fill:#fff6e0,stroke:#b07d10;
+    classDef obj fill:#e7f6ec,stroke:#2e7d4f;
+    class meta,helpers,tcm,tsvc,tpg,ting,tnp,notes,tpl file;
+    class vals,schema contract;
+    class o1,o2,o3,o4,o5 obj;

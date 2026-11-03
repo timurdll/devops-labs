@@ -1,0 +1,33 @@
+# Bootstrap: scripts/gitops-up.sh (second run, after the image pull) — 2026-11-03 19:01 +05
+deployment "argocd-server" successfully rolled out
+deployment "argocd-repo-server" successfully rolled out
+deployment "argocd-applicationset-controller" successfully rolled out
+deployment "argocd-redis" successfully rolled out
+deployment "argocd-dex-server" successfully rolled out
+partitioned roll out complete: 1 new pods have been updated...
+partitioned roll out complete: 1 new pods have been updated...
+generated environments/dev/db.env
+generated environments/staging/db.env
+generated environments/prod/db.env
+Warning: metadata.finalizers: "resources-finalizer.argocd.argoproj.io": prefer a domain-qualified finalizer name including a path (/) to avoid accidental conflicts with other finalizer writers
+application.argoproj.io/root created
+waiting for the environment Applications to be generated…
+application.argoproj.io/shoplite-dev condition met
+application.argoproj.io/shoplite-staging condition met
+APP                SYNC        HEALTH    REVISION
+platform           Unknown     Unknown   <none>
+root               Synced      Healthy   e35fbe9fb2b2c854158cf10e01318f9c27d89dfa
+shoplite-dev       OutOfSync   Healthy   e35fbe9fb2b2c854158cf10e01318f9c27d89dfa
+shoplite-prod      OutOfSync   Missing   e35fbe9fb2b2c854158cf10e01318f9c27d89dfa
+shoplite-staging   OutOfSync   Healthy   e35fbe9fb2b2c854158cf10e01318f9c27d89dfa
+
+prod is not auto-synced. Approve the first release with:  ./scripts/gitops-sync-prod.sh
+Argo CD UI: kubectl -n argocd port-forward svc/argocd-server 8081:80  →  http://localhost:8081
+  user admin, password: kubectl -n argocd get secret argocd-initial-admin-secret -o jsonpath='{.data.password}' | base64 -d
+exit=0
+
+# Fix pushed for the platform Application (InvalidSpecError: empty destination namespace)
+commit 98636da
+19:00:47  +  0s  platform       sync=Unknown health=Unknown operation=- revision=
+19:01:02  + 15s  platform       sync=Synced health=Progressing operation=Succeeded revision=98636da
+19:01:15  + 28s  platform       sync=Synced health=Healthy operation=Succeeded revision=98636da

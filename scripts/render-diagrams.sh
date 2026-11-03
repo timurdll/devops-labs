@@ -6,7 +6,7 @@ cd "$(dirname "$0")/.."
 MERMAID_IMAGE=mirror.gcr.io/minlag/mermaid-cli:latest
 PYTHON_IMAGE=mirror.gcr.io/library/python:3.12-slim
 
-for src in docs/week6/diagrams/*.mmd docs/week7/diagrams/*.mmd; do
+for src in docs/week6/diagrams/*.mmd docs/week7/diagrams/*.mmd docs/week8/diagrams/*.mmd; do
   base="${src%.mmd}"
   echo "mermaid  $src"
   docker run --rm -u "$(id -u):$(id -g)" -v "$PWD:/data" "$MERMAID_IMAGE" \
@@ -20,4 +20,4 @@ docker run --rm -v "$PWD:/w" -w /w "$PYTHON_IMAGE" sh -c '
   apt-get update -qq >/dev/null && apt-get install -y -qq --no-install-recommends graphviz fonts-dejavu-core >/dev/null &&
   pip install -q --root-user-action=ignore --disable-pip-version-check diagrams==0.25.1 &&
   python docs/week7/diagrams/k8s_topology.py'
-ls -1 docs/week6/diagrams docs/week7/diagrams
+ls -1 docs/week6/diagrams docs/week7/diagrams docs/week8/diagrams

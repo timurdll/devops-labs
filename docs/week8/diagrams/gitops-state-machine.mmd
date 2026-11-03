@@ -1,0 +1,35 @@
+%% GitOps state reconciliation as a finite state machine (one Argo CD Application).
+%% Git = desired state, cluster = actual state. Sync status and health are two orthogonal axes.
+stateDiagram-v2
+    direction TB
+    [*] --> Unknown: Application created
+    Unknown --> Comparing: repo-server renders desired state
+
+    state "Comparing<br/>desired (git @ rev) vs actual (live)" as Comparing
+    Comparing --> Synced: diff = ∅
+    Comparing --> OutOfSync: diff ≠ ∅
+    Comparing --> ComparisonError: render / git error
+
+    state "OutOfSync" as OutOfSync
+    state "Syncing<br/>server-side apply, prune" as Syncing
+    state "SyncFailed" as SyncFailed
+    state "AwaitingApproval<br/>(prod: no auto-sync)" as Awaiting
+
+    Synced --> Comparing: new commit (poll 30 s)
+    Synced --> Comparing: live object changed (watch event = drift)
+    OutOfSync --> Syncing: automated (dev, staging)<br/>selfHeal / prune
+    OutOfSync --> Awaiting: automated = off (prod)
+    Awaiting --> Syncing: operator: argocd app sync
+    Syncing --> Comparing: operation Succeeded
+    Syncing --> SyncFailed: apply rejected / hook failed
+    SyncFailed --> Syncing: retry, backoff 10 s × 2ⁿ ≤ 3 min (5×)
+    SyncFailed --> OutOfSync: retries exhausted
+    ComparisonError --> Comparing: next poll / fix pushed
+
+    state Synced {
+        direction LR
+        Progressing --> Healthy: all replicas ready
+        Progressing --> Degraded: probe / rollout failure
+        Degraded --> Progressing: new revision
+        Healthy --> Progressing: rollout started
+    }
