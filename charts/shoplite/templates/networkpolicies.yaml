@@ -1,0 +1,104 @@
+{{- if .Values.networkPolicies.enabled }}
+{{- /*
+Ingress isolation inside the release namespace:
+  1. deny everything by default
+  2. ingress controller → services exposed through the Ingress, on :8080
+  3. services.<name>.allowFrom → <name> on :8080 (east-west)
+  4. services with a database → postgres on :5432
+*/ -}}
+{{- $ic := .Values.networkPolicies.ingressController }}
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: default-deny-ingress
+  labels:
+    {{- include "shoplite.labels" . | nindent 4 }}
+spec:
+  podSelector: {}
+  policyTypes: ["Ingress"]
+{{- $exposed := list }}
+{{- $dbClients := list }}
+{{- range $name, $svc := .Values.services }}
+{{- if $svc.enabled }}
+{{- if $svc.ingressPath }}{{ $exposed = append $exposed $name }}{{ end }}
+{{- if $svc.database }}{{ $dbClients = append $dbClients $name }}{{ end }}
+{{- end }}
+{{- end }}
+{{- if and .Values.ingress.enabled $exposed }}
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-from-ingress-controller
+  labels:
+    {{- include "shoplite.labels" . | nindent 4 }}
+spec:
+  podSelector:
+    matchExpressions:
+      - key: app.kubernetes.io/name
+        operator: In
+        values: {{ $exposed | toJson }}
+  policyTypes: ["Ingress"]
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: {{ $ic.namespace }}
+          podSelector:
+            matchLabels:
+              app.kubernetes.io/name: {{ $ic.podName }}
+      ports:
+        - port: 8080
+          protocol: TCP
+{{- end }}
+{{- range $name, $svc := .Values.services }}
+{{- if and $svc.enabled $svc.allowFrom }}
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-to-{{ $name }}
+  labels:
+    {{- include "shoplite.labels" $ | nindent 4 }}
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: {{ $name }}
+  policyTypes: ["Ingress"]
+  ingress:
+    - from:
+        - podSelector:
+            matchExpressions:
+              - key: app.kubernetes.io/name
+                operator: In
+                values: {{ $svc.allowFrom | toJson }}
+      ports:
+        - port: 8080
+          protocol: TCP
+{{- end }}
+{{- end }}
+{{- if and .Values.postgres.enabled $dbClients }}
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-apps-to-postgres
+  labels:
+    {{- include "shoplite.labels" . | nindent 4 }}
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: postgres
+  policyTypes: ["Ingress"]
+  ingress:
+    - from:
+        - podSelector:
+            matchExpressions:
+              - key: app.kubernetes.io/name
+                operator: In
+                values: {{ $dbClients | toJson }}
+      ports:
+        - port: 5432
+          protocol: TCP
+{{- end }}
+{{- end }}

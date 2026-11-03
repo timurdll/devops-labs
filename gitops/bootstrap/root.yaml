@@ -1,0 +1,22 @@
+# App of apps: the only object applied by hand (scripts/gitops-up.sh). It points Argo CD at
+# gitops/apps; from then on every AppProject, Application and ApplicationSet comes from git.
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: root
+  namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/timurdll/devops-labs.git
+    targetRevision: week8-gitops-helm
+    path: gitops/apps
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: argocd
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true

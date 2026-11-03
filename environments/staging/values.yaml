@@ -1,0 +1,13 @@
+# Layer 2 · staging — production shape (2 replicas spread over nodes, PDBs), smaller sizing.
+# Auto-synced by Argo CD (prune + self-heal). A change is promoted here after it worked in dev.
+ingress:
+  host: staging.shop.local
+
+podDisruptionBudget:
+  enabled: true
+
+services:
+  web:
+    uiConfig:
+      shopName: ShopLite STAGING
+      banner: "staging: release candidate"

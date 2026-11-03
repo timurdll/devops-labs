@@ -1,0 +1,95 @@
+# Week 8: one namespace per GitOps environment (Argo CD Applications shoplite-dev/-staging/-prod).
+# Namespaces belong to the platform layer, not to the application chart: the app's AppProject
+# cannot create cluster-scoped objects, so Pod Security Admission labels cannot be weakened by
+# an application change.
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: shop-dev
+  labels:
+    shoplite.io/environment: dev
+    pod-security.kubernetes.io/enforce: restricted
+    pod-security.kubernetes.io/enforce-version: latest
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: shop-staging
+  labels:
+    shoplite.io/environment: staging
+    pod-security.kubernetes.io/enforce: restricted
+    pod-security.kubernetes.io/enforce-version: latest
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: shop-prod
+  labels:
+    shoplite.io/environment: prod
+    pod-security.kubernetes.io/enforce: restricted
+    pod-security.kubernetes.io/enforce-version: latest
+---
+# Same rules as the Role traefik-ingress in `shop`, defined once and granted per namespace
+# through RoleBindings (a ClusterRole bound by a RoleBinding is still namespace-scoped).
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: traefik-ingress-namespaced
+rules:
+  - apiGroups: [""]
+    resources: ["services"]
+    verbs: ["get", "list", "watch"]
+  - apiGroups: [""]
+    resources: ["secrets"] # only needed for TLS sections of Ingress objects
+    verbs: ["get", "list", "watch"]
+  - apiGroups: ["discovery.k8s.io"]
+    resources: ["endpointslices"]
+    verbs: ["list", "watch"]
+  - apiGroups: ["networking.k8s.io"]
+    resources: ["ingresses"]
+    verbs: ["get", "list", "watch"]
+  - apiGroups: ["networking.k8s.io"]
+    resources: ["ingresses/status"]
+    verbs: ["update"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: traefik-ingress
+  namespace: shop-dev
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: traefik-ingress-namespaced
+subjects:
+  - kind: ServiceAccount
+    name: traefik
+    namespace: ingress-traefik
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: traefik-ingress
+  namespace: shop-staging
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: traefik-ingress-namespaced
+subjects:
+  - kind: ServiceAccount
+    name: traefik
+    namespace: ingress-traefik
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: traefik-ingress
+  namespace: shop-prod
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: traefik-ingress-namespaced
+subjects:
+  - kind: ServiceAccount
+    name: traefik
+    namespace: ingress-traefik

@@ -1,0 +1,53 @@
+{{- /*
+Non-sensitive configuration only. Injection patterns (same as Week 7):
+  <service>-config  → envFrom (environment variables, read once at start)
+  web-config        → volume  (config.json, hot-updated by the kubelet)
+  postgres-init     → volume  (init script run by the postgres entrypoint on first boot)
+*/ -}}
+{{- range $name, $svc := .Values.services }}
+{{- if $svc.enabled }}
+{{- $env := include "shoplite.serviceEnv" (dict "name" $name "svc" $svc "ctx" $) | fromYaml }}
+{{- if $env }}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ $name }}-config
+  labels:
+    {{- include "shoplite.labels" $ | nindent 4 }}
+    app.kubernetes.io/name: {{ $name }}
+data:
+  {{- range $k, $v := $env }}
+  {{ $k }}: {{ $v | toString | quote }}
+  {{- end }}
+{{- end }}
+{{- end }}
+{{- end }}
+{{- with .Values.services.web }}
+{{- if .enabled }}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: web-config
+  labels:
+    {{- include "shoplite.labels" $ | nindent 4 }}
+    app.kubernetes.io/name: web
+data:
+  config.json: |
+    {{- merge (dict "environment" $.Values.global.environment) .uiConfig | toPrettyJson | nindent 4 }}
+{{- end }}
+{{- end }}
+{{- if .Values.postgres.enabled }}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: postgres-init
+  labels:
+    {{- include "shoplite.labels" . | nindent 4 }}
+    app.kubernetes.io/name: postgres
+data:
+  10-service-databases.sh: |
+    {{- include "shoplite.postgresInitScript" . | nindent 4 }}
+{{- end }}

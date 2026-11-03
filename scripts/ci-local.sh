@@ -15,6 +15,7 @@ SEMGREP_IMAGE=$(ci_env SEMGREP_IMAGE)
 HADOLINT_IMAGE=$(ci_env HADOLINT_IMAGE)
 KUBECONFORM_IMAGE=$(ci_env KUBECONFORM_IMAGE)
 ACTIONLINT_IMAGE=$(ci_env ACTIONLINT_IMAGE)
+HELM_IMAGE=$(ci_env HELM_IMAGE)
 TRIVY_IMAGE=aquasec/trivy:0.75.0@sha256:af6acf9a6b85dfe389a1941505c0ce9efef52a4719635e1a962f022a3d855daa
 SEVERITY=HIGH,CRITICAL
 K8S_VERSION=${K8S_VERSION:-1.37.0}
@@ -70,6 +71,21 @@ docs = open(path).read().split("\n---\n")
 docs = [re.sub(r"(?m)^(  [A-Z_]+: ).*$", r"\1<redacted>", d) if "kind: Secret" in d else d for d in docs]
 open(path, "w").write("\n---\n".join(docs))
 PY
+  echo "• helm lint + kubeconform (charts/shoplite × dev/staging/prod)"
+  mkdir -p "$EVIDENCE/helm"
+  for env in dev staging prod; do
+    docker run --rm -v "$PWD:/repo" -w /repo "$HELM_IMAGE" lint --strict charts/shoplite \
+      -f "environments/$env/values.yaml" --set "global.environment=$env" || rc=1
+    docker run --rm -v "$PWD:/repo" -w /repo "$HELM_IMAGE" template shoplite charts/shoplite -n "shop-$env" \
+      -f "environments/$env/values.yaml" --set "global.environment=$env" > "$EVIDENCE/helm/$env.yaml" || rc=1
+  done
+  docker run --rm -v "$PWD/$EVIDENCE/helm:/work" "$KUBECONFORM_IMAGE" \
+    -strict -summary -kubernetes-version "$K8S_VERSION" /work/dev.yaml /work/staging.yaml /work/prod.yaml || rc=1
+  echo "• kubeconform gitops/ (Argo CD CRDs)"
+  docker run --rm -v "$PWD/gitops:/work" "$KUBECONFORM_IMAGE" -strict -summary -kubernetes-version "$K8S_VERSION" \
+    -schema-location default \
+    -schema-location 'https://raw.githubusercontent.com/datreeio/CRDs-catalog/main/{{.Group}}/{{.ResourceKind}}_{{.ResourceAPIVersion}}.json' \
+    /work/bootstrap /work/apps || rc=1
   echo "• actionlint .github/workflows/ci.yml"
   docker run --rm -v "$PWD:/repo" -w /repo "$ACTIONLINT_IMAGE" -color || rc=1
   return $rc
@@ -124,8 +140,16 @@ g6_build_and_scan() {
 }
 
 g7_iac() {
+  local rc=0
   trivy config --severity "$SEVERITY" --exit-code 1 --ignorefile .trivyignore.yaml --skip-dirs docs \
-    --skip-dirs services/catalog/node_modules --skip-dirs services/orders/node_modules --format table .
+    --skip-dirs services/catalog/node_modules --skip-dirs services/orders/node_modules --format table . || rc=1
+  for env in dev staging prod; do
+    echo "• trivy config charts/shoplite ($env values)"
+    trivy config --severity "$SEVERITY" --exit-code 1 --ignorefile .trivyignore.yaml --skip-dirs docs \
+      --skip-dirs services/catalog/node_modules --skip-dirs services/orders/node_modules \
+      --helm-values "environments/$env/values.yaml" --helm-set "global.environment=$env" --format table . || rc=1
+  done
+  return $rc
 }
 
 {
