@@ -16,6 +16,7 @@ spec:
     path: k8s/platform
   destination:
     server: https://kubernetes.default.svc
+    namespace: ingress-traefik # default for objects without metadata.namespace
   syncPolicy:
     automated:
       prune: false # never auto-delete a namespace (it would take the environment with it)
