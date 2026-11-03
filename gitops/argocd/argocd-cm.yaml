@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: argocd-cm
+data:
+  # How often every Application is compared with git (default 120s). The kind cluster cannot
+  # receive GitHub webhooks, so a short polling interval is the only trigger; production uses a
+  # webhook (push → immediate refresh) and keeps the poll as a fallback.
+  timeout.reconciliation: 30s
+  timeout.reconciliation.jitter: 0s
+  # No SSO in the lab: the local admin account (initial password in argocd-initial-admin-secret).
+  admin.enabled: "true"
+  # Track the resources of an Application by annotation (Argo CD 3.x default), so labels set by
+  # the chart (app.kubernetes.io/instance) never collide with Argo CD bookkeeping.
+  application.resourceTrackingMethod: annotation

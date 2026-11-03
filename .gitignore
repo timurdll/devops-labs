@@ -3,3 +3,4 @@ coverage/
 k8s/shop/secrets/db.env
 *.sarif
 .DS_Store
+environments/*/db.env

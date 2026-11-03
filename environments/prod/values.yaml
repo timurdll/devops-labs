@@ -1,0 +1,28 @@
+# Layer 2 · prod — highest availability. Argo CD detects the difference between git and the cluster
+# (OutOfSync) but does NOT sync on its own: an operator approves every sync (manual gate).
+ingress:
+  host: prod.shop.local
+
+podDisruptionBudget:
+  enabled: true
+
+services:
+  catalog:
+    replicas: 3
+    resources:
+      requests: { cpu: 100m, memory: 96Mi }
+      limits: { cpu: "1", memory: 384Mi }
+  orders:
+    replicas: 3
+    resources:
+      requests: { cpu: 100m, memory: 96Mi }
+      limits: { cpu: "1", memory: 384Mi }
+  web:
+    uiConfig:
+      shopName: ShopLite
+
+postgres:
+  storage:
+    size: 2Gi
+  resources:
+    requests: { cpu: 250m, memory: 384Mi }

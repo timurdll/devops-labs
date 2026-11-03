@@ -1,0 +1,21 @@
+# Layer 2 · dev — fast feedback, smallest footprint. Auto-synced by Argo CD (prune + self-heal).
+# Only what differs from charts/shoplite/values.yaml belongs here.
+ingress:
+  host: dev.shop.local
+
+services:
+  catalog:
+    replicas: 1
+    resources:
+      requests: { cpu: 25m, memory: 48Mi }
+  orders:
+    replicas: 1
+    resources:
+      requests: { cpu: 25m, memory: 48Mi }
+    env:
+      CATALOG_TIMEOUT_MS: "5000" # generous: dev pods are often cold
+  web:
+    replicas: 1
+    uiConfig:
+      shopName: ShopLite DEV
+      banner: "dev: every commit to environments/dev is deployed automatically"

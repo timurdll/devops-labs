@@ -1,0 +1,11 @@
+# Argo CD control plane (non-HA install), pinned to an exact release. Installed once by
+# scripts/gitops-up.sh with server-side apply; everything after that is pulled from git.
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: argocd
+resources:
+  - namespace.yaml
+  - https://raw.githubusercontent.com/argoproj/argo-cd/v3.5.6/manifests/install.yaml
+patches:
+  - path: argocd-cm.yaml
+  - path: argocd-cmd-params-cm.yaml

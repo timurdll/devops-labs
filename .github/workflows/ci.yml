@@ -39,6 +39,7 @@ env:
   SEMGREP_IMAGE: semgrep/semgrep:1.180.0@sha256:529ee8a277ec8adc5b534d7c74eea0a47e9de21d62852b6ba7ac6ba9566845c3
   HADOLINT_IMAGE: hadolint/hadolint:v2.15.1@sha256:32dac94127fd60b7b7e3fbfc65e1383b9b5e25c9bfd7b8536de7a539fe68a12d
   KUBECONFORM_IMAGE: ghcr.io/yannh/kubeconform:v0.8.0@sha256:faffaf43f95aa6425306e1ab8d6fcad72acb9049158f38e574c085ea1ec0f64e
+  HELM_IMAGE: alpine/helm:4.3.1@sha256:e3f8d5c462d75470fbb1fce79ad5c20063657096d1f98c0fcea869e2600e2e5e
   ACTIONLINT_IMAGE: rhysd/actionlint:1.7.12@sha256:b1934ee5f1c509618f2508e6eb47ee0d3520686341fec936f3b79331f9315667
 
 jobs:
@@ -113,6 +114,23 @@ jobs:
           kubectl kustomize k8s/ > /tmp/rendered.yaml
           docker run --rm -v /tmp:/work "$KUBECONFORM_IMAGE" \
             -strict -summary -kubernetes-version 1.37.0 /work/rendered.yaml
+      - name: Helm chart (lint + strict schema, every environment) — Week 8
+        run: |
+          mkdir -p /tmp/helm
+          for env in dev staging prod; do
+            docker run --rm -v "$PWD:/repo" -w /repo "$HELM_IMAGE" lint --strict charts/shoplite \
+              -f "environments/$env/values.yaml" --set "global.environment=$env"
+            docker run --rm -v "$PWD:/repo" -w /repo "$HELM_IMAGE" template shoplite charts/shoplite \
+              -n "shop-$env" -f "environments/$env/values.yaml" --set "global.environment=$env" > "/tmp/helm/$env.yaml"
+          done
+          docker run --rm -v /tmp/helm:/work "$KUBECONFORM_IMAGE" \
+            -strict -summary -kubernetes-version 1.37.0 /work/dev.yaml /work/staging.yaml /work/prod.yaml
+      - name: Argo CD manifests (CRD schemas from the datree catalog)
+        run: |
+          docker run --rm -v "$PWD/gitops:/work" "$KUBECONFORM_IMAGE" -strict -summary -kubernetes-version 1.37.0 \
+            -schema-location default \
+            -schema-location 'https://raw.githubusercontent.com/datreeio/CRDs-catalog/main/{{.Group}}/{{.ResourceKind}}_{{.ResourceAPIVersion}}.json' \
+            /work/bootstrap /work/apps
       - name: actionlint
         run: docker run --rm -v "$PWD:/repo" -w /repo "$ACTIONLINT_IMAGE" -color
 
@@ -221,6 +239,18 @@ jobs:
           severity: ${{ env.TRIVY_GATE_SEVERITY }}
           exit-code: '1'
           format: table
+      # The chart needs global.environment to render, so the scan above skips it; scan the rendered
+      # chart once per environment (trivy-action left the pinned binary on PATH).
+      - name: Helm chart misconfiguration scan (dev, staging, prod) — Week 8
+        env:
+          TRIVY_IGNOREFILE: .trivyignore.yaml
+        run: |
+          for env in dev staging prod; do
+            echo "::group::$env"
+            trivy config --severity "$TRIVY_GATE_SEVERITY" --exit-code 1 --skip-dirs docs \
+              --helm-values "environments/$env/values.yaml" --helm-set "global.environment=$env" .
+            echo "::endgroup::"
+          done
 
   # ── G6 · Build + image scan, then G8 · publish ───────────────────────────────
   # The image that is pushed is byte-for-byte the image that was scanned (no rebuild between scan and push).

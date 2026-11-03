@@ -1,0 +1,71 @@
+# One chart, three environments. The list generator is the environment matrix; the template
+# turns each element into an Application "shoplite-<env>" rendering charts/shoplite with
+#   layer 1  charts/shoplite/values.yaml          (implicit)
+#   layer 2  environments/<env>/values.yaml
+#   layer 3  global.environment = <env>            (from the generator: name ≡ namespace)
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: shoplite
+  namespace: argocd
+spec:
+  goTemplate: true
+  goTemplateOptions: ["missingkey=error"]
+  generators:
+    - list:
+        elements:
+          - env: dev
+            autoSync: true
+          - env: staging
+            autoSync: true
+          - env: prod
+            autoSync: false # human approval: OutOfSync is reported, the sync is a manual action
+  template:
+    metadata:
+      name: "shoplite-{{ .env }}"
+      labels:
+        shoplite.io/environment: "{{ .env }}"
+      finalizers:
+        - resources-finalizer.argocd.argoproj.io
+    spec:
+      project: shoplite
+      source:
+        repoURL: https://github.com/timurdll/devops-labs.git
+        targetRevision: week8-gitops-helm
+        path: charts/shoplite
+        helm:
+          releaseName: shoplite
+          valueFiles:
+            - "../../environments/{{ .env }}/values.yaml"
+          parameters:
+            - name: global.environment
+              value: "{{ .env }}"
+      destination:
+        server: https://kubernetes.default.svc
+        namespace: "shop-{{ .env }}"
+      # Replica counts are owned by git, but kubectl rollout restart stamps an annotation that
+      # should not show up as drift.
+      ignoreDifferences:
+        - group: apps
+          kind: Deployment
+          jsonPointers:
+            - /spec/template/metadata/annotations/kubectl.kubernetes.io~1restartedAt
+      syncPolicy:
+        syncOptions:
+          - CreateNamespace=false # namespaces come from the platform Application
+          - PruneLast=true
+          - RespectIgnoreDifferences=true
+        retry:
+          limit: 5
+          backoff:
+            duration: 10s
+            factor: 2
+            maxDuration: 3m
+  templatePatch: |
+    {{- if .autoSync }}
+    spec:
+      syncPolicy:
+        automated:
+          prune: true
+          selfHeal: true
+    {{- end }}

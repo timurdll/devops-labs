@@ -1,0 +1,31 @@
+{{- if .Values.ingress.enabled }}
+{{- /* Host + path prefix → ClusterIP Service → pod :8080. Paths are emitted longest-first. */ -}}
+{{- $byPath := dict }}
+{{- range $name, $svc := .Values.services }}
+{{- if and $svc.enabled $svc.ingressPath }}
+{{- $_ := set $byPath $svc.ingressPath $name }}
+{{- end }}
+{{- end }}
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: shop
+  labels:
+    {{- include "shoplite.labels" . | nindent 4 }}
+    app.kubernetes.io/name: shop-ingress
+spec:
+  ingressClassName: {{ .Values.ingress.className }}
+  rules:
+    - host: {{ .Values.ingress.host }}
+      http:
+        paths:
+          {{- range $path := keys $byPath | sortAlpha | reverse }}
+          - path: {{ $path }}
+            pathType: Prefix
+            backend:
+              service:
+                name: {{ get $byPath $path }}
+                port:
+                  name: http
+          {{- end }}
+{{- end }}

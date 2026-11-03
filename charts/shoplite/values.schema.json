@@ -1,0 +1,429 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/timurdll/devops-labs/charts/shoplite/values.schema.json",
+  "title": "ShopLite chart values",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "global",
+    "image",
+    "ingress",
+    "services",
+    "postgres",
+    "database"
+  ],
+  "$defs": {
+    "quantity": {
+      "type": [
+        "string",
+        "number"
+      ],
+      "pattern": "^[0-9]+(\\.[0-9]+)?(m|Ki|Mi|Gi)?$"
+    },
+    "tag": {
+      "type": "string",
+      "pattern": "^$|^[A-Za-z0-9_][A-Za-z0-9_.-]{0,127}$",
+      "not": {
+        "const": "latest"
+      },
+      "description": "immutable tag; 'latest' is rejected"
+    },
+    "httpPath": {
+      "type": "string",
+      "pattern": "^/[A-Za-z0-9/_.-]*$"
+    },
+    "service": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "enabled",
+        "component",
+        "tier",
+        "replicas",
+        "image",
+        "runAsUser",
+        "probes",
+        "resources"
+      ],
+      "properties": {
+        "enabled": {
+          "type": "boolean"
+        },
+        "component": {
+          "enum": [
+            "api",
+            "frontend"
+          ]
+        },
+        "tier": {
+          "enum": [
+            "backend",
+            "frontend"
+          ]
+        },
+        "replicas": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 10
+        },
+        "image": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "repository"
+          ],
+          "properties": {
+            "repository": {
+              "type": "string",
+              "pattern": "^[a-z0-9]+([._/-][a-z0-9]+)*$"
+            },
+            "tag": {
+              "$ref": "#/$defs/tag"
+            }
+          }
+        },
+        "runAsUser": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "non-root UID (PSA restricted)"
+        },
+        "probes": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "readinessPath",
+            "livenessPath"
+          ],
+          "properties": {
+            "readinessPath": {
+              "$ref": "#/$defs/httpPath"
+            },
+            "livenessPath": {
+              "$ref": "#/$defs/httpPath"
+            }
+          }
+        },
+        "resources": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "requests",
+            "limits"
+          ],
+          "properties": {
+            "requests": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "cpu": {
+                  "$ref": "#/$defs/quantity"
+                },
+                "memory": {
+                  "$ref": "#/$defs/quantity"
+                }
+              }
+            },
+            "limits": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "cpu": {
+                  "$ref": "#/$defs/quantity"
+                },
+                "memory": {
+                  "$ref": "#/$defs/quantity"
+                }
+              }
+            }
+          }
+        },
+        "ingressPath": {
+          "oneOf": [
+            {
+              "const": ""
+            },
+            {
+              "$ref": "#/$defs/httpPath"
+            }
+          ]
+        },
+        "database": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "name",
+            "passwordKey"
+          ],
+          "properties": {
+            "name": {
+              "type": "string",
+              "pattern": "^[a-z][a-z0-9_]{0,30}$"
+            },
+            "passwordKey": {
+              "type": "string",
+              "pattern": "^[A-Z][A-Z0-9_]*$"
+            }
+          }
+        },
+        "env": {
+          "type": "object",
+          "description": "extra non-secret env vars (values must be strings)",
+          "propertyNames": {
+            "pattern": "^[A-Z][A-Z0-9_]*$",
+            "not": {
+              "pattern": "(PASSWORD|SECRET|TOKEN|KEY)"
+            }
+          },
+          "additionalProperties": {
+            "type": "string"
+          }
+        },
+        "allowFrom": {
+          "type": "array",
+          "items": {
+            "enum": [
+              "web",
+              "catalog",
+              "orders"
+            ]
+          },
+          "uniqueItems": true
+        },
+        "uiConfig": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "shopName": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 40
+            },
+            "currency": {
+              "type": "string",
+              "pattern": "^[A-Z]{3}$"
+            },
+            "banner": {
+              "type": "string",
+              "maxLength": 120
+            }
+          }
+        }
+      }
+    }
+  },
+  "properties": {
+    "global": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "environment"
+      ],
+      "properties": {
+        "environment": {
+          "enum": [
+            "dev",
+            "staging",
+            "prod"
+          ]
+        }
+      }
+    },
+    "image": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "registry": {
+          "type": "string",
+          "pattern": "^$|^[a-z0-9.-]+(:[0-9]+)?(/[a-z0-9._-]+)*$"
+        },
+        "tag": {
+          "$ref": "#/$defs/tag"
+        },
+        "pullPolicy": {
+          "enum": [
+            "IfNotPresent",
+            "Always"
+          ]
+        }
+      }
+    },
+    "ingress": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "enabled",
+        "className",
+        "host"
+      ],
+      "properties": {
+        "enabled": {
+          "type": "boolean"
+        },
+        "className": {
+          "type": "string",
+          "minLength": 1
+        },
+        "host": {
+          "type": "string",
+          "format": "hostname",
+          "pattern": "^[a-z0-9]([a-z0-9.-]*[a-z0-9])?$"
+        }
+      }
+    },
+    "podDefaults": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "terminationGracePeriodSeconds": {
+          "type": "integer",
+          "minimum": 10,
+          "maximum": 300
+        },
+        "preStopSleepSeconds": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 30
+        },
+        "revisionHistoryLimit": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 10
+        },
+        "topologySpread": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "enabled": {
+              "type": "boolean"
+            },
+            "whenUnsatisfiable": {
+              "enum": [
+                "DoNotSchedule",
+                "ScheduleAnyway"
+              ]
+            }
+          }
+        }
+      }
+    },
+    "podDisruptionBudget": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "enabled": {
+          "type": "boolean"
+        }
+      }
+    },
+    "services": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "catalog": {
+          "$ref": "#/$defs/service"
+        },
+        "orders": {
+          "$ref": "#/$defs/service"
+        },
+        "web": {
+          "$ref": "#/$defs/service"
+        }
+      }
+    },
+    "postgres": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "enabled": {
+          "type": "boolean"
+        },
+        "image": {
+          "type": "string",
+          "pattern": "@sha256:[a-f0-9]{64}$",
+          "description": "third-party image: digest-pinned"
+        },
+        "runAsUser": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "storage": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "size": {
+              "type": "string",
+              "pattern": "^[0-9]+(Mi|Gi)$"
+            },
+            "storageClassName": {
+              "type": "string"
+            }
+          }
+        },
+        "resources": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "requests": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "cpu": {
+                  "$ref": "#/$defs/quantity"
+                },
+                "memory": {
+                  "$ref": "#/$defs/quantity"
+                }
+              }
+            },
+            "limits": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "cpu": {
+                  "$ref": "#/$defs/quantity"
+                },
+                "memory": {
+                  "$ref": "#/$defs/quantity"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "database": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "existingSecret"
+      ],
+      "properties": {
+        "existingSecret": {
+          "type": "string",
+          "pattern": "^[a-z0-9]([-a-z0-9]*[a-z0-9])?$"
+        }
+      }
+    },
+    "networkPolicies": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "enabled": {
+          "type": "boolean"
+        },
+        "ingressController": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "namespace": {
+              "type": "string"
+            },
+            "podName": {
+              "type": "string"
+            }
+          }
+        }
+      }
+    }
+  }
+}

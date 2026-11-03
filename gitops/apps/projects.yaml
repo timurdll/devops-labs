@@ -1,0 +1,52 @@
+# AppProjects = the RBAC boundary of Argo CD itself. Even if a commit to gitops/apps is
+# compromised, an Application can only deploy what its project allows.
+apiVersion: argoproj.io/v1alpha1
+kind: AppProject
+metadata:
+  name: platform
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "-2"
+spec:
+  description: Cluster platform (ingress controller, environment namespaces, RBAC)
+  sourceRepos:
+    - https://github.com/timurdll/devops-labs.git
+  destinations:
+    - server: https://kubernetes.default.svc
+      namespace: ingress-traefik
+    - server: https://kubernetes.default.svc
+      namespace: "shop*"
+  clusterResourceWhitelist:
+    - { group: "", kind: Namespace }
+    - { group: networking.k8s.io, kind: IngressClass }
+    - { group: rbac.authorization.k8s.io, kind: ClusterRole }
+    - { group: rbac.authorization.k8s.io, kind: ClusterRoleBinding }
+---
+apiVersion: argoproj.io/v1alpha1
+kind: AppProject
+metadata:
+  name: shoplite
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "-2"
+spec:
+  description: ShopLite application, one Application per environment
+  sourceRepos:
+    - https://github.com/timurdll/devops-labs.git
+  destinations:
+    - server: https://kubernetes.default.svc
+      namespace: shop-dev
+    - server: https://kubernetes.default.svc
+      namespace: shop-staging
+    - server: https://kubernetes.default.svc
+      namespace: shop-prod
+  # No cluster-scoped objects at all; namespaced kinds limited to what the chart renders.
+  clusterResourceWhitelist: []
+  namespaceResourceWhitelist:
+    - { group: "", kind: ConfigMap }
+    - { group: "", kind: Service }
+    - { group: apps, kind: Deployment }
+    - { group: apps, kind: StatefulSet }
+    - { group: networking.k8s.io, kind: Ingress }
+    - { group: networking.k8s.io, kind: NetworkPolicy }
+    - { group: policy, kind: PodDisruptionBudget }

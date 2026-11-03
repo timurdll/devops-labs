@@ -1,0 +1,144 @@
+# ShopLite chart — parameter schema, layer 1 of 3 (chart defaults).
+#
+# Values are merged in this order; a later layer overrides an earlier one key by key
+# (maps merge deeply, lists and scalars are replaced):
+#   1. charts/shoplite/values.yaml           this file: safe baseline shared by every environment
+#   2. environments/<env>/values.yaml        what differs per environment (replicas, host, sizing…)
+#   3. ApplicationSet helm.parameters        only global.environment, injected from the generator,
+#                                            so the environment name and the namespace cannot diverge
+# The contract is enforced by values.schema.json: helm lint / helm template / Argo CD reject
+# unknown keys and out-of-range values before anything reaches the API server.
+
+global:
+  # dev | staging | prod. Required; set by the ApplicationSet (layer 3).
+  environment: ""
+
+# Applied to every application image unless a service overrides it.
+image:
+  # Empty → local images loaded into kind (shoplite/<service>:<tag>).
+  # For a real registry: ghcr.io/timurdll/devops-labs (pushed and signed by the Week 6 pipeline).
+  registry: ""
+  # Empty → Chart.appVersion. Promotion between environments = changing this value in git.
+  tag: ""
+  pullPolicy: IfNotPresent
+
+# North-south entry point (Traefik, Week 7). One host per environment.
+ingress:
+  enabled: true
+  className: traefik
+  host: shop.local
+
+# Pod-level defaults shared by all stateless services (Week 7 hardening, unchanged).
+podDefaults:
+  terminationGracePeriodSeconds: 30
+  # Seconds the pod keeps serving after it is removed from the endpoints (rolling-update drain).
+  preStopSleepSeconds: 5
+  revisionHistoryLimit: 3
+  # Hard spread of the replicas of one revision across worker nodes.
+  topologySpread:
+    enabled: true
+    whenUnsatisfiable: DoNotSchedule
+
+# PodDisruptionBudget (minAvailable: 1) for every service with replicas > 1.
+podDisruptionBudget:
+  enabled: false
+
+# Stateless services. The key is the Kubernetes name (Deployment, Service, DNS name).
+services:
+  catalog:
+    enabled: true
+    component: api
+    tier: backend
+    replicas: 2
+    image:
+      repository: shoplite/catalog
+      tag: "" # empty → image.tag → Chart.appVersion
+    runAsUser: 65532 # distroless "nonroot"
+    probes:
+      readinessPath: /readyz
+      livenessPath: /healthz
+    resources:
+      requests: { cpu: 50m, memory: 64Mi }
+      limits: { cpu: 500m, memory: 256Mi }
+    # Exposed through the Ingress under this path prefix ("" → not exposed).
+    ingressPath: /api/catalog
+    # Gets its own database + login role; the password is read from database.existingSecret.
+    database:
+      name: catalog
+      passwordKey: CATALOG_DB_PASSWORD
+    # Extra non-secret settings → <service>-config ConfigMap → envFrom.
+    env: {}
+    # Other services allowed to call this one (NetworkPolicy).
+    allowFrom: [orders]
+
+  orders:
+    enabled: true
+    component: api
+    tier: backend
+    replicas: 2
+    image:
+      repository: shoplite/orders
+      tag: ""
+    runAsUser: 65532
+    probes:
+      readinessPath: /readyz
+      livenessPath: /healthz
+    resources:
+      requests: { cpu: 50m, memory: 64Mi }
+      limits: { cpu: 500m, memory: 256Mi }
+    ingressPath: /api/orders
+    database:
+      name: orders
+      passwordKey: ORDERS_DB_PASSWORD
+    env:
+      # CATALOG_URL is derived from the release namespace by the chart.
+      CATALOG_TIMEOUT_MS: "2000"
+    allowFrom: []
+
+  web:
+    enabled: true
+    component: frontend
+    tier: frontend
+    replicas: 2
+    image:
+      repository: shoplite/web
+      tag: ""
+    runAsUser: 101 # "nginx" in nginx-unprivileged
+    probes:
+      readinessPath: /healthz
+      livenessPath: /healthz
+    resources:
+      requests: { cpu: 20m, memory: 32Mi }
+      limits: { cpu: 200m, memory: 128Mi }
+    ingressPath: /
+    env: {}
+    allowFrom: []
+    # Rendered into config.json and mounted as a file (hot-reloaded by the kubelet).
+    uiConfig:
+      shopName: ShopLite
+      currency: USD
+      banner: ""
+
+# Stateful tier: PostgreSQL StatefulSet with one PVC.
+postgres:
+  enabled: true
+  image: postgres:17-alpine@sha256:b0f9560a2de083e2cc7382e75f808c7381a32852a7ec49117deedb300e552b24
+  runAsUser: 70
+  storage:
+    size: 1Gi
+    storageClassName: standard
+  resources:
+    requests: { cpu: 100m, memory: 256Mi }
+    limits: { cpu: "1", memory: 512Mi }
+
+database:
+  # Secret holding POSTGRES_PASSWORD and one <SERVICE>_DB_PASSWORD per service. It is NOT part of
+  # the chart: values never enter git (created by scripts/gitops-up.sh; ADR in docs/week8).
+  existingSecret: db-credentials
+
+networkPolicies:
+  enabled: true
+  # Namespace + pod label of the ingress controller allowed to reach the services.
+  ingressController:
+    namespace: ingress-traefik
+    podName: traefik

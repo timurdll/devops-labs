@@ -1,0 +1,5 @@
+ShopLite {{ .Chart.AppVersion }} ({{ .Values.global.environment }}) in namespace {{ .Release.Namespace }}.
+{{- if .Values.ingress.enabled }}
+  curl -H 'Host: {{ .Values.ingress.host }}' http://127.0.0.1:8080/api/catalog/products
+{{- end }}
+Database credentials are read from Secret "{{ .Values.database.existingSecret }}" (not managed by this chart).

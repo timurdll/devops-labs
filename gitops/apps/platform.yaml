@@ -1,0 +1,24 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: platform
+  namespace: argocd
+  annotations:
+    # Namespaces + Traefik must exist before the environment Applications sync.
+    argocd.argoproj.io/sync-wave: "-1"
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: platform
+  source:
+    repoURL: https://github.com/timurdll/devops-labs.git
+    targetRevision: week8-gitops-helm
+    path: k8s/platform
+  destination:
+    server: https://kubernetes.default.svc
+  syncPolicy:
+    automated:
+      prune: false # never auto-delete a namespace (it would take the environment with it)
+      selfHeal: true
+    syncOptions:
+      - ServerSideApply=true
