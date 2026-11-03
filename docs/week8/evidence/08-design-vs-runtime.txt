@@ -1,0 +1,35 @@
+# Design (helm template of git) vs runtime — 19:03:57
+CHECK                                        EXPECTED                 ACTUAL                   RESULT
+app shoplite-dev                             Synced/Healthy           Synced/Healthy           PASS
+app shoplite-dev revision = git HEAD         f823253                  f823253                  PASS
+shop-dev deploy/catalog ready/desired        1/1                      1/1                      PASS
+shop-dev deploy/orders ready/desired         1/1                      1/1                      PASS
+shop-dev deploy/web ready/desired            1/1                      1/1                      PASS
+shop-dev ingress host                        dev.shop.local           dev.shop.local           PASS
+shop-dev PodDisruptionBudgets                0                        0                        PASS
+shop-dev pvc/data-postgres-0                 Bound:1Gi                Bound:1Gi                PASS
+shop-dev PSA enforce                         restricted               restricted               PASS
+shop-dev HTTP GET /api/catalog/products      200                      200                      PASS
+app shoplite-staging                         Synced/Healthy           Synced/Healthy           PASS
+app shoplite-staging revision = git HEAD     f823253                  f823253                  PASS
+shop-staging deploy/catalog ready/desired    2/2                      2/2                      PASS
+shop-staging deploy/orders ready/desired     2/2                      2/2                      PASS
+shop-staging deploy/web ready/desired        2/2                      2/2                      PASS
+shop-staging ingress host                    staging.shop.local       staging.shop.local       PASS
+shop-staging PodDisruptionBudgets            3                        3                        PASS
+shop-staging pvc/data-postgres-0             Bound:1Gi                Bound:1Gi                PASS
+shop-staging PSA enforce                     restricted               restricted               PASS
+shop-staging HTTP GET /api/catalog/products  200                      200                      PASS
+app shoplite-prod                            Synced/Healthy           Synced/Healthy           PASS
+app shoplite-prod revision = git HEAD        f823253                  f823253                  PASS
+shop-prod deploy/catalog ready/desired       3/3                      3/3                      PASS
+shop-prod deploy/orders ready/desired        3/3                      3/3                      PASS
+shop-prod deploy/web ready/desired           2/2                      2/2                      PASS
+shop-prod ingress host                       prod.shop.local          prod.shop.local          PASS
+shop-prod PodDisruptionBudgets               3                        3                        PASS
+shop-prod pvc/data-postgres-0                Bound:2Gi                Bound:2Gi                PASS
+shop-prod PSA enforce                        restricted               restricted               PASS
+shop-prod HTTP GET /api/catalog/products     200                      200                      PASS
+Secret db-credentials tracked by Argo CD     no                       no                       PASS
+
+Result: 31 passed, 0 failed

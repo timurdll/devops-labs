@@ -1,0 +1,1078 @@
+# First production release: manual approval (scripts/gitops-sync-prod.sh --yes) — 2026-11-03 19:01:28 +05
+
+===== /ConfigMap shop-prod/catalog-config ======
+0a1,20
+> apiVersion: v1
+> data:
+>   PGDATABASE: catalog
+>   PGHOST: postgres.shop-prod.svc.cluster.local
+>   PGPORT: "5432"
+>   PGUSER: catalog
+> kind: ConfigMap
+> metadata:
+>   annotations:
+>     argocd.argoproj.io/tracking-id: shoplite-prod:/ConfigMap:shop-prod/catalog-config
+>   labels:
+>     app.kubernetes.io/instance: shoplite
+>     app.kubernetes.io/managed-by: Helm
+>     app.kubernetes.io/name: catalog
+>     app.kubernetes.io/part-of: shoplite
+>     app.kubernetes.io/version: 1.0.1
+>     helm.sh/chart: shoplite-0.1.0
+>     shoplite.io/environment: prod
+>   name: catalog-config
+>   namespace: shop-prod
+
+===== /ConfigMap shop-prod/orders-config ======
+0a1,22
+> apiVersion: v1
+> data:
+>   CATALOG_TIMEOUT_MS: "2000"
+>   CATALOG_URL: http://catalog.shop-prod.svc.cluster.local
+>   PGDATABASE: orders
+>   PGHOST: postgres.shop-prod.svc.cluster.local
+>   PGPORT: "5432"
+>   PGUSER: orders
+> kind: ConfigMap
+> metadata:
+>   annotations:
+>     argocd.argoproj.io/tracking-id: shoplite-prod:/ConfigMap:shop-prod/orders-config
+>   labels:
+>     app.kubernetes.io/instance: shoplite
+>     app.kubernetes.io/managed-by: Helm
+>     app.kubernetes.io/name: orders
+>     app.kubernetes.io/part-of: shoplite
+>     app.kubernetes.io/version: 1.0.1
+>     helm.sh/chart: shoplite-0.1.0
+>     shoplite.io/environment: prod
+>   name: orders-config
+>   namespace: shop-prod
+
+===== /ConfigMap shop-prod/postgres-init ======
+0a1,33
+> apiVersion: v1
+> data:
+>   10-service-databases.sh: |
+>     #!/bin/sh
+>     # Database-per-service: each microservice gets its own database and login role.
+>     # Passwords are read from the Secret mounted at /run/secrets/db (never from env or args).
+>     set -eu
+>     psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --dbname postgres \
+>       -v pw="$(cat /run/secrets/db/CATALOG_DB_PASSWORD)" <<'EOSQL'
+>     CREATE ROLE catalog LOGIN PASSWORD :'pw';
+>     CREATE DATABASE catalog OWNER catalog;
+>     REVOKE ALL ON DATABASE catalog FROM PUBLIC;
+>     EOSQL
+>     psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --dbname postgres \
+>       -v pw="$(cat /run/secrets/db/ORDERS_DB_PASSWORD)" <<'EOSQL'
+>     CREATE ROLE orders LOGIN PASSWORD :'pw';
+>     CREATE DATABASE orders OWNER orders;
+>     REVOKE ALL ON DATABASE orders FROM PUBLIC;
+>     EOSQL
+> kind: ConfigMap
+> metadata:
+>   annotations:
+>     argocd.argoproj.io/tracking-id: shoplite-prod:/ConfigMap:shop-prod/postgres-init
+>   labels:
+>     app.kubernetes.io/instance: shoplite
+>     app.kubernetes.io/managed-by: Helm
+>     app.kubernetes.io/name: postgres
+>     app.kubernetes.io/part-of: shoplite
+>     app.kubernetes.io/version: 1.0.1
+>     helm.sh/chart: shoplite-0.1.0
+>     shoplite.io/environment: prod
+>   name: postgres-init
+>   namespace: shop-prod
+
+===== /ConfigMap shop-prod/web-config ======
+0a1,23
+> apiVersion: v1
+> data:
+>   config.json: |
+>     {
+>       "banner": "",
+>       "currency": "USD",
+>       "environment": "prod",
+>       "shopName": "ShopLite"
+>     }
+> kind: ConfigMap
+> metadata:
+>   annotations:
+>     argocd.argoproj.io/tracking-id: shoplite-prod:/ConfigMap:shop-prod/web-config
+>   labels:
+>     app.kubernetes.io/instance: shoplite
+>     app.kubernetes.io/managed-by: Helm
+>     app.kubernetes.io/name: web
+>     app.kubernetes.io/part-of: shoplite
+>     app.kubernetes.io/version: 1.0.1
+>     helm.sh/chart: shoplite-0.1.0
+>     shoplite.io/environment: prod
+>   name: web-config
+>   namespace: shop-prod
+
+===== /Service shop-prod/catalog ======
+0a1,23
+> apiVersion: v1
+> kind: Service
+> metadata:
+>   annotations:
+>     argocd.argoproj.io/tracking-id: shoplite-prod:/Service:shop-prod/catalog
+>   labels:
+>     app.kubernetes.io/instance: shoplite
+>     app.kubernetes.io/managed-by: Helm
+>     app.kubernetes.io/name: catalog
+>     app.kubernetes.io/part-of: shoplite
+>     app.kubernetes.io/version: 1.0.1
+>     helm.sh/chart: shoplite-0.1.0
+>     shoplite.io/environment: prod
+>   name: catalog
+>   namespace: shop-prod
+> spec:
+>   ports:
+>   - name: http
+>     port: 80
+>     targetPort: http
+>   selector:
+>     app.kubernetes.io/name: catalog
+>   type: ClusterIP
+
+===== /Service shop-prod/orders ======
+0a1,23
+> apiVersion: v1
+> kind: Service
+> metadata:
+>   annotations:
+>     argocd.argoproj.io/tracking-id: shoplite-prod:/Service:shop-prod/orders
+>   labels:
+>     app.kubernetes.io/instance: shoplite
+>     app.kubernetes.io/managed-by: Helm
+>     app.kubernetes.io/name: orders
+>     app.kubernetes.io/part-of: shoplite
+>     app.kubernetes.io/version: 1.0.1
+>     helm.sh/chart: shoplite-0.1.0
+>     shoplite.io/environment: prod
+>   name: orders
+>   namespace: shop-prod
+> spec:
+>   ports:
+>   - name: http
+>     port: 80
+>     targetPort: http
+>   selector:
+>     app.kubernetes.io/name: orders
+>   type: ClusterIP
+
+===== /Service shop-prod/postgres ======
+0a1,24
+> apiVersion: v1
+> kind: Service
+> metadata:
+>   annotations:
+>     argocd.argoproj.io/tracking-id: shoplite-prod:/Service:shop-prod/postgres
+>   labels:
+>     app.kubernetes.io/component: database
+>     app.kubernetes.io/instance: shoplite
+>     app.kubernetes.io/managed-by: Helm
+>     app.kubernetes.io/name: postgres
+>     app.kubernetes.io/part-of: shoplite
+>     app.kubernetes.io/version: 1.0.1
+>     helm.sh/chart: shoplite-0.1.0
+>     shoplite.io/environment: prod
+>   name: postgres
+>   namespace: shop-prod
+> spec:
+>   clusterIP: None
+>   ports:
+>   - name: postgres
+>     port: 5432
+>     targetPort: postgres
+>   selector:
+>     app.kubernetes.io/name: postgres
+
+===== /Service shop-prod/web ======
+0a1,23
+> apiVersion: v1
+> kind: Service
+> metadata:
+>   annotations:
+>     argocd.argoproj.io/tracking-id: shoplite-prod:/Service:shop-prod/web
+>   labels:
+>     app.kubernetes.io/instance: shoplite
+>     app.kubernetes.io/managed-by: Helm
+>     app.kubernetes.io/name: web
+>     app.kubernetes.io/part-of: shoplite
+>     app.kubernetes.io/version: 1.0.1
+>     helm.sh/chart: shoplite-0.1.0
+>     shoplite.io/environment: prod
+>   name: web
+>   namespace: shop-prod
+> spec:
+>   ports:
+>   - name: http
+>     port: 80
+>     targetPort: http
+>   selector:
+>     app.kubernetes.io/name: web
+>   type: ClusterIP
+
+===== apps/Deployment shop-prod/catalog ======
+0a1,104
+> apiVersion: apps/v1
+> kind: Deployment
+> metadata:
+>   annotations:
+>     argocd.argoproj.io/tracking-id: shoplite-prod:apps/Deployment:shop-prod/catalog
+>   labels:
+>     app.kubernetes.io/component: api
+>     app.kubernetes.io/instance: shoplite
+>     app.kubernetes.io/managed-by: Helm
+>     app.kubernetes.io/name: catalog
+>     app.kubernetes.io/part-of: shoplite
+>     app.kubernetes.io/version: 1.0.1
+>     helm.sh/chart: shoplite-0.1.0
+>     shoplite.io/environment: prod
+>   name: catalog
+>   namespace: shop-prod
+> spec:
+>   replicas: 3
+>   revisionHistoryLimit: 3
+>   selector:
+>     matchLabels:
+>       app.kubernetes.io/name: catalog
+>   strategy:
+>     rollingUpdate:
+>       maxSurge: 1
+>       maxUnavailable: 0
+>     type: RollingUpdate
+>   template:
+>     metadata:
+>       annotations:
+>         checksum/config: faab3595f4ad6957
+>       labels:
+>         app.kubernetes.io/component: api
+>         app.kubernetes.io/name: catalog
+>         app.kubernetes.io/part-of: shoplite
+>         shoplite.io/environment: prod
+>         tier: backend
+>     spec:
+>       automountServiceAccountToken: false
+>       containers:
+>       - env:
+>         - name: POD_NAME
+>           valueFrom:
+>             fieldRef:
+>               fieldPath: metadata.name
+>         - name: PGPASSWORD
+>           valueFrom:
+>             secretKeyRef:
+>               key: CATALOG_DB_PASSWORD
+>               name: db-credentials
+>         envFrom:
+>         - configMapRef:
+>             name: catalog-config
+>         image: shoplite/catalog:1.0.1
+>         imagePullPolicy: IfNotPresent
+>         lifecycle:
+>           preStop:
+>             sleep:
+>               seconds: 5
+>         livenessProbe:
+>           httpGet:
+>             path: /healthz
+>             port: http
+>           periodSeconds: 10
+>         name: catalog
+>         ports:
+>         - containerPort: 8080
+>           name: http
+>         readinessProbe:
+>           httpGet:
+>             path: /readyz
+>             port: http
+>           periodSeconds: 5
+>         resources:
+>           limits:
+>             cpu: "1"
+>             memory: 384Mi
+>           requests:
+>             cpu: 100m
+>             memory: 96Mi
+>         securityContext:
+>           allowPrivilegeEscalation: false
+>           capabilities:
+>             drop:
+>             - ALL
+>           readOnlyRootFilesystem: true
+>       enableServiceLinks: false
+>       securityContext:
+>         runAsGroup: 65532
+>         runAsNonRoot: true
+>         runAsUser: 65532
+>         seccompProfile:
+>           type: RuntimeDefault
+>       terminationGracePeriodSeconds: 30
+>       topologySpreadConstraints:
+>       - labelSelector:
+>           matchLabels:
+>             app.kubernetes.io/name: catalog
+>         matchLabelKeys:
+>         - pod-template-hash
+>         maxSkew: 1
+>         nodeTaintsPolicy: Honor
+>         topologyKey: kubernetes.io/hostname
+>         whenUnsatisfiable: DoNotSchedule
+
+===== apps/Deployment shop-prod/orders ======
+0a1,104
+> apiVersion: apps/v1
+> kind: Deployment
+> metadata:
+>   annotations:
+>     argocd.argoproj.io/tracking-id: shoplite-prod:apps/Deployment:shop-prod/orders
+>   labels:
+>     app.kubernetes.io/component: api
+>     app.kubernetes.io/instance: shoplite
+>     app.kubernetes.io/managed-by: Helm
+>     app.kubernetes.io/name: orders
+>     app.kubernetes.io/part-of: shoplite
+>     app.kubernetes.io/version: 1.0.1
+>     helm.sh/chart: shoplite-0.1.0
+>     shoplite.io/environment: prod
+>   name: orders
+>   namespace: shop-prod
+> spec:
+>   replicas: 3
+>   revisionHistoryLimit: 3
+>   selector:
+>     matchLabels:
+>       app.kubernetes.io/name: orders
+>   strategy:
+>     rollingUpdate:
+>       maxSurge: 1
+>       maxUnavailable: 0
+>     type: RollingUpdate
+>   template:
+>     metadata:
+>       annotations:
+>         checksum/config: d12ed0f22bcccc96
+>       labels:
+>         app.kubernetes.io/component: api
+>         app.kubernetes.io/name: orders
+>         app.kubernetes.io/part-of: shoplite
+>         shoplite.io/environment: prod
+>         tier: backend
+>     spec:
+>       automountServiceAccountToken: false
+>       containers:
+>       - env:
+>         - name: POD_NAME
+>           valueFrom:
+>             fieldRef:
+>               fieldPath: metadata.name
+>         - name: PGPASSWORD
+>           valueFrom:
+>             secretKeyRef:
+>               key: ORDERS_DB_PASSWORD
+>               name: db-credentials
+>         envFrom:
+>         - configMapRef:
+>             name: orders-config
+>         image: shoplite/orders:1.0.1
+>         imagePullPolicy: IfNotPresent
+>         lifecycle:
+>           preStop:
+>             sleep:
+>               seconds: 5
+>         livenessProbe:
+>           httpGet:
+>             path: /healthz
+>             port: http
+>           periodSeconds: 10
+>         name: orders
+>         ports:
+>         - containerPort: 8080
+>           name: http
+>         readinessProbe:
+>           httpGet:
+>             path: /readyz
+>             port: http
+>           periodSeconds: 5
+>         resources:
+>           limits:
+>             cpu: "1"
+>             memory: 384Mi
+>           requests:
+>             cpu: 100m
+>             memory: 96Mi
+>         securityContext:
+>           allowPrivilegeEscalation: false
+>           capabilities:
+>             drop:
+>             - ALL
+>           readOnlyRootFilesystem: true
+>       enableServiceLinks: false
+>       securityContext:
+>         runAsGroup: 65532
+>         runAsNonRoot: true
+>         runAsUser: 65532
+>         seccompProfile:
+>           type: RuntimeDefault
+>       terminationGracePeriodSeconds: 30
+>       topologySpreadConstraints:
+>       - labelSelector:
+>           matchLabels:
+>             app.kubernetes.io/name: orders
+>         matchLabelKeys:
+>         - pod-template-hash
+>         maxSkew: 1
+>         nodeTaintsPolicy: Honor
+>         topologyKey: kubernetes.io/hostname
+>         whenUnsatisfiable: DoNotSchedule
+
+===== apps/Deployment shop-prod/web ======
+0a1,107
+> apiVersion: apps/v1
+> kind: Deployment
+> metadata:
+>   annotations:
+>     argocd.argoproj.io/tracking-id: shoplite-prod:apps/Deployment:shop-prod/web
+>   labels:
+>     app.kubernetes.io/component: frontend
+>     app.kubernetes.io/instance: shoplite
+>     app.kubernetes.io/managed-by: Helm
+>     app.kubernetes.io/name: web
+>     app.kubernetes.io/part-of: shoplite
+>     app.kubernetes.io/version: 1.0.1
+>     helm.sh/chart: shoplite-0.1.0
+>     shoplite.io/environment: prod
+>   name: web
+>   namespace: shop-prod
+> spec:
+>   replicas: 2
+>   revisionHistoryLimit: 3
+>   selector:
+>     matchLabels:
+>       app.kubernetes.io/name: web
+>   strategy:
+>     rollingUpdate:
+>       maxSurge: 1
+>       maxUnavailable: 0
+>     type: RollingUpdate
+>   template:
+>     metadata:
+>       labels:
+>         app.kubernetes.io/component: frontend
+>         app.kubernetes.io/name: web
+>         app.kubernetes.io/part-of: shoplite
+>         shoplite.io/environment: prod
+>         tier: frontend
+>     spec:
+>       automountServiceAccountToken: false
+>       containers:
+>       - env:
+>         - name: POD_NAME
+>           valueFrom:
+>             fieldRef:
+>               fieldPath: metadata.name
+>         image: shoplite/web:1.0.1
+>         imagePullPolicy: IfNotPresent
+>         lifecycle:
+>           preStop:
+>             sleep:
+>               seconds: 5
+>         livenessProbe:
+>           httpGet:
+>             path: /healthz
+>             port: http
+>           periodSeconds: 10
+>         name: web
+>         ports:
+>         - containerPort: 8080
+>           name: http
+>         readinessProbe:
+>           httpGet:
+>             path: /healthz
+>             port: http
+>           periodSeconds: 5
+>         resources:
+>           limits:
+>             cpu: 200m
+>             memory: 128Mi
+>           requests:
+>             cpu: 20m
+>             memory: 32Mi
+>         securityContext:
+>           allowPrivilegeEscalation: false
+>           capabilities:
+>             drop:
+>             - ALL
+>           readOnlyRootFilesystem: true
+>         volumeMounts:
+>         - mountPath: /usr/share/nginx/html/config
+>           name: web-config
+>           readOnly: true
+>         - mountPath: /tmp
+>           name: tmp
+>       enableServiceLinks: false
+>       securityContext:
+>         runAsGroup: 101
+>         runAsNonRoot: true
+>         runAsUser: 101
+>         seccompProfile:
+>           type: RuntimeDefault
+>       terminationGracePeriodSeconds: 30
+>       topologySpreadConstraints:
+>       - labelSelector:
+>           matchLabels:
+>             app.kubernetes.io/name: web
+>         matchLabelKeys:
+>         - pod-template-hash
+>         maxSkew: 1
+>         nodeTaintsPolicy: Honor
+>         topologyKey: kubernetes.io/hostname
+>         whenUnsatisfiable: DoNotSchedule
+>       volumes:
+>       - configMap:
+>           name: web-config
+>         name: web-config
+>       - emptyDir:
+>           sizeLimit: 32Mi
+>         name: tmp
+
+===== apps/StatefulSet shop-prod/postgres ======
+0a1,128
+> apiVersion: apps/v1
+> kind: StatefulSet
+> metadata:
+>   annotations:
+>     argocd.argoproj.io/tracking-id: shoplite-prod:apps/StatefulSet:shop-prod/postgres
+>   labels:
+>     app.kubernetes.io/component: database
+>     app.kubernetes.io/instance: shoplite
+>     app.kubernetes.io/managed-by: Helm
+>     app.kubernetes.io/name: postgres
+>     app.kubernetes.io/part-of: shoplite
+>     app.kubernetes.io/version: 1.0.1
+>     helm.sh/chart: shoplite-0.1.0
+>     shoplite.io/environment: prod
+>   name: postgres
+>   namespace: shop-prod
+> spec:
+>   replicas: 1
+>   selector:
+>     matchLabels:
+>       app.kubernetes.io/name: postgres
+>   serviceName: postgres
+>   template:
+>     metadata:
+>       annotations:
+>         checksum/init: ac5b5fad8cca1100
+>       labels:
+>         app.kubernetes.io/component: database
+>         app.kubernetes.io/name: postgres
+>         app.kubernetes.io/part-of: shoplite
+>         shoplite.io/environment: prod
+>         tier: data
+>     spec:
+>       automountServiceAccountToken: false
+>       containers:
+>       - env:
+>         - name: POSTGRES_USER
+>           value: postgres
+>         - name: POSTGRES_PASSWORD_FILE
+>           value: /run/secrets/db/POSTGRES_PASSWORD
+>         - name: PGDATA
+>           value: /var/lib/postgresql/data/pgdata
+>         image: postgres:17-alpine@sha256:b0f9560a2de083e2cc7382e75f808c7381a32852a7ec49117deedb300e552b24
+>         imagePullPolicy: IfNotPresent
+>         livenessProbe:
+>           exec:
+>             command:
+>             - pg_isready
+>             - -U
+>             - postgres
+>             - -h
+>             - 127.0.0.1
+>           initialDelaySeconds: 30
+>           periodSeconds: 10
+>         name: postgres
+>         ports:
+>         - containerPort: 5432
+>           name: postgres
+>         readinessProbe:
+>           exec:
+>             command:
+>             - pg_isready
+>             - -U
+>             - postgres
+>             - -h
+>             - 127.0.0.1
+>           periodSeconds: 5
+>         resources:
+>           limits:
+>             cpu: "1"
+>             memory: 512Mi
+>           requests:
+>             cpu: 250m
+>             memory: 384Mi
+>         securityContext:
+>           allowPrivilegeEscalation: false
+>           capabilities:
+>             drop:
+>             - ALL
+>           readOnlyRootFilesystem: true
+>         volumeMounts:
+>         - mountPath: /var/lib/postgresql/data
+>           name: data
+>         - mountPath: /run/secrets/db
+>           name: db-credentials
+>           readOnly: true
+>         - mountPath: /docker-entrypoint-initdb.d
+>           name: init-scripts
+>           readOnly: true
+>         - mountPath: /var/run/postgresql
+>           name: run
+>         - mountPath: /tmp
+>           name: tmp
+>       enableServiceLinks: false
+>       securityContext:
+>         fsGroup: 70
+>         runAsGroup: 70
+>         runAsNonRoot: true
+>         runAsUser: 70
+>         seccompProfile:
+>           type: RuntimeDefault
+>       terminationGracePeriodSeconds: 30
+>       volumes:
+>       - name: db-credentials
+>         secret:
+>           defaultMode: 288
+>           secretName: db-credentials
+>       - configMap:
+>           defaultMode: 365
+>           name: postgres-init
+>         name: init-scripts
+>       - emptyDir:
+>           medium: Memory
+>           sizeLimit: 16Mi
+>         name: run
+>       - emptyDir:
+>           sizeLimit: 64Mi
+>         name: tmp
+>   volumeClaimTemplates:
+>   - metadata:
+>       name: data
+>     spec:
+>       accessModes:
+>       - ReadWriteOnce
+>       resources:
+>         requests:
+>           storage: 2Gi
+>       storageClassName: standard
+
+===== networking.k8s.io/Ingress shop-prod/shop ======
+0a1,42
+> apiVersion: networking.k8s.io/v1
+> kind: Ingress
+> metadata:
+>   annotations:
+>     argocd.argoproj.io/tracking-id: shoplite-prod:networking.k8s.io/Ingress:shop-prod/shop
+>   labels:
+>     app.kubernetes.io/instance: shoplite
+>     app.kubernetes.io/managed-by: Helm
+>     app.kubernetes.io/name: shop-ingress
+>     app.kubernetes.io/part-of: shoplite
+>     app.kubernetes.io/version: 1.0.1
+>     helm.sh/chart: shoplite-0.1.0
+>     shoplite.io/environment: prod
+>   name: shop
+>   namespace: shop-prod
+> spec:
+>   ingressClassName: traefik
+>   rules:
+>   - host: prod.shop.local
+>     http:
+>       paths:
+>       - backend:
+>           service:
+>             name: orders
+>             port:
+>               name: http
+>         path: /api/orders
+>         pathType: Prefix
+>       - backend:
+>           service:
+>             name: catalog
+>             port:
+>               name: http
+>         path: /api/catalog
+>         pathType: Prefix
+>       - backend:
+>           service:
+>             name: web
+>             port:
+>               name: http
+>         path: /
+>         pathType: Prefix
+
+===== networking.k8s.io/NetworkPolicy shop-prod/allow-apps-to-postgres ======
+0a1,32
+> apiVersion: networking.k8s.io/v1
+> kind: NetworkPolicy
+> metadata:
+>   annotations:
+>     argocd.argoproj.io/tracking-id: shoplite-prod:networking.k8s.io/NetworkPolicy:shop-prod/allow-apps-to-postgres
+>   labels:
+>     app.kubernetes.io/instance: shoplite
+>     app.kubernetes.io/managed-by: Helm
+>     app.kubernetes.io/part-of: shoplite
+>     app.kubernetes.io/version: 1.0.1
+>     helm.sh/chart: shoplite-0.1.0
+>     shoplite.io/environment: prod
+>   name: allow-apps-to-postgres
+>   namespace: shop-prod
+> spec:
+>   ingress:
+>   - from:
+>     - podSelector:
+>         matchExpressions:
+>         - key: app.kubernetes.io/name
+>           operator: In
+>           values:
+>           - catalog
+>           - orders
+>     ports:
+>     - port: 5432
+>       protocol: TCP
+>   podSelector:
+>     matchLabels:
+>       app.kubernetes.io/name: postgres
+>   policyTypes:
+>   - Ingress
+
+===== networking.k8s.io/NetworkPolicy shop-prod/allow-from-ingress-controller ======
+0a1,36
+> apiVersion: networking.k8s.io/v1
+> kind: NetworkPolicy
+> metadata:
+>   annotations:
+>     argocd.argoproj.io/tracking-id: shoplite-prod:networking.k8s.io/NetworkPolicy:shop-prod/allow-from-ingress-controller
+>   labels:
+>     app.kubernetes.io/instance: shoplite
+>     app.kubernetes.io/managed-by: Helm
+>     app.kubernetes.io/part-of: shoplite
+>     app.kubernetes.io/version: 1.0.1
+>     helm.sh/chart: shoplite-0.1.0
+>     shoplite.io/environment: prod
+>   name: allow-from-ingress-controller
+>   namespace: shop-prod
+> spec:
+>   ingress:
+>   - from:
+>     - namespaceSelector:
+>         matchLabels:
+>           kubernetes.io/metadata.name: ingress-traefik
+>       podSelector:
+>         matchLabels:
+>           app.kubernetes.io/name: traefik
+>     ports:
+>     - port: 8080
+>       protocol: TCP
+>   podSelector:
+>     matchExpressions:
+>     - key: app.kubernetes.io/name
+>       operator: In
+>       values:
+>       - catalog
+>       - orders
+>       - web
+>   policyTypes:
+>   - Ingress
+
+===== networking.k8s.io/NetworkPolicy shop-prod/allow-to-catalog ======
+0a1,31
+> apiVersion: networking.k8s.io/v1
+> kind: NetworkPolicy
+> metadata:
+>   annotations:
+>     argocd.argoproj.io/tracking-id: shoplite-prod:networking.k8s.io/NetworkPolicy:shop-prod/allow-to-catalog
+>   labels:
+>     app.kubernetes.io/instance: shoplite
+>     app.kubernetes.io/managed-by: Helm
+>     app.kubernetes.io/part-of: shoplite
+>     app.kubernetes.io/version: 1.0.1
+>     helm.sh/chart: shoplite-0.1.0
+>     shoplite.io/environment: prod
+>   name: allow-to-catalog
+>   namespace: shop-prod
+> spec:
+>   ingress:
+>   - from:
+>     - podSelector:
+>         matchExpressions:
+>         - key: app.kubernetes.io/name
+>           operator: In
+>           values:
+>           - orders
+>     ports:
+>     - port: 8080
+>       protocol: TCP
+>   podSelector:
+>     matchLabels:
+>       app.kubernetes.io/name: catalog
+>   policyTypes:
+>   - Ingress
+
+===== networking.k8s.io/NetworkPolicy shop-prod/default-deny-ingress ======
+0a1,18
+> apiVersion: networking.k8s.io/v1
+> kind: NetworkPolicy
+> metadata:
+>   annotations:
+>     argocd.argoproj.io/tracking-id: shoplite-prod:networking.k8s.io/NetworkPolicy:shop-prod/default-deny-ingress
+>   labels:
+>     app.kubernetes.io/instance: shoplite
+>     app.kubernetes.io/managed-by: Helm
+>     app.kubernetes.io/part-of: shoplite
+>     app.kubernetes.io/version: 1.0.1
+>     helm.sh/chart: shoplite-0.1.0
+>     shoplite.io/environment: prod
+>   name: default-deny-ingress
+>   namespace: shop-prod
+> spec:
+>   podSelector: {}
+>   policyTypes:
+>   - Ingress
+
+===== policy/PodDisruptionBudget shop-prod/catalog ======
+0a1,20
+> apiVersion: policy/v1
+> kind: PodDisruptionBudget
+> metadata:
+>   annotations:
+>     argocd.argoproj.io/tracking-id: shoplite-prod:policy/PodDisruptionBudget:shop-prod/catalog
+>   labels:
+>     app.kubernetes.io/instance: shoplite
+>     app.kubernetes.io/managed-by: Helm
+>     app.kubernetes.io/name: catalog
+>     app.kubernetes.io/part-of: shoplite
+>     app.kubernetes.io/version: 1.0.1
+>     helm.sh/chart: shoplite-0.1.0
+>     shoplite.io/environment: prod
+>   name: catalog
+>   namespace: shop-prod
+> spec:
+>   minAvailable: 1
+>   selector:
+>     matchLabels:
+>       app.kubernetes.io/name: catalog
+
+===== policy/PodDisruptionBudget shop-prod/orders ======
+0a1,20
+> apiVersion: policy/v1
+> kind: PodDisruptionBudget
+> metadata:
+>   annotations:
+>     argocd.argoproj.io/tracking-id: shoplite-prod:policy/PodDisruptionBudget:shop-prod/orders
+>   labels:
+>     app.kubernetes.io/instance: shoplite
+>     app.kubernetes.io/managed-by: Helm
+>     app.kubernetes.io/name: orders
+>     app.kubernetes.io/part-of: shoplite
+>     app.kubernetes.io/version: 1.0.1
+>     helm.sh/chart: shoplite-0.1.0
+>     shoplite.io/environment: prod
+>   name: orders
+>   namespace: shop-prod
+> spec:
+>   minAvailable: 1
+>   selector:
+>     matchLabels:
+>       app.kubernetes.io/name: orders
+
+===== policy/PodDisruptionBudget shop-prod/web ======
+0a1,20
+> apiVersion: policy/v1
+> kind: PodDisruptionBudget
+> metadata:
+>   annotations:
+>     argocd.argoproj.io/tracking-id: shoplite-prod:policy/PodDisruptionBudget:shop-prod/web
+>   labels:
+>     app.kubernetes.io/instance: shoplite
+>     app.kubernetes.io/managed-by: Helm
+>     app.kubernetes.io/name: web
+>     app.kubernetes.io/part-of: shoplite
+>     app.kubernetes.io/version: 1.0.1
+>     helm.sh/chart: shoplite-0.1.0
+>     shoplite.io/environment: prod
+>   name: web
+>   namespace: shop-prod
+> spec:
+>   minAvailable: 1
+>   selector:
+>     matchLabels:
+>       app.kubernetes.io/name: web
+TIMESTAMP                  GROUP                    KIND            NAMESPACE                  NAME             STATUS    HEALTH        HOOK  MESSAGE
+2026-11-03T19:01:33+05:00  networking.k8s.io     Ingress            shop-prod                  shop           OutOfSync  Missing              
+2026-11-03T19:01:33+05:00  networking.k8s.io  NetworkPolicy         shop-prod  allow-apps-to-postgres         OutOfSync  Missing              
+2026-11-03T19:01:33+05:00  networking.k8s.io  NetworkPolicy         shop-prod  allow-from-ingress-controller  OutOfSync  Missing              
+2026-11-03T19:01:33+05:00  policy             PodDisruptionBudget   shop-prod               catalog           OutOfSync  Missing              
+2026-11-03T19:01:33+05:00                        Service            shop-prod               catalog           OutOfSync  Missing              
+2026-11-03T19:01:33+05:00                        Service            shop-prod                   web           OutOfSync  Missing              
+2026-11-03T19:01:33+05:00   apps              Deployment            shop-prod                   web           OutOfSync  Missing              
+2026-11-03T19:01:33+05:00  networking.k8s.io  NetworkPolicy         shop-prod      allow-to-catalog           OutOfSync  Missing              
+2026-11-03T19:01:33+05:00  policy             PodDisruptionBudget   shop-prod                   web           OutOfSync  Missing              
+2026-11-03T19:01:33+05:00                      ConfigMap            shop-prod         postgres-init           OutOfSync  Missing              
+2026-11-03T19:01:33+05:00   apps              StatefulSet           shop-prod              postgres           OutOfSync  Missing              
+2026-11-03T19:01:33+05:00  networking.k8s.io  NetworkPolicy         shop-prod  default-deny-ingress           OutOfSync  Missing              
+2026-11-03T19:01:33+05:00                      ConfigMap            shop-prod        catalog-config           OutOfSync  Missing              
+2026-11-03T19:01:33+05:00                      ConfigMap            shop-prod         orders-config           OutOfSync  Missing              
+2026-11-03T19:01:33+05:00                      ConfigMap            shop-prod            web-config           OutOfSync  Missing              
+2026-11-03T19:01:33+05:00                        Service            shop-prod                orders           OutOfSync  Missing              
+2026-11-03T19:01:33+05:00                        Service            shop-prod              postgres           OutOfSync  Missing              
+2026-11-03T19:01:33+05:00   apps              Deployment            shop-prod               catalog           OutOfSync  Missing              
+2026-11-03T19:01:33+05:00   apps              Deployment            shop-prod                orders           OutOfSync  Missing              
+2026-11-03T19:01:33+05:00  policy             PodDisruptionBudget   shop-prod                orders           OutOfSync  Missing              
+2026-11-03T19:01:34+05:00  networking.k8s.io  NetworkPolicy         shop-prod  allow-apps-to-postgres           Synced  Missing              
+2026-11-03T19:01:34+05:00  policy             PodDisruptionBudget   shop-prod                orders             Synced  Healthy              
+2026-11-03T19:01:34+05:00  networking.k8s.io  NetworkPolicy         shop-prod  allow-from-ingress-controller    Synced  Missing              
+2026-11-03T19:01:34+05:00  networking.k8s.io  NetworkPolicy         shop-prod  default-deny-ingress             Synced  Missing              
+2026-11-03T19:01:34+05:00  policy             PodDisruptionBudget   shop-prod               catalog             Synced  Healthy              
+2026-11-03T19:01:34+05:00  policy             PodDisruptionBudget   shop-prod                   web             Synced  Healthy              
+2026-11-03T19:01:34+05:00  networking.k8s.io  NetworkPolicy         shop-prod      allow-to-catalog             Synced  Missing              
+2026-11-03T19:01:34+05:00          ConfigMap   shop-prod        catalog-config    Synced  Missing              
+2026-11-03T19:01:34+05:00          ConfigMap   shop-prod         orders-config    Synced  Missing              
+2026-11-03T19:01:34+05:00          ConfigMap   shop-prod         postgres-init    Synced  Missing              
+2026-11-03T19:01:34+05:00          ConfigMap   shop-prod            web-config    Synced  Missing              
+2026-11-03T19:01:34+05:00            Service   shop-prod               catalog    Synced  Healthy              
+2026-11-03T19:01:34+05:00            Service   shop-prod                orders    Synced  Healthy              
+2026-11-03T19:01:34+05:00            Service   shop-prod              postgres    Synced  Healthy              
+2026-11-03T19:01:34+05:00            Service   shop-prod                   web    Synced  Healthy              
+2026-11-03T19:01:34+05:00                        Service            shop-prod               catalog             Synced   Healthy              service/catalog created
+2026-11-03T19:01:34+05:00                        Service            shop-prod                   web             Synced   Healthy              service/web created
+2026-11-03T19:01:34+05:00  networking.k8s.io     Ingress            shop-prod                  shop           OutOfSync  Missing              ingress.networking.k8s.io/shop created
+2026-11-03T19:01:34+05:00                      ConfigMap            shop-prod        catalog-config             Synced   Missing              configmap/catalog-config created
+2026-11-03T19:01:34+05:00                        Service            shop-prod              postgres             Synced   Healthy              service/postgres created
+2026-11-03T19:01:34+05:00  networking.k8s.io  NetworkPolicy         shop-prod  default-deny-ingress             Synced   Missing              networkpolicy.networking.k8s.io/default-deny-ingress created
+2026-11-03T19:01:34+05:00  networking.k8s.io  NetworkPolicy         shop-prod      allow-to-catalog             Synced   Missing              networkpolicy.networking.k8s.io/allow-to-catalog created
+2026-11-03T19:01:34+05:00  networking.k8s.io  NetworkPolicy         shop-prod  allow-from-ingress-controller    Synced   Missing              networkpolicy.networking.k8s.io/allow-from-ingress-controller created
+2026-11-03T19:01:34+05:00                      ConfigMap            shop-prod         postgres-init             Synced   Missing              configmap/postgres-init created
+2026-11-03T19:01:34+05:00                      ConfigMap            shop-prod         orders-config             Synced   Missing              configmap/orders-config created
+2026-11-03T19:01:34+05:00   apps              Deployment            shop-prod                   web           OutOfSync  Missing              deployment.apps/web created
+2026-11-03T19:01:34+05:00   apps              StatefulSet           shop-prod              postgres           OutOfSync  Missing              statefulset.apps/postgres created
+2026-11-03T19:01:34+05:00  networking.k8s.io  NetworkPolicy         shop-prod  allow-apps-to-postgres           Synced   Missing              networkpolicy.networking.k8s.io/allow-apps-to-postgres created
+2026-11-03T19:01:34+05:00  policy             PodDisruptionBudget   shop-prod                   web             Synced   Healthy              poddisruptionbudget.policy/web created
+2026-11-03T19:01:34+05:00  policy             PodDisruptionBudget   shop-prod               catalog             Synced   Healthy              poddisruptionbudget.policy/catalog created
+2026-11-03T19:01:34+05:00                      ConfigMap            shop-prod            web-config             Synced   Missing              configmap/web-config created
+2026-11-03T19:01:34+05:00                        Service            shop-prod                orders             Synced   Healthy              service/orders created
+2026-11-03T19:01:34+05:00   apps              Deployment            shop-prod               catalog           OutOfSync  Missing              deployment.apps/catalog created
+2026-11-03T19:01:34+05:00   apps              Deployment            shop-prod                orders           OutOfSync  Missing              deployment.apps/orders created
+2026-11-03T19:01:34+05:00  policy             PodDisruptionBudget   shop-prod                orders             Synced   Healthy              poddisruptionbudget.policy/orders created
+2026-11-03T19:01:34+05:00   apps  Deployment    shop-prod                orders    Synced  Progressing              deployment.apps/orders created
+2026-11-03T19:01:34+05:00   apps  Deployment    shop-prod                   web    Synced  Progressing              deployment.apps/web created
+2026-11-03T19:01:34+05:00   apps  StatefulSet   shop-prod              postgres    Synced  Progressing              statefulset.apps/postgres created
+2026-11-03T19:01:34+05:00   apps  Deployment    shop-prod               catalog    Synced  Progressing              deployment.apps/catalog created
+
+Name:               argocd/shoplite-prod
+Project:            shoplite
+Server:             https://kubernetes.default.svc
+Namespace:          shop-prod
+URL:                http://localhost:53852/applications/shoplite-prod
+Source:
+- Repo:             https://github.com/timurdll/devops-labs.git
+  Target:           week8-gitops-helm
+  Path:             charts/shoplite
+  Helm Values:      ../../environments/prod/values.yaml
+SyncWindow:         Sync Allowed
+Sync Policy:        Manual
+Sync Status:        Synced to week8-gitops-helm (f823253)
+Health Status:      Progressing
+
+Operation:          Sync
+Sync Revision:      f82325329a7c9fbda76914bd75dbc3bb0c2a4b33
+Phase:              Succeeded
+Start:              2026-11-03 19:01:33 +0500 +05
+Finished:           2026-11-03 19:01:34 +0500 +05
+Duration:           1s
+Message:            successfully synced (all tasks run)
+
+GROUP              KIND                 NAMESPACE  NAME                           STATUS  HEALTH       HOOK  MESSAGE
+networking.k8s.io  NetworkPolicy        shop-prod  default-deny-ingress           Synced                     networkpolicy.networking.k8s.io/default-deny-ingress created
+networking.k8s.io  NetworkPolicy        shop-prod  allow-to-catalog               Synced                     networkpolicy.networking.k8s.io/allow-to-catalog created
+networking.k8s.io  NetworkPolicy        shop-prod  allow-apps-to-postgres         Synced                     networkpolicy.networking.k8s.io/allow-apps-to-postgres created
+networking.k8s.io  NetworkPolicy        shop-prod  allow-from-ingress-controller  Synced                     networkpolicy.networking.k8s.io/allow-from-ingress-controller created
+policy             PodDisruptionBudget  shop-prod  orders                         Synced  Healthy            poddisruptionbudget.policy/orders created
+policy             PodDisruptionBudget  shop-prod  web                            Synced  Healthy            poddisruptionbudget.policy/web created
+policy             PodDisruptionBudget  shop-prod  catalog                        Synced  Healthy            poddisruptionbudget.policy/catalog created
+                   ConfigMap            shop-prod  postgres-init                  Synced                     configmap/postgres-init created
+                   ConfigMap            shop-prod  web-config                     Synced                     configmap/web-config created
+                   ConfigMap            shop-prod  orders-config                  Synced                     configmap/orders-config created
+                   ConfigMap            shop-prod  catalog-config                 Synced                     configmap/catalog-config created
+                   Service              shop-prod  catalog                        Synced  Healthy            service/catalog created
+                   Service              shop-prod  web                            Synced  Healthy            service/web created
+                   Service              shop-prod  postgres                       Synced  Healthy            service/postgres created
+                   Service              shop-prod  orders                         Synced  Healthy            service/orders created
+apps               Deployment           shop-prod  catalog                        Synced  Progressing        deployment.apps/catalog created
+apps               Deployment           shop-prod  orders                         Synced  Progressing        deployment.apps/orders created
+apps               Deployment           shop-prod  web                            Synced  Healthy            deployment.apps/web created
+apps               StatefulSet          shop-prod  postgres                       Synced  Progressing        statefulset.apps/postgres created
+networking.k8s.io  Ingress              shop-prod  shop                           Synced  Healthy            ingress.networking.k8s.io/shop created
+TIMESTAMP                  GROUP                    KIND            NAMESPACE                  NAME             STATUS   HEALTH            HOOK  MESSAGE
+2026-11-03T19:01:37+05:00                      ConfigMap            shop-prod         postgres-init             Synced                           configmap/postgres-init created
+2026-11-03T19:01:37+05:00                      ConfigMap            shop-prod        catalog-config             Synced                           configmap/catalog-config created
+2026-11-03T19:01:37+05:00  networking.k8s.io  NetworkPolicy         shop-prod  default-deny-ingress             Synced                           networkpolicy.networking.k8s.io/default-deny-ingress created
+2026-11-03T19:01:37+05:00  networking.k8s.io  NetworkPolicy         shop-prod      allow-to-catalog             Synced                           networkpolicy.networking.k8s.io/allow-to-catalog created
+2026-11-03T19:01:37+05:00  networking.k8s.io  NetworkPolicy         shop-prod  allow-apps-to-postgres           Synced                           networkpolicy.networking.k8s.io/allow-apps-to-postgres created
+2026-11-03T19:01:37+05:00                        Service            shop-prod                orders             Synced  Healthy                  service/orders created
+2026-11-03T19:01:37+05:00   apps              Deployment            shop-prod                   web             Synced  Healthy                  deployment.apps/web created
+2026-11-03T19:01:37+05:00   apps              StatefulSet           shop-prod              postgres             Synced  Progressing              statefulset.apps/postgres created
+2026-11-03T19:01:37+05:00  networking.k8s.io     Ingress            shop-prod                  shop             Synced  Healthy                  ingress.networking.k8s.io/shop created
+2026-11-03T19:01:37+05:00  networking.k8s.io  NetworkPolicy         shop-prod  allow-from-ingress-controller    Synced                           networkpolicy.networking.k8s.io/allow-from-ingress-controller created
+2026-11-03T19:01:37+05:00  policy             PodDisruptionBudget   shop-prod                orders             Synced  Healthy                  poddisruptionbudget.policy/orders created
+2026-11-03T19:01:37+05:00                      ConfigMap            shop-prod         orders-config             Synced                           configmap/orders-config created
+2026-11-03T19:01:37+05:00                        Service            shop-prod               catalog             Synced  Healthy                  service/catalog created
+2026-11-03T19:01:37+05:00                        Service            shop-prod              postgres             Synced  Healthy                  service/postgres created
+2026-11-03T19:01:37+05:00  policy             PodDisruptionBudget   shop-prod                   web             Synced  Healthy                  poddisruptionbudget.policy/web created
+2026-11-03T19:01:37+05:00  policy             PodDisruptionBudget   shop-prod               catalog             Synced  Healthy                  poddisruptionbudget.policy/catalog created
+2026-11-03T19:01:37+05:00                      ConfigMap            shop-prod            web-config             Synced                           configmap/web-config created
+2026-11-03T19:01:37+05:00                        Service            shop-prod                   web             Synced  Healthy                  service/web created
+2026-11-03T19:01:37+05:00   apps              Deployment            shop-prod               catalog             Synced  Progressing              deployment.apps/catalog created
+2026-11-03T19:01:37+05:00   apps              Deployment            shop-prod                orders             Synced  Progressing              deployment.apps/orders created
+
+Name:               argocd/shoplite-prod
+Project:            shoplite
+Server:             https://kubernetes.default.svc
+Namespace:          shop-prod
+URL:                http://localhost:53886/applications/shoplite-prod
+Source:
+- Repo:             https://github.com/timurdll/devops-labs.git
+  Target:           week8-gitops-helm
+  Path:             charts/shoplite
+  Helm Values:      ../../environments/prod/values.yaml
+SyncWindow:         Sync Allowed
+Sync Policy:        Manual
+Sync Status:        Synced to week8-gitops-helm (f823253)
+Health Status:      Healthy
+
+
+GROUP              KIND                 NAMESPACE  NAME                           STATUS  HEALTH   HOOK  MESSAGE
+networking.k8s.io  NetworkPolicy        shop-prod  default-deny-ingress           Synced                 networkpolicy.networking.k8s.io/default-deny-ingress created
+networking.k8s.io  NetworkPolicy        shop-prod  allow-to-catalog               Synced                 networkpolicy.networking.k8s.io/allow-to-catalog created
+networking.k8s.io  NetworkPolicy        shop-prod  allow-apps-to-postgres         Synced                 networkpolicy.networking.k8s.io/allow-apps-to-postgres created
+networking.k8s.io  NetworkPolicy        shop-prod  allow-from-ingress-controller  Synced                 networkpolicy.networking.k8s.io/allow-from-ingress-controller created
+policy             PodDisruptionBudget  shop-prod  orders                         Synced  Healthy        poddisruptionbudget.policy/orders created
+policy             PodDisruptionBudget  shop-prod  web                            Synced  Healthy        poddisruptionbudget.policy/web created
+policy             PodDisruptionBudget  shop-prod  catalog                        Synced  Healthy        poddisruptionbudget.policy/catalog created
+                   ConfigMap            shop-prod  postgres-init                  Synced                 configmap/postgres-init created
+                   ConfigMap            shop-prod  web-config                     Synced                 configmap/web-config created
+                   ConfigMap            shop-prod  orders-config                  Synced                 configmap/orders-config created
+                   ConfigMap            shop-prod  catalog-config                 Synced                 configmap/catalog-config created
+                   Service              shop-prod  catalog                        Synced  Healthy        service/catalog created
+                   Service              shop-prod  web                            Synced  Healthy        service/web created
+                   Service              shop-prod  postgres                       Synced  Healthy        service/postgres created
+                   Service              shop-prod  orders                         Synced  Healthy        service/orders created
+apps               Deployment           shop-prod  catalog                        Synced  Healthy        deployment.apps/catalog created
+apps               Deployment           shop-prod  orders                         Synced  Healthy        deployment.apps/orders created
+apps               Deployment           shop-prod  web                            Synced  Healthy        deployment.apps/web created
+apps               StatefulSet          shop-prod  postgres                       Synced  Healthy        statefulset.apps/postgres created
+networking.k8s.io  Ingress              shop-prod  shop                           Synced  Healthy        ingress.networking.k8s.io/shop created

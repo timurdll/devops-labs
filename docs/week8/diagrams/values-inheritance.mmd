@@ -1,0 +1,26 @@
+%% Environment-specific variable inheritance: three layers, deep-merged left → right.
+flowchart LR
+    L1["<b>Layer 1 · charts/shoplite/values.yaml</b><br/>replicas 2 · requests 50m/64Mi<br/>ingress.host shop.local · PDB off<br/>postgres 1Gi · image.tag → appVersion 1.0.1"]
+
+    subgraph L2["Layer 2 · environments/&lt;env&gt;/values.yaml (only differences)"]
+        direction TB
+        D["<b>dev</b><br/>replicas 1 · requests 25m/48Mi<br/>host dev.shop.local<br/>CATALOG_TIMEOUT_MS 5000"]
+        S["<b>staging</b><br/>host staging.shop.local<br/>PDB on"]
+        P["<b>prod</b><br/>catalog/orders replicas 3 · 100m/96Mi<br/>host prod.shop.local · PDB on<br/>postgres 2Gi / 384Mi"]
+    end
+
+    L3["<b>Layer 3 · ApplicationSet</b><br/>helm.parameters<br/>global.environment = {{ .env }}"]
+
+    L1 --> D & S & P
+    D & S & P --> L3
+    L3 --> R["helm template (repo-server)<br/>+ values.schema.json check"]
+    R --> RD["shop-dev<br/>pods: 4 · no PDB"]
+    R --> RS["shop-staging<br/>pods: 7 · PDB × 3"]
+    R --> RP["shop-prod<br/>pods: 9 · PDB × 3"]
+
+    classDef l1 fill:#eef4fb,stroke:#2f5d8a;
+    classDef l2 fill:#fff6e0,stroke:#b07d10;
+    classDef out fill:#e7f6ec,stroke:#2e7d4f;
+    class L1 l1;
+    class D,S,P,L3 l2;
+    class RD,RS,RP,R out;

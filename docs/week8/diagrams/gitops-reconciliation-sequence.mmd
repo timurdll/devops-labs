@@ -1,0 +1,40 @@
+%% GitOps reconciliation loop: Git ↔ Argo CD ↔ Kubernetes API server (pull model).
+sequenceDiagram
+    autonumber
+    actor Dev as Developer
+    participant Git as GitHub<br/>timurdll/devops-labs
+    participant Repo as argocd-repo-server
+    participant Ctrl as argocd-application-controller
+    participant API as kube-apiserver
+    participant K8s as kube controllers / kubelet
+    actor Op as Operator (prod)
+
+    Dev->>Git: git push (environments/dev/values.yaml)
+    Note over Git: desired state = commit SHA<br/>(single source of truth)
+
+    loop every 30 s (timeout.reconciliation) — no inbound webhook into kind
+        Ctrl->>Repo: GetManifests(app, targetRevision)
+        Repo->>Git: git ls-remote / fetch week8-gitops-helm
+        Git-->>Repo: HEAD = new SHA
+        Repo->>Repo: helm template charts/shoplite<br/>values.yaml ⊕ environments/env/values.yaml ⊕ global.environment
+        Repo-->>Ctrl: desired manifests (cached per SHA)
+        Ctrl->>API: (watch cache) live objects of the Application
+        Ctrl->>Ctrl: diff desired vs live → Synced / OutOfSync
+    end
+
+    alt dev, staging: automated sync (prune + selfHeal)
+        Ctrl->>API: server-side apply changed objects, prune removed ones
+    else prod: manual gate
+        Ctrl-->>Op: status OutOfSync (diff visible in UI / CLI)
+        Op->>Ctrl: argocd app sync shoplite-prod
+        Ctrl->>API: server-side apply
+    end
+    API->>K8s: Deployment spec changed (new checksum/config)
+    K8s->>K8s: RollingUpdate maxSurge 1 / maxUnavailable 0
+    K8s-->>API: pods Ready, status updated
+    API-->>Ctrl: watch events
+    Ctrl->>Ctrl: health = Progressing → Healthy, sync = Synced @ SHA
+
+    Note over API,Ctrl: Drift: kubectl scale / edit on a live object
+    API-->>Ctrl: watch event (live ≠ desired)
+    Ctrl->>API: selfHeal re-applies git state (dev, staging)

@@ -1,0 +1,42 @@
+%% What lives where: git repository → Argo CD objects → cluster namespaces.
+flowchart LR
+    subgraph GIT["GitHub · timurdll/devops-labs @ week8-gitops-helm"]
+        direction TB
+        gb["gitops/bootstrap/root.yaml"]
+        ga["gitops/apps/<br/>projects.yaml · platform.yaml · shoplite.yaml"]
+        kp["k8s/platform/<br/>traefik.yaml · environments.yaml"]
+        ch["charts/shoplite/"]
+        ev["environments/dev · staging · prod/values.yaml"]
+    end
+
+    subgraph ARGO["namespace argocd · Argo CD v3.5.6"]
+        direction TB
+        root["Application <b>root</b><br/>(app of apps, applied once)"]
+        pp["AppProject platform<br/>cluster: Namespace, IngressClass, ClusterRole(Binding)"]
+        sp["AppProject shoplite<br/>no cluster-scoped kinds · 3 namespaces"]
+        plat["Application <b>platform</b><br/>wave -1 · auto, selfHeal, no prune"]
+        as["ApplicationSet <b>shoplite</b><br/>list generator: dev · staging · prod"]
+        ad["shoplite-dev<br/>auto · prune · selfHeal"]
+        ast["shoplite-staging<br/>auto · prune · selfHeal"]
+        ap["shoplite-prod<br/>manual sync"]
+    end
+
+    subgraph K8S["kind cluster shoplite"]
+        direction TB
+        it["ingress-traefik"]
+        nd["shop-dev"]
+        ns["shop-staging"]
+        np["shop-prod"]
+    end
+
+    gb -. kubectl apply (once) .-> root
+    root -->|path| ga
+    ga --> pp & sp & plat & as
+    plat -->|path| kp
+    as --> ad & ast & ap
+    ad & ast & ap -->|path| ch
+    ad & ast & ap -->|valueFiles| ev
+    plat --> it & nd & ns & np
+    ad --> nd
+    ast --> ns
+    ap --> np
