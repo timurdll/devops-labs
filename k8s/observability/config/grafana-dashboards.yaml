@@ -1,0 +1,9 @@
+apiVersion: 1
+providers:
+  - name: shoplite
+    folder: ShopLite
+    type: file
+    disableDeletion: true
+    allowUiUpdates: false # git is the source of truth; edit the JSON in k8s/observability/dashboards
+    options:
+      path: /etc/grafana/dashboards

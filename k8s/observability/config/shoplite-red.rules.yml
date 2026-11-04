@@ -1,0 +1,35 @@
+# RED recording rules (the dashboard's stat tiles) and SLO alerts. No Alertmanager in the lab:
+# firing alerts are visible in Prometheus /alerts and in Grafana.
+groups:
+  - name: shoplite-red
+    interval: 15s
+    rules:
+      - record: shoplite:http_requests:rate1m
+        expr: >-
+          sum by (environment, service, http_route) (
+            rate(http_server_request_duration_seconds_count{http_route=~"/api/.*"}[1m]))
+      - record: shoplite:http_errors:ratio_rate1m
+        expr: >-
+          sum by (environment, service) (
+            rate(http_server_request_duration_seconds_count{http_route=~"/api/.*",http_response_status_code=~"5.."}[1m]))
+          /
+          sum by (environment, service) (
+            rate(http_server_request_duration_seconds_count{http_route=~"/api/.*"}[1m]))
+      - record: shoplite:http_request_duration_seconds:p95_1m
+        expr: >-
+          histogram_quantile(0.95, sum by (environment, service, le) (
+            rate(http_server_request_duration_seconds_bucket{http_route=~"/api/.*"}[1m])))
+      - alert: ShopLiteHighErrorRate
+        expr: shoplite:http_errors:ratio_rate1m > 0.05
+        for: 1m
+        labels:
+          severity: page
+        annotations:
+          summary: "{{ $labels.service }} in {{ $labels.environment }}: {{ $value | humanizePercentage }} of API requests fail (SLO: < 5 %)"
+      - alert: ShopLiteSlowRequests
+        expr: shoplite:http_request_duration_seconds:p95_1m > 0.5
+        for: 2m
+        labels:
+          severity: ticket
+        annotations:
+          summary: "{{ $labels.service }} in {{ $labels.environment }}: p95 latency {{ $value | humanizeDuration }} (SLO: < 500 ms)"

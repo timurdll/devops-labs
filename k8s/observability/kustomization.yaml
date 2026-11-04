@@ -1,0 +1,33 @@
+# Week 9 — telemetry backend, synced by the Argo CD Application `observability`.
+#
+#   app pods ──OTLP/HTTP :4318──▶ otel-collector ──OTLP/gRPC──▶ jaeger (traces, in-memory)
+#   app pods ◀──scrape /metrics── otel-collector ──remote write──▶ prometheus (metrics + exemplars)
+#                                              grafana ──PromQL / Jaeger API──▶ both
+#
+# Every config file is turned into a ConfigMap with a content hash in its name, so a config
+# change in git produces a new ConfigMap name, which changes the pod template and rolls the pod.
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: observability
+labels:
+  - pairs:
+      app.kubernetes.io/part-of: observability
+    includeSelectors: false
+resources:
+  - namespace.yaml
+  - otel-collector.yaml
+  - prometheus.yaml
+  - jaeger.yaml
+  - grafana.yaml
+  - networkpolicies.yaml
+configMapGenerator:
+  - name: otel-collector-config
+    files: [config.yaml=config/otel-collector.yaml]
+  - name: prometheus-config
+    files: [prometheus.yml=config/prometheus.yml, shoplite-red.rules.yml=config/shoplite-red.rules.yml]
+  - name: jaeger-config
+    files: [config.yaml=config/jaeger.yaml]
+  - name: grafana-provisioning
+    files: [datasources.yaml=config/grafana-datasources.yaml, dashboards.yaml=config/grafana-dashboards.yaml]
+  - name: grafana-dashboards
+    files: [shoplite-red.json=dashboards/shoplite-red.json]

@@ -113,6 +113,10 @@ spec:
       labels:
         app.kubernetes.io/name: traefik
         app.kubernetes.io/component: ingress-controller
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "9000"
+        prometheus.io/path: /metrics
     spec:
       serviceAccountName: traefik
       enableServiceLinks: false
@@ -151,6 +155,17 @@ spec:
             - --providers.kubernetesingress.ingressclass=traefik
             - --providers.kubernetesingress.namespaces=shop,shop-dev,shop-staging,shop-prod
             - --providers.kubernetesingress.ingressendpoint.ip=127.0.0.1
+            # Week 9: Traefik is the first hop of every trace. It starts the root span (or continues
+            # an incoming traceparent) and injects traceparent into the request to web/catalog/orders.
+            - --tracing.serviceName=traefik
+            - --tracing.sampleRate=1.0
+            - --tracing.otlp.http.endpoint=http://otel-collector.observability.svc.cluster.local:4318/v1/traces
+            # Edge RED metrics per entrypoint / router / backend service on :9000/metrics.
+            - --metrics.prometheus=true
+            - --metrics.prometheus.entryPoint=traefik
+            - --metrics.prometheus.addRoutersLabels=true
+            - --metrics.prometheus.addServicesLabels=true
+            - --metrics.prometheus.buckets=0.005,0.01,0.025,0.05,0.1,0.25,0.5,1,2.5,5
             - --accesslog=true
             - --log.level=INFO
             - --global.checknewversion=false

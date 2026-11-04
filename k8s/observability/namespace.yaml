@@ -1,0 +1,10 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: observability
+  labels:
+    pod-security.kubernetes.io/enforce: restricted
+    pod-security.kubernetes.io/enforce-version: latest
+  annotations:
+    # The Application prunes, but never the namespace (it holds the grafana-admin Secret).
+    argocd.argoproj.io/sync-options: Prune=false

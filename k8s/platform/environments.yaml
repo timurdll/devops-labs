@@ -29,12 +29,15 @@ metadata:
     pod-security.kubernetes.io/enforce: restricted
     pod-security.kubernetes.io/enforce-version: latest
 ---
-# Same rules as the Role traefik-ingress in `shop`, defined once and granted per namespace
-# through RoleBindings (a ClusterRole bound by a RoleBinding is still namespace-scoped).
+# Traefik's read access, granted per environment namespace with a namespaced Role (same rules as
+# the Role traefik-ingress in `shop`). Week 9 replaced the Week 8 ClusterRole + RoleBindings: the
+# effective scope was identical, but a ClusterRole that can read Secrets is one ClusterRoleBinding
+# away from cluster-wide Secret access (Trivy KSV-0041). Roles cannot be bound cluster-wide.
 apiVersion: rbac.authorization.k8s.io/v1
-kind: ClusterRole
+kind: Role
 metadata:
-  name: traefik-ingress-namespaced
+  name: traefik-ingress-env
+  namespace: shop-dev
 rules:
   - apiGroups: [""]
     resources: ["services"]
@@ -55,40 +58,84 @@ rules:
 apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
 metadata:
-  name: traefik-ingress
+  name: traefik-ingress-env
   namespace: shop-dev
 roleRef:
   apiGroup: rbac.authorization.k8s.io
-  kind: ClusterRole
-  name: traefik-ingress-namespaced
+  kind: Role
+  name: traefik-ingress-env
 subjects:
   - kind: ServiceAccount
     name: traefik
     namespace: ingress-traefik
 ---
 apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: traefik-ingress-env
+  namespace: shop-staging
+rules:
+  - apiGroups: [""]
+    resources: ["services"]
+    verbs: ["get", "list", "watch"]
+  - apiGroups: [""]
+    resources: ["secrets"] # only needed for TLS sections of Ingress objects
+    verbs: ["get", "list", "watch"]
+  - apiGroups: ["discovery.k8s.io"]
+    resources: ["endpointslices"]
+    verbs: ["list", "watch"]
+  - apiGroups: ["networking.k8s.io"]
+    resources: ["ingresses"]
+    verbs: ["get", "list", "watch"]
+  - apiGroups: ["networking.k8s.io"]
+    resources: ["ingresses/status"]
+    verbs: ["update"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
 metadata:
-  name: traefik-ingress
+  name: traefik-ingress-env
   namespace: shop-staging
 roleRef:
   apiGroup: rbac.authorization.k8s.io
-  kind: ClusterRole
-  name: traefik-ingress-namespaced
+  kind: Role
+  name: traefik-ingress-env
 subjects:
   - kind: ServiceAccount
     name: traefik
     namespace: ingress-traefik
 ---
 apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: traefik-ingress-env
+  namespace: shop-prod
+rules:
+  - apiGroups: [""]
+    resources: ["services"]
+    verbs: ["get", "list", "watch"]
+  - apiGroups: [""]
+    resources: ["secrets"] # only needed for TLS sections of Ingress objects
+    verbs: ["get", "list", "watch"]
+  - apiGroups: ["discovery.k8s.io"]
+    resources: ["endpointslices"]
+    verbs: ["list", "watch"]
+  - apiGroups: ["networking.k8s.io"]
+    resources: ["ingresses"]
+    verbs: ["get", "list", "watch"]
+  - apiGroups: ["networking.k8s.io"]
+    resources: ["ingresses/status"]
+    verbs: ["update"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
 metadata:
-  name: traefik-ingress
+  name: traefik-ingress-env
   namespace: shop-prod
 roleRef:
   apiGroup: rbac.authorization.k8s.io
-  kind: ClusterRole
-  name: traefik-ingress-namespaced
+  kind: Role
+  name: traefik-ingress-env
 subjects:
   - kind: ServiceAccount
     name: traefik

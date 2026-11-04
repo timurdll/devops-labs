@@ -1,0 +1,16 @@
+# Prometheus is a pure storage + query backend here: application and Traefik series arrive by
+# remote write from the Collector (one scraper in the cluster), so there are no app scrape jobs.
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+  external_labels:
+    cluster: kind-shoplite
+storage:
+  exemplars:
+    max_exemplars: 100000 # trace_id exemplars on the duration histograms (ring buffer)
+rule_files:
+  - /etc/prometheus/shoplite-red.rules.yml
+scrape_configs:
+  - job_name: prometheus
+    static_configs:
+      - targets: [localhost:9090]

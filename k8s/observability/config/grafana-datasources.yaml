@@ -1,0 +1,36 @@
+# Provisioned = defined in git, read-only in the UI. Fixed UIDs so the dashboard JSON can refer to them.
+apiVersion: 1
+datasources:
+  - name: Prometheus
+    uid: prometheus
+    type: prometheus
+    access: proxy
+    url: http://prometheus.observability.svc.cluster.local:9090
+    isDefault: true
+    editable: false
+    jsonData:
+      timeInterval: 15s
+      # Exemplar dots on latency panels link straight to the trace in Jaeger (metrics → traces).
+      exemplarTraceIdDestinations:
+        - name: trace_id
+          datasourceUid: jaeger
+  - name: Jaeger
+    uid: jaeger
+    type: jaeger
+    access: proxy
+    url: http://jaeger.observability.svc.cluster.local:16686
+    editable: false
+    jsonData:
+      # Trace view → "related metrics" for the span's service (traces → metrics).
+      tracesToMetrics:
+        datasourceUid: prometheus
+        spanStartTimeShift: -2m
+        spanEndTimeShift: 2m
+        tags:
+          - key: service.name
+            value: service
+        queries:
+          - name: Request rate
+            query: sum(rate(http_server_request_duration_seconds_count{$$__tags}[1m]))
+          - name: p95 latency
+            query: histogram_quantile(0.95, sum by (le) (rate(http_server_request_duration_seconds_bucket{$$__tags}[1m])))

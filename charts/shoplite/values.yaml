@@ -43,6 +43,22 @@ podDefaults:
 podDisruptionBudget:
   enabled: false
 
+# Week 9 — observability. When enabled, every service with `instrumented: true`:
+#   • gets OTEL_* variables → spans are exported over OTLP/HTTP to the OpenTelemetry Collector
+#   • gets prometheus.io/* pod annotations → the Collector scrapes GET /metrics (RED histograms)
+#   • accepts scrapes from the Collector pods on :8080 (NetworkPolicy allow-telemetry-scrape)
+telemetry:
+  enabled: false
+  # OTLP/HTTP base URL of the Collector; the SDK appends /v1/traces.
+  otlpEndpoint: http://otel-collector.observability.svc.cluster.local:4318
+  # Head sampling: parentbased_traceidratio. The decision travels in traceparent (flags 01/00),
+  # so one sampled request is sampled in every downstream service.
+  samplingRatio: 1.0
+  # Where the Collector runs (source of scrapes).
+  collector:
+    namespace: observability
+    podName: otel-collector
+
 # Stateless services. The key is the Kubernetes name (Deployment, Service, DNS name).
 services:
   catalog:
@@ -54,6 +70,8 @@ services:
       repository: shoplite/catalog
       tag: "" # empty → image.tag → Chart.appVersion
     runAsUser: 65532 # distroless "nonroot"
+    # Exposes /metrics and emits OpenTelemetry spans (see telemetry).
+    instrumented: true
     probes:
       readinessPath: /readyz
       livenessPath: /healthz
@@ -80,6 +98,7 @@ services:
       repository: shoplite/orders
       tag: ""
     runAsUser: 65532
+    instrumented: true
     probes:
       readinessPath: /readyz
       livenessPath: /healthz
@@ -104,6 +123,8 @@ services:
       repository: shoplite/web
       tag: ""
     runAsUser: 101 # "nginx" in nginx-unprivileged
+    # Static files only: its traffic is measured and traced one hop earlier, at Traefik.
+    instrumented: false
     probes:
       readinessPath: /healthz
       livenessPath: /healthz

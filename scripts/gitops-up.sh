@@ -4,7 +4,7 @@
 set -euo pipefail
 cd "$(dirname "$0")/.."
 CLUSTER=shoplite
-VERSION=1.0.1
+VERSION=1.1.0
 
 # 1. Cluster + application images (the Week 7 script is idempotent).
 if ! kind get clusters | grep -qx "$CLUSTER"; then

@@ -6,6 +6,12 @@ ingress:
 podDisruptionBudget:
   enabled: true
 
+# Week 9: traces → OpenTelemetry Collector, /metrics scraped. samplingRatio only applies to traces
+# that START in a service; requests through Traefik inherit Traefik's decision (parent-based).
+telemetry:
+  enabled: true
+  samplingRatio: 1.0
+
 services:
   catalog:
     replicas: 3

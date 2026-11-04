@@ -35,10 +35,19 @@ spec:
         app.kubernetes.io/part-of: shoplite
         shoplite.io/environment: {{ $.Values.global.environment }}
         tier: {{ $svc.tier }}
-      {{- if $env }}
+      {{- $scrape := and $.Values.telemetry.enabled $svc.instrumented }}
+      {{- if or $env $scrape }}
       annotations:
+        {{- if $env }}
         # Env vars are read once at start: a config change in git must roll the pods.
         checksum/config: {{ toYaml $env | sha256sum | trunc 16 }}
+        {{- end }}
+        {{- if $scrape }}
+        # Discovered by the Collector's prometheus receiver (kubernetes_sd, role: pod).
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "8080"
+        prometheus.io/path: /metrics
+        {{- end }}
       {{- end }}
     spec:
       automountServiceAccountToken: false

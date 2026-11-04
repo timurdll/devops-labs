@@ -84,3 +84,11 @@ test('catalog outage returns 502 and unknown routes return 404', async () => {
   catalogDown = false;
   assert.equal((await fetch(`${base}/api/unknown`)).status, 404);
 });
+
+test('GET /metrics exposes RED series labelled by route template', async () => {
+  await fetch(`${base}/api/orders`);
+  const text = await (await fetch(`${base}/metrics`)).text();
+  assert.match(text, /http_request_method="GET",http_route="\/api\/orders",http_response_status_code="200"/);
+  assert.match(text, /http_request_method="POST",http_route="\/api\/orders",http_response_status_code="502"/);
+  assert.match(text, /http_route="unmatched",http_response_status_code="404"/);
+});

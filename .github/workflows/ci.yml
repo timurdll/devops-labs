@@ -41,6 +41,9 @@ env:
   KUBECONFORM_IMAGE: ghcr.io/yannh/kubeconform:v0.8.0@sha256:faffaf43f95aa6425306e1ab8d6fcad72acb9049158f38e574c085ea1ec0f64e
   HELM_IMAGE: alpine/helm:4.3.1@sha256:e3f8d5c462d75470fbb1fce79ad5c20063657096d1f98c0fcea869e2600e2e5e
   ACTIONLINT_IMAGE: rhysd/actionlint:1.7.12@sha256:b1934ee5f1c509618f2508e6eb47ee0d3520686341fec936f3b79331f9315667
+  OTELCOL_IMAGE: otel/opentelemetry-collector-contrib:0.163.2@sha256:7f22d2a6748110ffb6a59bc0df448bccbf501cdb667d610ede4c61d3863d5849
+  JAEGER_IMAGE: jaegertracing/jaeger:2.22.0@sha256:836b967b5abcf1f7758066aa6b348619267a2f1459f72d472840570f9bd88a17
+  PROMETHEUS_IMAGE: prom/prometheus:v3.15.1@sha256:fa3302279710be2f21a8301ec17a8b4f2301fd829bd113839b3b6b02b6f191a2
 
 jobs:
   # ── G1 · Secret scanning ─────────────────────────────────────────────────────
@@ -131,6 +134,17 @@ jobs:
             -schema-location default \
             -schema-location 'https://raw.githubusercontent.com/datreeio/CRDs-catalog/main/{{.Group}}/{{.ResourceKind}}_{{.ResourceAPIVersion}}.json' \
             /work/bootstrap /work/apps
+      - name: Observability stack (kubeconform + Collector / Jaeger / Prometheus config check) — Week 9
+        run: |
+          kubectl kustomize k8s/observability > /tmp/observability.yaml
+          docker run --rm -v /tmp:/work "$KUBECONFORM_IMAGE" \
+            -strict -summary -kubernetes-version 1.37.0 /work/observability.yaml
+          cfg="$PWD/k8s/observability/config"
+          docker run --rm -v "$cfg:/c:ro" "$OTELCOL_IMAGE" validate --config=/c/otel-collector.yaml
+          docker run --rm -v "$cfg:/c:ro" "$JAEGER_IMAGE" validate --config=file:/c/jaeger.yaml
+          docker run --rm -v "$cfg:/etc/prometheus:ro" --entrypoint /bin/promtool "$PROMETHEUS_IMAGE" \
+            check config /etc/prometheus/prometheus.yml
+          python3 -m json.tool k8s/observability/dashboards/shoplite-red.json > /dev/null
       - name: actionlint
         run: docker run --rm -v "$PWD:/repo" -w /repo "$ACTIONLINT_IMAGE" -color
 

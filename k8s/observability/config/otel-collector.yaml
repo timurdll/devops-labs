@@ -1,0 +1,111 @@
+# OpenTelemetry Collector (contrib 0.163) — the single telemetry gateway of the cluster.
+# Apps only know one address (OTEL_EXPORTER_OTLP_ENDPOINT); backends can be swapped here
+# without touching the services. `$$` escapes `$` from the Collector's env-var expansion.
+extensions:
+  health_check:
+    endpoint: 0.0.0.0:13133
+
+receivers:
+  # Push: spans from catalog/orders (OTel SDK) and Traefik.
+  otlp:
+    protocols:
+      grpc:
+        endpoint: 0.0.0.0:4317
+      http:
+        endpoint: 0.0.0.0:4318
+  # Pull: Prometheus-compatible scraping of every pod annotated prometheus.io/scrape=true.
+  prometheus:
+    config:
+      global:
+        scrape_interval: 15s
+        scrape_timeout: 5s
+      scrape_configs:
+        - job_name: kubernetes-pods
+          kubernetes_sd_configs:
+            - role: pod
+              namespaces:
+                names: [shop-dev, shop-staging, shop-prod, ingress-traefik]
+          relabel_configs:
+            - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_scrape]
+              regex: "true"
+              action: keep
+            - source_labels: [__meta_kubernetes_pod_phase]
+              regex: Running
+              action: keep
+            # role: pod yields one target per declared container port; keep the annotated one.
+            - source_labels: [__meta_kubernetes_pod_container_port_number]
+              target_label: __meta_kubernetes_pod_annotation_prometheus_io_port
+              action: keepequal
+            - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_path]
+              regex: (.+)
+              target_label: __metrics_path__
+            - source_labels: [__meta_kubernetes_namespace]
+              target_label: namespace
+            - source_labels: [__meta_kubernetes_pod_name]
+              target_label: pod
+            - source_labels: [__meta_kubernetes_pod_label_app_kubernetes_io_name]
+              target_label: app
+            - source_labels: [__meta_kubernetes_pod_label_shoplite_io_environment]
+              target_label: environment
+            # Traefik is shared by all environments: its series get environment="edge".
+            - source_labels: [__meta_kubernetes_namespace]
+              regex: ingress-traefik
+              replacement: edge
+              target_label: environment
+        - job_name: otel-collector # self-monitoring: queue sizes, refused/dropped spans
+          static_configs:
+            - targets: [localhost:8888]
+
+processors:
+  # First in every pipeline: refuse data instead of being OOM-killed under a burst.
+  memory_limiter:
+    check_interval: 1s
+    limit_percentage: 80
+    spike_limit_percentage: 25
+  # Adds k8s.namespace.name / k8s.pod.name / k8s.deployment.name to spans, looked up by the
+  # source IP of the OTLP connection, so the apps don't have to know where they run.
+  k8s_attributes:
+    auth_type: serviceAccount
+    passthrough: false
+    extract:
+      metadata: [k8s.namespace.name, k8s.pod.name, k8s.deployment.name, k8s.node.name]
+    pod_association:
+      - sources:
+          - from: connection
+  batch:
+    send_batch_size: 1024
+    timeout: 2s
+
+exporters:
+  otlp_grpc/jaeger:
+    endpoint: jaeger.observability.svc.cluster.local:4317
+    tls:
+      insecure: true # in-cluster, NetworkPolicy-restricted; mTLS is the production step (ADR-W9-04)
+  prometheus_remote_write:
+    endpoint: http://prometheus.observability.svc.cluster.local:9090/api/v1/write
+    tls:
+      insecure: true
+    resource_to_telemetry_conversion:
+      enabled: false # target labels above are enough; avoids a label explosion
+    send_metadata: true
+
+service:
+  extensions: [health_check]
+  telemetry:
+    metrics:
+      level: normal
+      readers:
+        - pull:
+            exporter:
+              prometheus:
+                host: 0.0.0.0
+                port: 8888
+  pipelines:
+    traces:
+      receivers: [otlp]
+      processors: [memory_limiter, k8s_attributes, batch]
+      exporters: [otlp_grpc/jaeger]
+    metrics:
+      receivers: [prometheus]
+      processors: [memory_limiter, batch]
+      exporters: [prometheus_remote_write]

@@ -8,7 +8,7 @@ metadata:
   annotations:
     argocd.argoproj.io/sync-wave: "-2"
 spec:
-  description: Cluster platform (ingress controller, environment namespaces, RBAC)
+  description: Cluster platform (ingress controller, environment namespaces, RBAC, observability)
   sourceRepos:
     - https://github.com/timurdll/devops-labs.git
   destinations:
@@ -16,6 +16,8 @@ spec:
       namespace: ingress-traefik
     - server: https://kubernetes.default.svc
       namespace: "shop*"
+    - server: https://kubernetes.default.svc
+      namespace: observability
   clusterResourceWhitelist:
     - { group: "", kind: Namespace }
     - { group: networking.k8s.io, kind: IngressClass }

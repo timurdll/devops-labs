@@ -1,5 +1,7 @@
 'use strict';
 
+// Tracing first: the instrumentations must patch http/pg/undici before anything loads them.
+const { shutdownTracing } = require('./telemetry/tracing');
 const http = require('node:http');
 const { createHandler } = require('./app');
 const { createRepo } = require('./repo');
@@ -28,7 +30,9 @@ server.listen(PORT, () => {
 
 function shutdown(signal) {
   console.log(`catalog: ${signal} received, draining connections`);
-  server.close(() => repo.close().finally(() => process.exit(0)));
+  server.close(() =>
+    Promise.allSettled([repo.close(), shutdownTracing()]).finally(() => process.exit(0)),
+  );
   setTimeout(() => process.exit(1), 10000).unref();
 }
 process.on('SIGTERM', shutdown);

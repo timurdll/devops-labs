@@ -1,0 +1,74 @@
+# Default deny inside observability; only the telemetry paths of the data-flow diagram are open.
+# (kubectl port-forward and kubelet probes are not subject to NetworkPolicy.)
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: default-deny-ingress
+spec:
+  podSelector: {}
+  policyTypes: ["Ingress"]
+---
+# ① app pods + Traefik → Collector (OTLP)
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-otlp-to-collector
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: otel-collector
+  policyTypes: ["Ingress"]
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchExpressions:
+              - key: kubernetes.io/metadata.name
+                operator: In
+                values: [shop-dev, shop-staging, shop-prod, ingress-traefik]
+      ports:
+        - { port: 4317, protocol: TCP }
+        - { port: 4318, protocol: TCP }
+---
+# ② Collector → Jaeger (OTLP gRPC); Grafana → Jaeger (query API)
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-to-jaeger
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: jaeger
+  policyTypes: ["Ingress"]
+  ingress:
+    - from:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: otel-collector
+      ports:
+        - { port: 4317, protocol: TCP }
+    - from:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: grafana
+      ports:
+        - { port: 16686, protocol: TCP }
+---
+# ③ Collector → Prometheus (remote write); Grafana → Prometheus (PromQL)
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-to-prometheus
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: prometheus
+  policyTypes: ["Ingress"]
+  ingress:
+    - from:
+        - podSelector:
+            matchExpressions:
+              - key: app.kubernetes.io/name
+                operator: In
+                values: [otel-collector, grafana]
+      ports:
+        - { port: 9090, protocol: TCP }

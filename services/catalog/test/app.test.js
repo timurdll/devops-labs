@@ -74,3 +74,15 @@ test('repository errors become 500 without leaking details', async () => {
   assert.equal(res.status, 500);
   assert.deepEqual(await res.json(), { error: 'internal error' });
 });
+
+test('GET /metrics exposes RED series labelled by route template', async () => {
+  await fetch(`${base}/api/catalog/products/1`);
+  await fetch(`${base}/no/such/path`);
+  const res = await fetch(`${base}/metrics`);
+  assert.equal(res.status, 200);
+  assert.match(res.headers.get('content-type'), /openmetrics/);
+  const text = await res.text();
+  assert.match(text, /http_route="\/api\/catalog\/products\/:id",http_response_status_code="200"/);
+  assert.match(text, /http_route="unmatched",http_response_status_code="404"/);
+  assert.doesNotMatch(text, /http_route="\/metrics"/);
+});

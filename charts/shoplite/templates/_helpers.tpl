@@ -46,6 +46,18 @@ Tag precedence: services.<name>.image.tag → image.tag → Chart.appVersion.
 {{- if eq $name "orders" -}}
 {{- $_ := set $env "CATALOG_URL" (printf "http://%s" (include "shoplite.svcHost" (dict "name" "catalog" "ctx" $root))) -}}
 {{- end -}}
+{{- if and $root.Values.telemetry.enabled $svc.instrumented -}}
+{{- $tag := $svc.image.tag | default $root.Values.image.tag | default $root.Chart.AppVersion -}}
+{{- $_ := set $env "OTEL_SERVICE_NAME" $name -}}
+{{- $_ := set $env "OTEL_EXPORTER_OTLP_ENDPOINT" $root.Values.telemetry.otlpEndpoint -}}
+{{- $_ := set $env "OTEL_EXPORTER_OTLP_PROTOCOL" "http/protobuf" -}}
+{{- $_ := set $env "OTEL_TRACES_SAMPLER" "parentbased_traceidratio" -}}
+{{- $_ := set $env "OTEL_TRACES_SAMPLER_ARG" (toString $root.Values.telemetry.samplingRatio) -}}
+{{- $_ := set $env "OTEL_PROPAGATORS" "tracecontext,baggage" -}}
+{{- $_ := set $env "OTEL_METRICS_EXPORTER" "none" -}}{{/* metrics are pulled from /metrics */}}
+{{- $_ := set $env "OTEL_LOGS_EXPORTER" "none" -}}
+{{- $_ := set $env "OTEL_RESOURCE_ATTRIBUTES" (printf "deployment.environment.name=%s,service.namespace=shoplite,service.version=%s" $root.Values.global.environment $tag) -}}
+{{- end -}}
 {{- toYaml (merge (deepCopy ($svc.env | default dict)) $env) -}}
 {{- end }}
 

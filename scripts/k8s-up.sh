@@ -3,7 +3,7 @@
 set -euo pipefail
 cd "$(dirname "$0")/.."
 CLUSTER=shoplite
-VERSION=1.0.1
+VERSION=1.1.0
 
 if ! kind get clusters | grep -qx "$CLUSTER"; then
   kind create cluster --config kind/cluster.yaml --wait 120s

@@ -11,7 +11,7 @@ spec:
   project: default
   source:
     repoURL: https://github.com/timurdll/devops-labs.git
-    targetRevision: week8-gitops-helm
+    targetRevision: week9-observability
     path: gitops/apps
   destination:
     server: https://kubernetes.default.svc

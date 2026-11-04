@@ -1,6 +1,8 @@
 'use strict';
 
 const os = require('node:os');
+const { trace, SpanStatusCode } = require('@opentelemetry/api');
+const { createMetrics } = require('./telemetry/metrics');
 
 const POD_NAME = process.env.POD_NAME || os.hostname();
 const MAX_BODY_BYTES = 10 * 1024;
@@ -61,14 +63,32 @@ function validateOrder(input) {
   return { productId, quantity };
 }
 
+// Route template used as the `http_route` label and span name (bounded cardinality).
+function routeOf(path) {
+  return ['/healthz', '/readyz', '/api/orders'].includes(path) ? path : 'unmatched';
+}
+
 /**
  * Builds the HTTP handler for the orders service.
  * `repo` persists orders; `catalog` resolves products via the catalog Service (east-west call).
  */
-function createHandler({ repo, catalog, logger = console }) {
+function createHandler({ repo, catalog, logger = console, metrics = createMetrics({ service: 'orders' }) }) {
   return async function handler(req, res) {
     const url = new URL(req.url, 'http://localhost');
     const path = url.pathname.replace(/\/+$/, '') || '/';
+
+    if (req.method === 'GET' && path === '/metrics') {
+      const body = await metrics.registry.metrics();
+      res.writeHead(200, { 'Content-Type': metrics.contentType });
+      return res.end(body);
+    }
+
+    const route = routeOf(path);
+    const span = trace.getActiveSpan();
+    span?.updateName(`${req.method} ${route}`);
+    span?.setAttribute('http.route', route);
+    const end = metrics.startRequest(req.method);
+    res.on('finish', () => end(route, res.statusCode));
 
     try {
       if (req.method === 'GET' && path === '/healthz') {
@@ -105,10 +125,13 @@ function createHandler({ repo, catalog, logger = console }) {
       return send(res, 404, { error: 'not found' });
     } catch (err) {
       if (err instanceof HttpError) return send(res, err.status, { error: err.message });
-      logger.error(`orders: ${req.method} ${path} failed: ${err.message}`);
+      span?.recordException(err);
+      span?.setStatus({ code: SpanStatusCode.ERROR, message: err.message });
+      const traceId = span?.spanContext().traceId ?? '-';
+      logger.error(`orders: ${req.method} ${path} failed: ${err.message} trace_id=${traceId}`);
       return send(res, 502, { error: 'upstream or database error' });
     }
   };
 }
 
-module.exports = { createHandler, validateOrder, HttpError };
+module.exports = { createHandler, validateOrder, HttpError, routeOf };

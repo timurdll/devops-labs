@@ -1,0 +1,30 @@
+# Week 9: telemetry backend (Collector, Prometheus, Jaeger, Grafana). Wave -1 like the platform:
+# the Collector should exist before instrumented pods start exporting spans (they would only
+# drop spans otherwise; the SDK never blocks requests on telemetry).
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: observability
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "-1"
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: platform
+  source:
+    repoURL: https://github.com/timurdll/devops-labs.git
+    targetRevision: week9-observability
+    path: k8s/observability
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: observability
+  syncPolicy:
+    automated:
+      prune: true # generated ConfigMaps get a new name per change; old ones are pruned
+      selfHeal: true
+    syncOptions:
+      - ServerSideApply=true
+    retry:
+      limit: 5
+      backoff: { duration: 10s, factor: 2, maxDuration: 3m }

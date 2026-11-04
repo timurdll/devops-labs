@@ -5,6 +5,7 @@ Ingress isolation inside the release namespace:
   2. ingress controller → services exposed through the Ingress, on :8080
   3. services.<name>.allowFrom → <name> on :8080 (east-west)
   4. services with a database → postgres on :5432
+  5. OpenTelemetry Collector → instrumented services on :8080 (GET /metrics), when telemetry is on
 */ -}}
 {{- $ic := .Values.networkPolicies.ingressController }}
 apiVersion: networking.k8s.io/v1
@@ -18,10 +19,12 @@ spec:
   policyTypes: ["Ingress"]
 {{- $exposed := list }}
 {{- $dbClients := list }}
+{{- $scraped := list }}
 {{- range $name, $svc := .Values.services }}
 {{- if $svc.enabled }}
 {{- if $svc.ingressPath }}{{ $exposed = append $exposed $name }}{{ end }}
 {{- if $svc.database }}{{ $dbClients = append $dbClients $name }}{{ end }}
+{{- if $svc.instrumented }}{{ $scraped = append $scraped $name }}{{ end }}
 {{- end }}
 {{- end }}
 {{- if and .Values.ingress.enabled $exposed }}
@@ -99,6 +102,34 @@ spec:
                 values: {{ $dbClients | toJson }}
       ports:
         - port: 5432
+          protocol: TCP
+{{- end }}
+{{- if and .Values.telemetry.enabled $scraped }}
+{{- $col := .Values.telemetry.collector }}
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-telemetry-scrape
+  labels:
+    {{- include "shoplite.labels" . | nindent 4 }}
+spec:
+  podSelector:
+    matchExpressions:
+      - key: app.kubernetes.io/name
+        operator: In
+        values: {{ $scraped | toJson }}
+  policyTypes: ["Ingress"]
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: {{ $col.namespace }}
+          podSelector:
+            matchLabels:
+              app.kubernetes.io/name: {{ $col.podName }}
+      ports:
+        - port: 8080
           protocol: TCP
 {{- end }}
 {{- end }}

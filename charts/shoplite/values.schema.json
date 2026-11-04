@@ -207,6 +207,10 @@
               "maxLength": 120
             }
           }
+        },
+        "instrumented": {
+          "type": "boolean",
+          "description": "Exposes /metrics and emits OpenTelemetry spans."
         }
       }
     }
@@ -312,6 +316,48 @@
       "properties": {
         "enabled": {
           "type": "boolean"
+        }
+      }
+    },
+    "telemetry": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "Week 9: OpenTelemetry tracing + Prometheus scraping of instrumented services.",
+      "required": [
+        "enabled",
+        "otlpEndpoint",
+        "samplingRatio",
+        "collector"
+      ],
+      "properties": {
+        "enabled": {
+          "type": "boolean"
+        },
+        "otlpEndpoint": {
+          "type": "string",
+          "pattern": "^https?://[a-z0-9.-]+(:[0-9]{1,5})?/?$"
+        },
+        "samplingRatio": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "collector": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "namespace",
+            "podName"
+          ],
+          "properties": {
+            "namespace": {
+              "type": "string",
+              "pattern": "^[a-z0-9]([-a-z0-9]*[a-z0-9])?$"
+            },
+            "podName": {
+              "type": "string"
+            }
+          }
         }
       }
     },

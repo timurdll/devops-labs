@@ -16,6 +16,9 @@ HADOLINT_IMAGE=$(ci_env HADOLINT_IMAGE)
 KUBECONFORM_IMAGE=$(ci_env KUBECONFORM_IMAGE)
 ACTIONLINT_IMAGE=$(ci_env ACTIONLINT_IMAGE)
 HELM_IMAGE=$(ci_env HELM_IMAGE)
+OTELCOL_IMAGE=$(ci_env OTELCOL_IMAGE)
+JAEGER_IMAGE=$(ci_env JAEGER_IMAGE)
+PROMETHEUS_IMAGE=$(ci_env PROMETHEUS_IMAGE)
 TRIVY_IMAGE=aquasec/trivy:0.75.0@sha256:af6acf9a6b85dfe389a1941505c0ce9efef52a4719635e1a962f022a3d855daa
 SEVERITY=HIGH,CRITICAL
 K8S_VERSION=${K8S_VERSION:-1.37.0}
@@ -86,6 +89,16 @@ PY
     -schema-location default \
     -schema-location 'https://raw.githubusercontent.com/datreeio/CRDs-catalog/main/{{.Group}}/{{.ResourceKind}}_{{.ResourceAPIVersion}}.json' \
     /work/bootstrap /work/apps || rc=1
+  echo "• kubeconform + config check k8s/observability (Week 9)"
+  kubectl kustomize k8s/observability > "$EVIDENCE/rendered-observability.yaml"
+  docker run --rm -v "$PWD/$EVIDENCE:/work" "$KUBECONFORM_IMAGE" \
+    -strict -summary -kubernetes-version "$K8S_VERSION" /work/rendered-observability.yaml || rc=1
+  local cfg="$PWD/k8s/observability/config"
+  docker run --rm -v "$cfg:/c:ro" "$OTELCOL_IMAGE" validate --config=/c/otel-collector.yaml || rc=1
+  docker run --rm -v "$cfg:/c:ro" "$JAEGER_IMAGE" validate --config=file:/c/jaeger.yaml >/dev/null 2>&1 || rc=1
+  docker run --rm -v "$cfg:/etc/prometheus:ro" --entrypoint /bin/promtool "$PROMETHEUS_IMAGE" \
+    check config /etc/prometheus/prometheus.yml || rc=1
+  python3 -m json.tool k8s/observability/dashboards/shoplite-red.json > /dev/null || rc=1
   echo "• actionlint .github/workflows/ci.yml"
   docker run --rm -v "$PWD:/repo" -w /repo "$ACTIONLINT_IMAGE" -color || rc=1
   return $rc
@@ -120,21 +133,21 @@ g5_deps() {
 g6_build_and_scan() {
   local rc=0
   for s in catalog orders web; do
-    echo "• docker build shoplite/$s:1.0.1"
-    docker build -q -t "shoplite/$s:1.0.1" "services/$s" || { rc=1; continue; }
-    echo "• trivy gate shoplite/$s:1.0.1 (fixable $SEVERITY ⇒ fail)"
+    echo "• docker build shoplite/$s:1.1.0"
+    docker build -q -t "shoplite/$s:1.1.0" "services/$s" || { rc=1; continue; }
+    echo "• trivy gate shoplite/$s:1.1.0 (fixable $SEVERITY ⇒ fail)"
     trivy image --scanners vuln,secret --severity "$SEVERITY" --ignore-unfixed --exit-code 1 \
-      --format table --output "/src/$EVIDENCE/trivy/$s-gate.txt" "shoplite/$s:1.0.1"
+      --format table --output "/src/$EVIDENCE/trivy/$s-gate.txt" "shoplite/$s:1.1.0"
     local gate_rc=$?
     cat "$EVIDENCE/trivy/$s-gate.txt"
     [ $gate_rc -eq 0 ] || rc=1
     # full report (all severities, informational) + SBOM
     trivy image --skip-db-update --scanners vuln --format json \
-      --output "/src/$EVIDENCE/trivy/$s-full.json" "shoplite/$s:1.0.1" >/dev/null 2>&1
+      --output "/src/$EVIDENCE/trivy/$s-full.json" "shoplite/$s:1.1.0" >/dev/null 2>&1
     trivy image --skip-db-update --scanners vuln --format table \
-      --output "/src/$EVIDENCE/trivy/$s-full.txt" "shoplite/$s:1.0.1" >/dev/null 2>&1
+      --output "/src/$EVIDENCE/trivy/$s-full.txt" "shoplite/$s:1.1.0" >/dev/null 2>&1
     trivy image --skip-db-update --format cyclonedx \
-      --output "/src/$EVIDENCE/trivy/$s-sbom.cdx.json" "shoplite/$s:1.0.1" >/dev/null 2>&1
+      --output "/src/$EVIDENCE/trivy/$s-sbom.cdx.json" "shoplite/$s:1.1.0" >/dev/null 2>&1
   done
   return $rc
 }

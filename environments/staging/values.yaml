@@ -6,6 +6,11 @@ ingress:
 podDisruptionBudget:
   enabled: true
 
+# Week 9: traces → OpenTelemetry Collector, /metrics scraped (every request is traced).
+telemetry:
+  enabled: true
+  samplingRatio: 1.0
+
 services:
   web:
     uiConfig:

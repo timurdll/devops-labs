@@ -3,6 +3,11 @@
 ingress:
   host: dev.shop.local
 
+# Week 9: traces → OpenTelemetry Collector, /metrics scraped (every request is traced).
+telemetry:
+  enabled: true
+  samplingRatio: 1.0
+
 services:
   catalog:
     replicas: 2
@@ -18,4 +23,4 @@ services:
     replicas: 2
     uiConfig:
       shopName: ShopLite DEV
-      banner: "dev: deployed by Argo CD from git commit (Week 8 demo)"
+      banner: "dev: instrumented build 1.1.0 (Week 9)"
