@@ -5,7 +5,7 @@ ingress:
 
 services:
   catalog:
-    replicas: 1
+    replicas: 2
     resources:
       requests: { cpu: 25m, memory: 48Mi }
   orders:
@@ -18,4 +18,4 @@ services:
     replicas: 1
     uiConfig:
       shopName: ShopLite DEV
-      banner: "dev: every commit to environments/dev is deployed automatically"
+      banner: "dev: deployed by Argo CD from git commit (Week 8 demo)"
