@@ -20,6 +20,7 @@ services:
   web:
     uiConfig:
       shopName: ShopLite
+      banner: "Release 2026.11 approved for production"
 
 postgres:
   storage:
