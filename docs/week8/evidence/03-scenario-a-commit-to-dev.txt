@@ -1,0 +1,53 @@
+# Scenario A — change environments/dev/values.yaml, push, let Argo CD reconcile
+## before
+{
+  "banner": "dev: every commit to environments/dev is deployed automatically",
+  "currency": "USD",
+  "environment": "dev",
+  "shopName": "ShopLite DEV"
+}
+
+DEPLOY    REPLICAS   READY
+catalog   1          1
+## git diff
+diff --git a/environments/dev/values.yaml b/environments/dev/values.yaml
+index bdc7985..da4f94c 100644
+--- a/environments/dev/values.yaml
++++ b/environments/dev/values.yaml
+@@ -5,7 +5,7 @@ ingress:
+ 
+ services:
+   catalog:
+-    replicas: 1
++    replicas: 2
+     resources:
+       requests: { cpu: 25m, memory: 48Mi }
+   orders:
+@@ -18,4 +18,4 @@ services:
+     replicas: 1
+     uiConfig:
+       shopName: ShopLite DEV
+-      banner: "dev: every commit to environments/dev is deployed automatically"
++      banner: "dev: deployed by Argo CD from git commit (Week 8 demo)"
+## push at 17:42:18
+commit 017a7f4
+## Application timeline
+17:42:21  +  0s  shoplite-dev   sync=Synced health=Healthy operation=Succeeded revision=06da9ad
+17:42:26  +  5s  shoplite-dev   sync=OutOfSync health=Healthy operation=Running revision=017a7f4
+17:42:27  +  6s  shoplite-dev   sync=Synced health=Progressing operation=Succeeded revision=017a7f4
+17:42:29  +  8s  shoplite-dev   sync=Synced health=Healthy operation=Succeeded revision=017a7f4
+## after
+{
+  "banner": "dev: every commit to environments/dev is deployed automatically",
+  "currency": "USD",
+  "environment": "dev",
+  "shopName": "ShopLite DEV"
+}
+
+DEPLOY    REPLICAS   READY
+catalog   2          2
+NAME                       READY   STATUS        RESTARTS   AGE   IP            NODE               NOMINATED NODE   READINESS GATES
+catalog-545fd7cc48-gmkx4   1/1     Running       0          2s    10.244.1.28   shoplite-worker2   <none>           <none>
+catalog-545fd7cc48-mpsbd   1/1     Running       0          3s    10.244.2.30   shoplite-worker    <none>           <none>
+catalog-7fc8544678-7x65d   1/1     Terminating   0          22h   10.244.2.16   shoplite-worker    <none>           <none>
+catalog-7fc8544678-nlh6p   1/1     Terminating   0          3s    10.244.1.27   shoplite-worker2   <none>           <none>

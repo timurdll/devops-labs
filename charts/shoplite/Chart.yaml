@@ -5,7 +5,7 @@ description: >-
   manifests. One chart, three environments: values come from environments/<env>/values.yaml.
 type: application
 # Chart version: bump on any template/values-contract change (SemVer).
-version: 0.1.0
+version: 0.1.1
 # Default application image tag (services.<name>.image.tag and image.tag override it).
 appVersion: "1.0.1"
 kubeVersion: ">=1.33.0-0"
