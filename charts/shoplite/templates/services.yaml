@@ -50,7 +50,9 @@ spec:
         runAsGroup: {{ $svc.runAsUser }}
         seccompProfile:
           type: RuntimeDefault
-      {{- if and $pd.topologySpread.enabled (gt (int $svc.replicas) 1) }}
+      {{- /* Rendered for every replica count: if it depended on replicas > 1, scaling 1 → 2 would
+             change the pod template and restart the pods (found in scenario A). */}}
+      {{- if $pd.topologySpread.enabled }}
       topologySpreadConstraints:
         - maxSkew: 1
           topologyKey: kubernetes.io/hostname

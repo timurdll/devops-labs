@@ -1,0 +1,89 @@
+# Scenario C — change environments/prod/values.yaml; prod must wait for approval
+## git diff
+diff --git a/environments/prod/values.yaml b/environments/prod/values.yaml
+index 20d7646..2a765aa 100644
+--- a/environments/prod/values.yaml
++++ b/environments/prod/values.yaml
+@@ -20,6 +20,7 @@ services:
+   web:
+     uiConfig:
+       shopName: ShopLite
++      banner: "Release 2026.11 approved for production"
+ 
+ postgres:
+   storage:
+## push at 17:42:35
+commit 958534b
+## Application timeline without approval (120 s)
+17:42:39  +  0s  shoplite-prod  sync=Synced health=Healthy operation=Succeeded revision=96cfda0
+17:43:26  + 47s  shoplite-prod  sync=OutOfSync health=Healthy operation=Succeeded revision=958534b
+(stopped after 120s)
+## prod still serves the old config:
+{
+  "banner": "",
+  "currency": "USD",
+  "environment": "prod",
+  "shopName": "ShopLite"
+}
+
+## operator approves at 17:44:40
+apps               StatefulSet          shop-prod  postgres                       Synced  Healthy        statefulset.apps/postgres configured
+networking.k8s.io  Ingress              shop-prod  shop                           Synced  Healthy        ingress.networking.k8s.io/shop unchanged
+
+Name:               argocd/shoplite-prod
+Project:            shoplite
+Server:             https://kubernetes.default.svc
+Namespace:          shop-prod
+URL:                http://localhost:57284/applications/shoplite-prod
+Source:
+- Repo:             https://github.com/timurdll/devops-labs.git
+  Target:           week8-gitops-helm
+  Path:             charts/shoplite
+  Helm Values:      ../../environments/prod/values.yaml
+SyncWindow:         Sync Allowed
+Sync Policy:        Manual
+Sync Status:        Synced to week8-gitops-helm (958534b)
+Health Status:      Healthy
+
+
+GROUP              KIND                 NAMESPACE  NAME                           STATUS  HEALTH   HOOK  MESSAGE
+networking.k8s.io  NetworkPolicy        shop-prod  default-deny-ingress           Synced                 networkpolicy.networking.k8s.io/default-deny-ingress unchanged
+networking.k8s.io  NetworkPolicy        shop-prod  allow-from-ingress-controller  Synced                 networkpolicy.networking.k8s.io/allow-from-ingress-controller unchanged
+networking.k8s.io  NetworkPolicy        shop-prod  allow-apps-to-postgres         Synced                 networkpolicy.networking.k8s.io/allow-apps-to-postgres unchanged
+networking.k8s.io  NetworkPolicy        shop-prod  allow-to-catalog               Synced                 networkpolicy.networking.k8s.io/allow-to-catalog unchanged
+policy             PodDisruptionBudget  shop-prod  catalog                        Synced  Healthy        poddisruptionbudget.policy/catalog configured
+policy             PodDisruptionBudget  shop-prod  orders                         Synced  Healthy        poddisruptionbudget.policy/orders configured
+policy             PodDisruptionBudget  shop-prod  web                            Synced  Healthy        poddisruptionbudget.policy/web configured
+                   ConfigMap            shop-prod  catalog-config                 Synced                 configmap/catalog-config unchanged
+                   ConfigMap            shop-prod  orders-config                  Synced                 configmap/orders-config unchanged
+                   ConfigMap            shop-prod  postgres-init                  Synced                 configmap/postgres-init unchanged
+                   ConfigMap            shop-prod  web-config                     Synced                 configmap/web-config configured
+                   Service              shop-prod  web                            Synced  Healthy        service/web unchanged
+                   Service              shop-prod  postgres                       Synced  Healthy        service/postgres unchanged
+                   Service              shop-prod  orders                         Synced  Healthy        service/orders unchanged
+                   Service              shop-prod  catalog                        Synced  Healthy        service/catalog unchanged
+apps               Deployment           shop-prod  catalog                        Synced  Healthy        deployment.apps/catalog unchanged
+apps               Deployment           shop-prod  web                            Synced  Healthy        deployment.apps/web unchanged
+apps               Deployment           shop-prod  orders                         Synced  Healthy        deployment.apps/orders unchanged
+apps               StatefulSet          shop-prod  postgres                       Synced  Healthy        statefulset.apps/postgres configured
+networking.k8s.io  Ingress              shop-prod  shop                           Synced  Healthy        ingress.networking.k8s.io/shop unchanged
+17:44:46  +  0s  shoplite-prod  sync=Synced health=Healthy operation=Succeeded revision=958534b
+## after
+{
+  "banner": "",
+  "currency": "USD",
+  "environment": "prod",
+  "shopName": "ShopLite"
+}
+
+
+## propagation of the file-mounted ConfigMap (kubelet sync, eventual)
+12:44:45 UTC  ConfigMap web-config updated by argocd-controller (managedFields time)
+12:45:32 UTC  first response with the new banner from prod.shop.local (+47 s)
+{
+  "banner": "",
+  "currency": "USD",
+  "environment": "prod",
+  "shopName": "ShopLite"
+}
+

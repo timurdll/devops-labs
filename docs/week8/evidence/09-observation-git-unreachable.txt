@@ -1,0 +1,24 @@
+# Observation: GitHub unreachable during the first demo run (2026-11-03 19:04–19:35 +05)
+# git push over SSH and Argo CD's HTTPS fetch both failed (connection refused / can't assign address).
+# The demo commits never reached GitHub; they were discarded and the demo was re-run (03–05).
+
+## Argo CD: comparison impossible → sync status Unknown, revision = branch name (unresolved)
+19:17:29  + 33s  shoplite-prod  sync=Synced health=Healthy operation=Succeeded revision=291b2cf
+19:07:52  + 41s  shoplite-dev   sync=Unknown health=Healthy operation=Succeeded revision=week8-g
+
+## Drift injected at 19:12:11 (kubectl scale deploy/orders --replicas=5 -n shop-staging) was NOT reverted while git was unreachable:
+DEPLOY   REPLICAS   READY
+orders   5          5
+
+## argocd app sync shoplite-prod at 19:34:51:
+{"level":"fatal","msg":"rpc error: code = FailedPrecondition desc = error resolving repo revision: rpc error: code = Unknown desc = failed to list refs: Get \"https://github.com/timurdll/devops-labs.git/info/refs?service=git-upload-pack\": dial tcp 140.82.121.4:443: connect: connection refused","time":"2026-11-03T19:34:54+05:00"}
+
+## After connectivity returned (2026-11-04 17:42 +05): self-heal restored git state without any manual action
+APP                SYNC     HEALTH    REV
+platform           Synced   Healthy   291b2cf59ed5f42d5542905eac6ac48f44656d86
+root               Synced   Healthy   291b2cf59ed5f42d5542905eac6ac48f44656d86
+shoplite-dev       Synced   Healthy   291b2cf59ed5f42d5542905eac6ac48f44656d86
+shoplite-prod      Synced   Healthy   291b2cf59ed5f42d5542905eac6ac48f44656d86
+shoplite-staging   Synced   Healthy   291b2cf59ed5f42d5542905eac6ac48f44656d86
+NAME     READY   UP-TO-DATE   AVAILABLE   AGE
+orders   2/2     2            2           22h

@@ -1,0 +1,22 @@
+# Scenario B — manual drift: kubectl scale deploy/orders --replicas=5 in shop-staging
+## drift at 17:42:29
+deployment.apps/orders scaled
+17:42:29  +  0s  shoplite-staging sync=Synced health=Healthy operation=Succeeded revision=96cfda0
+(stopped after 5s)
+## Application timeline (self-heal)
+17:42:34  +  0s  shoplite-staging sync=Synced health=Healthy operation=Succeeded revision=96cfda0
+DEPLOY   REPLICAS   READY
+orders   2          2
+## ReplicaSet events
+5s          Normal   SuccessfulCreate   replicaset/orders-56f46b7ddc   Created pod: orders-56f46b7ddc-dnnh6
+5s          Normal   SuccessfulCreate   replicaset/orders-56f46b7ddc   Created pod: orders-56f46b7ddc-r6zt2
+5s          Normal   SuccessfulCreate   replicaset/orders-56f46b7ddc   Created pod: orders-56f46b7ddc-bk5zw
+4s          Normal   SuccessfulDelete   replicaset/orders-56f46b7ddc   Deleted pod: orders-56f46b7ddc-dnnh6
+4s          Normal   SuccessfulDelete   replicaset/orders-56f46b7ddc   Deleted pod: orders-56f46b7ddc-r6zt2
+4s          Normal   SuccessfulDelete   replicaset/orders-56f46b7ddc   Deleted pod: orders-56f46b7ddc-bk5zw
+
+## Argo CD application-controller log (self-heal = partial automated sync of the drifted object only)
+2026-11-04T12:42:29Z Initiated automated sync to '96cfda086fb486ee5a4cbe574d28453ac54da008'
+2026-11-04T12:42:29Z Initiated automated sync to '96cfda086fb486ee5a4cbe574d28453ac54da008'
+2026-11-04T12:42:29Z Initialized new operation: resources=[SyncOperationResource{Group:apps,Kind:Deployment,Name:orders,Namespace:,] selfHealAttemptsCount=2
+2026-11-04T12:42:30Z Partial sync operation to 96cfda086fb486ee5a4cbe574d28453ac54da008 succeeded

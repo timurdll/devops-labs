@@ -9,7 +9,13 @@ cd "$(dirname "$0")/.."
 EV=docs/week8/evidence; mkdir -p "$EV"
 BRANCH=$(git rev-parse --abbrev-ref HEAD)
 curl_cfg() { curl -s -H "Host: $1.shop.local" http://127.0.0.1:8080/config/config.json; }
-push() { git add "$@"; git commit -q -m "$MSG [skip ci]"; git push -q origin "$BRANCH"; git rev-parse --short=7 HEAD; }
+# A demo commit that never reaches GitHub proves nothing: abort instead of watching a no-op.
+push() {
+  git add "$@"; git commit -q -m "$MSG [skip ci]"
+  git push -q origin "$BRANCH" >&2 || { echo "git push failed — aborting" >&2; git reset -q --hard HEAD~1; exit 1; }
+  git rev-parse --short=7 HEAD
+}
+git ls-remote --exit-code origin "refs/heads/$BRANCH" >/dev/null || { echo "GitHub unreachable"; exit 1; }
 
 # ── A · commit to dev ──────────────────────────────────────────────────────────────────────────
 {
