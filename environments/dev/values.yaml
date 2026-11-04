@@ -15,7 +15,7 @@ services:
     env:
       CATALOG_TIMEOUT_MS: "5000" # generous: dev pods are often cold
   web:
-    replicas: 1
+    replicas: 2
     uiConfig:
       shopName: ShopLite DEV
       banner: "dev: deployed by Argo CD from git commit (Week 8 demo)"
