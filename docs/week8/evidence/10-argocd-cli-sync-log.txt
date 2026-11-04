@@ -1,0 +1,65 @@
+# argocd CLI (--core: reads the Application CRs through the Kubernetes API) — 2026-11-04 17:47:53 +05
+
+$ argocd app list --core
+NAME                     CLUSTER                         NAMESPACE        PROJECT   STATUS     HEALTH   SYNCPOLICY  CONDITIONS  REPO                                         PATH             TARGET
+argocd/platform          https://kubernetes.default.svc  ingress-traefik  platform  Synced     Healthy  Auto        <none>      https://github.com/timurdll/devops-labs.git  k8s/platform     week8-gitops-helm
+argocd/root              https://kubernetes.default.svc  argocd           default   Synced     Healthy  Auto-Prune  <none>      https://github.com/timurdll/devops-labs.git  gitops/apps      week8-gitops-helm
+argocd/shoplite-dev      https://kubernetes.default.svc  shop-dev         shoplite  Synced     Healthy  Auto-Prune  <none>      https://github.com/timurdll/devops-labs.git  charts/shoplite  week8-gitops-helm
+argocd/shoplite-prod     https://kubernetes.default.svc  shop-prod        shoplite  OutOfSync  Healthy  Manual      <none>      https://github.com/timurdll/devops-labs.git  charts/shoplite  week8-gitops-helm
+argocd/shoplite-staging  https://kubernetes.default.svc  shop-staging     shoplite  Synced     Healthy  Auto-Prune  <none>      https://github.com/timurdll/devops-labs.git  charts/shoplite  week8-gitops-helm
+
+$ argocd app get shoplite-dev --core
+Name:               argocd/shoplite-dev
+Project:            shoplite
+Server:             https://kubernetes.default.svc
+Namespace:          shop-dev
+URL:                http://localhost:57481/applications/shoplite-dev
+Source:
+- Repo:             https://github.com/timurdll/devops-labs.git
+  Target:           week8-gitops-helm
+  Path:             charts/shoplite
+  Helm Values:      ../../environments/dev/values.yaml
+SyncWindow:         Sync Allowed
+Sync Policy:        Automated (Prune)
+Sync Status:        Synced to week8-gitops-helm (c6355e7)
+Health Status:      Healthy
+
+GROUP              KIND           NAMESPACE  NAME                           STATUS  HEALTH   HOOK  MESSAGE
+networking.k8s.io  NetworkPolicy  shop-dev   allow-to-catalog               Synced                 networkpolicy.networking.k8s.io/allow-to-catalog unchanged
+networking.k8s.io  NetworkPolicy  shop-dev   allow-apps-to-postgres         Synced                 networkpolicy.networking.k8s.io/allow-apps-to-postgres unchanged
+networking.k8s.io  NetworkPolicy  shop-dev   default-deny-ingress           Synced                 networkpolicy.networking.k8s.io/default-deny-ingress unchanged
+networking.k8s.io  NetworkPolicy  shop-dev   allow-from-ingress-controller  Synced                 networkpolicy.networking.k8s.io/allow-from-ingress-controller unchanged
+                   ConfigMap      shop-dev   orders-config                  Synced                 configmap/orders-config unchanged
+                   ConfigMap      shop-dev   web-config                     Synced                 configmap/web-config unchanged
+                   ConfigMap      shop-dev   catalog-config                 Synced                 configmap/catalog-config unchanged
+                   ConfigMap      shop-dev   postgres-init                  Synced                 configmap/postgres-init unchanged
+                   Service        shop-dev   web                            Synced  Healthy        service/web unchanged
+                   Service        shop-dev   orders                         Synced  Healthy        service/orders unchanged
+                   Service        shop-dev   catalog                        Synced  Healthy        service/catalog unchanged
+                   Service        shop-dev   postgres                       Synced  Healthy        service/postgres unchanged
+apps               Deployment     shop-dev   catalog                        Synced  Healthy        deployment.apps/catalog unchanged
+apps               Deployment     shop-dev   orders                         Synced  Healthy        deployment.apps/orders unchanged
+apps               Deployment     shop-dev   web                            Synced  Healthy        deployment.apps/web configured
+apps               StatefulSet    shop-dev   postgres                       Synced  Healthy        statefulset.apps/postgres configured
+networking.k8s.io  Ingress        shop-dev   shop                           Synced  Healthy        ingress.networking.k8s.io/shop unchanged
+
+$ argocd app history shoplite-dev --core
+SOURCE  https://github.com/timurdll/devops-labs.git
+ID      DATE                           REVISION
+0       2026-11-03 19:00:24 +0500 +05  week8-gitops-helm (b7f0412)
+1       2026-11-04 17:42:26 +0500 +05  week8-gitops-helm (96cfda0)
+2       2026-11-04 17:46:26 +0500 +05  week8-gitops-helm (5021563)
+3       2026-11-04 17:47:26 +0500 +05  week8-gitops-helm (c6355e7)
+
+$ argocd app history shoplite-staging --core
+SOURCE  https://github.com/timurdll/devops-labs.git
+ID      DATE                           REVISION
+0       2026-11-03 19:00:24 +0500 +05  week8-gitops-helm (b7f0412)
+1       2026-11-04 17:46:26 +0500 +05  week8-gitops-helm (5021563)
+
+$ argocd app history shoplite-prod --core
+SOURCE  https://github.com/timurdll/devops-labs.git
+ID      DATE                           REVISION
+0       2026-11-03 19:01:34 +0500 +05  week8-gitops-helm (f823253)
+1       2026-11-04 17:44:45 +0500 +05  week8-gitops-helm (958534b)
+

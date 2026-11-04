@@ -1,96 +1,98 @@
 ════ shop-dev ════
 NAME                      READY   UP-TO-DATE   AVAILABLE   AGE
-deployment.apps/catalog   1/1     1            1           3m23s
-deployment.apps/orders    1/1     1            1           3m23s
-deployment.apps/web       1/1     1            1           3m23s
+deployment.apps/catalog   2/2     2            2           22h
+deployment.apps/orders    1/1     1            1           22h
+deployment.apps/web       2/2     2            2           22h
 
 NAME                        READY   AGE
-statefulset.apps/postgres   1/1     3m23s
+statefulset.apps/postgres   1/1     22h
 
 NAME                             CLASS     HOSTS            ADDRESS     PORTS   AGE
-ingress.networking.k8s.io/shop   traefik   dev.shop.local   127.0.0.1   80      3m23s
+ingress.networking.k8s.io/shop   traefik   dev.shop.local   127.0.0.1   80      22h
 
 NAME                                                            POD-SELECTOR                                     AGE
-networkpolicy.networking.k8s.io/allow-apps-to-postgres          app.kubernetes.io/name=postgres                  3m24s
-networkpolicy.networking.k8s.io/allow-from-ingress-controller   app.kubernetes.io/name in (catalog,orders,web)   3m24s
-networkpolicy.networking.k8s.io/allow-to-catalog                app.kubernetes.io/name=catalog                   3m24s
-networkpolicy.networking.k8s.io/default-deny-ingress            <none>                                           3m24s
+networkpolicy.networking.k8s.io/allow-apps-to-postgres          app.kubernetes.io/name=postgres                  22h
+networkpolicy.networking.k8s.io/allow-from-ingress-controller   app.kubernetes.io/name in (catalog,orders,web)   22h
+networkpolicy.networking.k8s.io/allow-to-catalog                app.kubernetes.io/name=catalog                   22h
+networkpolicy.networking.k8s.io/default-deny-ingress            <none>                                           22h
 
 NAME                                    STATUS   VOLUME                                     CAPACITY   ACCESS MODES   STORAGECLASS   VOLUMEATTRIBUTESCLASS   AGE
-persistentvolumeclaim/data-postgres-0   Bound    pvc-69ca4c00-0b98-4fe2-a4da-79163cb89237   1Gi        RWO            standard       <unset>                 3m23s
-NAME                       READY   STATUS    RESTARTS   AGE     IP            NODE              NOMINATED NODE   READINESS GATES
-catalog-7fc8544678-7x65d   1/1     Running   0          3m23s   10.244.2.16   shoplite-worker   <none>           <none>
-orders-664989c6d8-5jnp2    1/1     Running   0          3m23s   10.244.2.15   shoplite-worker   <none>           <none>
-postgres-0                 1/1     Running   0          3m23s   10.244.2.21   shoplite-worker   <none>           <none>
-web-5f89fc7757-c8vzx       1/1     Running   0          3m23s   10.244.2.18   shoplite-worker   <none>           <none>
+persistentvolumeclaim/data-postgres-0   Bound    pvc-69ca4c00-0b98-4fe2-a4da-79163cb89237   1Gi        RWO            standard       <unset>                 22h
+NAME                       READY   STATUS    RESTARTS   AGE     IP            NODE               NOMINATED NODE   READINESS GATES
+catalog-545fd7cc48-gmkx4   1/1     Running   0          5m53s   10.244.1.28   shoplite-worker2   <none>           <none>
+catalog-545fd7cc48-mpsbd   1/1     Running   0          5m54s   10.244.2.30   shoplite-worker    <none>           <none>
+orders-548c99bdc4-wbqcp    1/1     Running   0          114s    10.244.2.34   shoplite-worker    <none>           <none>
+postgres-0                 1/1     Running   0          22h     10.244.2.21   shoplite-worker    <none>           <none>
+web-79778ddb44-7lr8n       1/1     Running   0          114s    10.244.2.35   shoplite-worker    <none>           <none>
+web-79778ddb44-wmcjt       1/1     Running   0          54s     10.244.1.29   shoplite-worker2   <none>           <none>
 
 ════ shop-staging ════
 NAME                      READY   UP-TO-DATE   AVAILABLE   AGE
-deployment.apps/catalog   2/2     2            2           3m23s
-deployment.apps/orders    2/2     2            2           3m23s
-deployment.apps/web       2/2     2            2           3m23s
+deployment.apps/catalog   2/2     2            2           22h
+deployment.apps/orders    2/2     2            2           22h
+deployment.apps/web       2/2     2            2           22h
 
 NAME                        READY   AGE
-statefulset.apps/postgres   1/1     3m23s
+statefulset.apps/postgres   1/1     22h
 
 NAME                                 MIN AVAILABLE   MAX UNAVAILABLE   ALLOWED DISRUPTIONS   AGE
-poddisruptionbudget.policy/catalog   1               N/A               1                     3m24s
-poddisruptionbudget.policy/orders    1               N/A               1                     3m24s
-poddisruptionbudget.policy/web       1               N/A               1                     3m24s
+poddisruptionbudget.policy/catalog   1               N/A               1                     22h
+poddisruptionbudget.policy/orders    1               N/A               1                     22h
+poddisruptionbudget.policy/web       1               N/A               1                     22h
 
 NAME                             CLASS     HOSTS                ADDRESS     PORTS   AGE
-ingress.networking.k8s.io/shop   traefik   staging.shop.local   127.0.0.1   80      3m23s
+ingress.networking.k8s.io/shop   traefik   staging.shop.local   127.0.0.1   80      22h
 
 NAME                                                            POD-SELECTOR                                     AGE
-networkpolicy.networking.k8s.io/allow-apps-to-postgres          app.kubernetes.io/name=postgres                  3m24s
-networkpolicy.networking.k8s.io/allow-from-ingress-controller   app.kubernetes.io/name in (catalog,orders,web)   3m24s
-networkpolicy.networking.k8s.io/allow-to-catalog                app.kubernetes.io/name=catalog                   3m24s
-networkpolicy.networking.k8s.io/default-deny-ingress            <none>                                           3m24s
+networkpolicy.networking.k8s.io/allow-apps-to-postgres          app.kubernetes.io/name=postgres                  22h
+networkpolicy.networking.k8s.io/allow-from-ingress-controller   app.kubernetes.io/name in (catalog,orders,web)   22h
+networkpolicy.networking.k8s.io/allow-to-catalog                app.kubernetes.io/name=catalog                   22h
+networkpolicy.networking.k8s.io/default-deny-ingress            <none>                                           22h
 
 NAME                                    STATUS   VOLUME                                     CAPACITY   ACCESS MODES   STORAGECLASS   VOLUMEATTRIBUTESCLASS   AGE
-persistentvolumeclaim/data-postgres-0   Bound    pvc-9d4aa5bd-01c4-4942-88c7-3443b18c9d83   1Gi        RWO            standard       <unset>                 3m23s
-NAME                      READY   STATUS    RESTARTS   AGE     IP            NODE               NOMINATED NODE   READINESS GATES
-catalog-ff448555b-hp4wb   1/1     Running   0          3m23s   10.244.2.13   shoplite-worker    <none>           <none>
-catalog-ff448555b-qwzq5   1/1     Running   0          3m23s   10.244.1.16   shoplite-worker2   <none>           <none>
-orders-56f46b7ddc-s2s2f   1/1     Running   0          3m23s   10.244.1.15   shoplite-worker2   <none>           <none>
-orders-56f46b7ddc-vcjzv   1/1     Running   0          3m23s   10.244.2.14   shoplite-worker    <none>           <none>
-postgres-0                1/1     Running   0          3m23s   10.244.2.22   shoplite-worker    <none>           <none>
-web-58d4fc744b-2cg97      1/1     Running   0          3m23s   10.244.1.17   shoplite-worker2   <none>           <none>
-web-58d4fc744b-s47lv      1/1     Running   0          3m23s   10.244.2.17   shoplite-worker    <none>           <none>
+persistentvolumeclaim/data-postgres-0   Bound    pvc-9d4aa5bd-01c4-4942-88c7-3443b18c9d83   1Gi        RWO            standard       <unset>                 22h
+NAME                      READY   STATUS    RESTARTS   AGE   IP            NODE               NOMINATED NODE   READINESS GATES
+catalog-ff448555b-hp4wb   1/1     Running   0          22h   10.244.2.13   shoplite-worker    <none>           <none>
+catalog-ff448555b-qwzq5   1/1     Running   0          22h   10.244.1.16   shoplite-worker2   <none>           <none>
+orders-56f46b7ddc-j8n4t   1/1     Running   0          22h   10.244.1.26   shoplite-worker2   <none>           <none>
+orders-56f46b7ddc-s2s2f   1/1     Running   0          22h   10.244.1.15   shoplite-worker2   <none>           <none>
+postgres-0                1/1     Running   0          22h   10.244.2.22   shoplite-worker    <none>           <none>
+web-58d4fc744b-2cg97      1/1     Running   0          22h   10.244.1.17   shoplite-worker2   <none>           <none>
+web-58d4fc744b-s47lv      1/1     Running   0          22h   10.244.2.17   shoplite-worker    <none>           <none>
 
 ════ shop-prod ════
 NAME                      READY   UP-TO-DATE   AVAILABLE   AGE
-deployment.apps/catalog   3/3     3            3           2m13s
-deployment.apps/orders    3/3     3            3           2m13s
-deployment.apps/web       2/2     2            2           2m13s
+deployment.apps/catalog   3/3     3            3           22h
+deployment.apps/orders    3/3     3            3           22h
+deployment.apps/web       2/2     2            2           22h
 
 NAME                        READY   AGE
-statefulset.apps/postgres   1/1     2m13s
+statefulset.apps/postgres   1/1     22h
 
 NAME                                 MIN AVAILABLE   MAX UNAVAILABLE   ALLOWED DISRUPTIONS   AGE
-poddisruptionbudget.policy/catalog   1               N/A               2                     2m14s
-poddisruptionbudget.policy/orders    1               N/A               2                     2m14s
-poddisruptionbudget.policy/web       1               N/A               1                     2m14s
+poddisruptionbudget.policy/catalog   1               N/A               2                     22h
+poddisruptionbudget.policy/orders    1               N/A               2                     22h
+poddisruptionbudget.policy/web       1               N/A               1                     22h
 
 NAME                             CLASS     HOSTS             ADDRESS     PORTS   AGE
-ingress.networking.k8s.io/shop   traefik   prod.shop.local   127.0.0.1   80      2m13s
+ingress.networking.k8s.io/shop   traefik   prod.shop.local   127.0.0.1   80      22h
 
 NAME                                                            POD-SELECTOR                                     AGE
-networkpolicy.networking.k8s.io/allow-apps-to-postgres          app.kubernetes.io/name=postgres                  2m14s
-networkpolicy.networking.k8s.io/allow-from-ingress-controller   app.kubernetes.io/name in (catalog,orders,web)   2m14s
-networkpolicy.networking.k8s.io/allow-to-catalog                app.kubernetes.io/name=catalog                   2m14s
-networkpolicy.networking.k8s.io/default-deny-ingress            <none>                                           2m14s
+networkpolicy.networking.k8s.io/allow-apps-to-postgres          app.kubernetes.io/name=postgres                  22h
+networkpolicy.networking.k8s.io/allow-from-ingress-controller   app.kubernetes.io/name in (catalog,orders,web)   22h
+networkpolicy.networking.k8s.io/allow-to-catalog                app.kubernetes.io/name=catalog                   22h
+networkpolicy.networking.k8s.io/default-deny-ingress            <none>                                           22h
 
 NAME                                    STATUS   VOLUME                                     CAPACITY   ACCESS MODES   STORAGECLASS   VOLUMEATTRIBUTESCLASS   AGE
-persistentvolumeclaim/data-postgres-0   Bound    pvc-349e8c81-03ae-4bae-93a6-97ba98e606e9   2Gi        RWO            standard       <unset>                 2m13s
-NAME                       READY   STATUS    RESTARTS   AGE     IP            NODE               NOMINATED NODE   READINESS GATES
-catalog-8589bfb5b6-djqr9   1/1     Running   0          2m13s   10.244.2.25   shoplite-worker    <none>           <none>
-catalog-8589bfb5b6-txjmh   1/1     Running   0          2m13s   10.244.1.20   shoplite-worker2   <none>           <none>
-catalog-8589bfb5b6-zhnwd   1/1     Running   0          2m13s   10.244.1.19   shoplite-worker2   <none>           <none>
-orders-54cdfc549c-bll6k    1/1     Running   0          2m13s   10.244.2.26   shoplite-worker    <none>           <none>
-orders-54cdfc549c-j4k97    1/1     Running   0          2m13s   10.244.2.24   shoplite-worker    <none>           <none>
-orders-54cdfc549c-qvzzr    1/1     Running   0          2m13s   10.244.1.21   shoplite-worker2   <none>           <none>
-postgres-0                 1/1     Running   0          2m13s   10.244.1.24   shoplite-worker2   <none>           <none>
-web-79db94b9cd-ffbs9       1/1     Running   0          2m13s   10.244.2.27   shoplite-worker    <none>           <none>
-web-79db94b9cd-rfwtc       1/1     Running   0          2m13s   10.244.1.22   shoplite-worker2   <none>           <none>
+persistentvolumeclaim/data-postgres-0   Bound    pvc-349e8c81-03ae-4bae-93a6-97ba98e606e9   2Gi        RWO            standard       <unset>                 22h
+NAME                       READY   STATUS    RESTARTS   AGE   IP            NODE               NOMINATED NODE   READINESS GATES
+catalog-8589bfb5b6-djqr9   1/1     Running   0          22h   10.244.2.25   shoplite-worker    <none>           <none>
+catalog-8589bfb5b6-txjmh   1/1     Running   0          22h   10.244.1.20   shoplite-worker2   <none>           <none>
+catalog-8589bfb5b6-zhnwd   1/1     Running   0          22h   10.244.1.19   shoplite-worker2   <none>           <none>
+orders-54cdfc549c-bll6k    1/1     Running   0          22h   10.244.2.26   shoplite-worker    <none>           <none>
+orders-54cdfc549c-j4k97    1/1     Running   0          22h   10.244.2.24   shoplite-worker    <none>           <none>
+orders-54cdfc549c-qvzzr    1/1     Running   0          22h   10.244.1.21   shoplite-worker2   <none>           <none>
+postgres-0                 1/1     Running   0          22h   10.244.1.24   shoplite-worker2   <none>           <none>
+web-79db94b9cd-ffbs9       1/1     Running   0          22h   10.244.2.27   shoplite-worker    <none>           <none>
+web-79db94b9cd-rfwtc       1/1     Running   0          22h   10.244.1.22   shoplite-worker2   <none>           <none>
 

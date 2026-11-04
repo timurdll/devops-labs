@@ -1,17 +1,17 @@
-# Design (helm template of git) vs runtime — 19:03:57
+# Design (helm template of git) vs runtime — 17:48:32
 CHECK                                        EXPECTED                 ACTUAL                   RESULT
 app shoplite-dev                             Synced/Healthy           Synced/Healthy           PASS
-app shoplite-dev revision = git HEAD         f823253                  f823253                  PASS
-shop-dev deploy/catalog ready/desired        1/1                      1/1                      PASS
+app shoplite-dev revision = git HEAD         c6355e7                  c6355e7                  PASS
+shop-dev deploy/catalog ready/desired        2/2                      2/2                      PASS
 shop-dev deploy/orders ready/desired         1/1                      1/1                      PASS
-shop-dev deploy/web ready/desired            1/1                      1/1                      PASS
+shop-dev deploy/web ready/desired            2/2                      2/2                      PASS
 shop-dev ingress host                        dev.shop.local           dev.shop.local           PASS
 shop-dev PodDisruptionBudgets                0                        0                        PASS
 shop-dev pvc/data-postgres-0                 Bound:1Gi                Bound:1Gi                PASS
 shop-dev PSA enforce                         restricted               restricted               PASS
 shop-dev HTTP GET /api/catalog/products      200                      200                      PASS
 app shoplite-staging                         Synced/Healthy           Synced/Healthy           PASS
-app shoplite-staging revision = git HEAD     f823253                  f823253                  PASS
+app shoplite-staging revision = git HEAD     c6355e7                  c6355e7                  PASS
 shop-staging deploy/catalog ready/desired    2/2                      2/2                      PASS
 shop-staging deploy/orders ready/desired     2/2                      2/2                      PASS
 shop-staging deploy/web ready/desired        2/2                      2/2                      PASS
@@ -21,7 +21,7 @@ shop-staging pvc/data-postgres-0             Bound:1Gi                Bound:1Gi 
 shop-staging PSA enforce                     restricted               restricted               PASS
 shop-staging HTTP GET /api/catalog/products  200                      200                      PASS
 app shoplite-prod                            Synced/Healthy           Synced/Healthy           PASS
-app shoplite-prod revision = git HEAD        f823253                  f823253                  PASS
+app shoplite-prod revision = git HEAD        c6355e7                  c6355e7                  PASS
 shop-prod deploy/catalog ready/desired       3/3                      3/3                      PASS
 shop-prod deploy/orders ready/desired        3/3                      3/3                      PASS
 shop-prod deploy/web ready/desired           2/2                      2/2                      PASS

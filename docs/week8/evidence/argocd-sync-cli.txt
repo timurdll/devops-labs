@@ -1,0 +1,20 @@
+$ argocd app list --core   (CLUSTER, REPO, PATH columns trimmed)
+NAME                     NAMESPACE        PROJECT   STATUS     HEALTH   SYNCPOLICY  TARGET
+argocd/platform          ingress-traefik  platform  Synced     Healthy  Auto        week8-gitops-helm
+argocd/root              argocd           default   Synced     Healthy  Auto-Prune  week8-gitops-helm
+argocd/shoplite-dev      shop-dev         shoplite  Synced     Healthy  Auto-Prune  week8-gitops-helm
+argocd/shoplite-prod     shop-prod        shoplite  Synced     Healthy  Manual      week8-gitops-helm
+argocd/shoplite-staging  shop-staging     shoplite  Synced     Healthy  Auto-Prune  week8-gitops-helm
+
+$ argocd app history shoplite-prod --core
+ID      DATE                           REVISION
+0       2026-11-03 19:01:34 +0500 +05  week8-gitops-helm (f823253)
+1       2026-11-04 17:44:45 +0500 +05  week8-gitops-helm (958534b)
+2       2026-11-04 17:48:17 +0500 +05  week8-gitops-helm (c6355e7)
+
+$ argocd app history shoplite-dev --core
+ID      DATE                           REVISION
+0       2026-11-03 19:00:24 +0500 +05  week8-gitops-helm (b7f0412)
+1       2026-11-04 17:42:26 +0500 +05  week8-gitops-helm (96cfda0)
+2       2026-11-04 17:46:26 +0500 +05  week8-gitops-helm (5021563)
+3       2026-11-04 17:47:26 +0500 +05  week8-gitops-helm (c6355e7)

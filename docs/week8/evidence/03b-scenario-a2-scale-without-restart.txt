@@ -1,0 +1,30 @@
+# Scenario A2 — after the chart fix (0.1.1): scale dev web 1 → 2 through git; the running pod must survive
+## before
+NAME                   STARTED                NODE
+web-79778ddb44-7lr8n   2026-11-04T12:46:26Z   shoplite-worker
+diff --git a/environments/dev/values.yaml b/environments/dev/values.yaml
+index da4f94c..25a727f 100644
+--- a/environments/dev/values.yaml
++++ b/environments/dev/values.yaml
+@@ -15,7 +15,7 @@ services:
+     env:
+       CATALOG_TIMEOUT_MS: "5000" # generous: dev pods are often cold
+   web:
+-    replicas: 1
++    replicas: 2
+     uiConfig:
+       shopName: ShopLite DEV
+       banner: "dev: deployed by Argo CD from git commit (Week 8 demo)"
+## push at 17:46:40 commit c6355e7
+17:46:40  +  0s  shoplite-dev   sync=Synced health=Healthy operation=Succeeded revision=5021563
+17:47:26  + 46s  shoplite-dev   sync=OutOfSync health=Healthy operation=Running revision=c6355e7
+17:47:27  + 47s  shoplite-dev   sync=Synced health=Progressing operation=Succeeded revision=c6355e7
+17:47:28  + 48s  shoplite-dev   sync=Synced health=Healthy operation=Succeeded revision=c6355e7
+deployment "web" successfully rolled out
+## after
+NAME                   STARTED                NODE
+web-79778ddb44-7lr8n   2026-11-04T12:46:26Z   shoplite-worker
+web-79778ddb44-wmcjt   2026-11-04T12:47:26Z   shoplite-worker2
+NAME             DESIRED   CURRENT   READY   AGE
+web-5f89fc7757   0         0         0       22h
+web-79778ddb44   2         2         2       63s

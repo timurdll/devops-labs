@@ -1,16 +1,16 @@
 ════ dev.shop.local ════
 GET /config/config.json
 {
-  "banner": "dev: every commit to environments/dev is deployed automatically",
+  "banner": "dev: deployed by Argo CD from git commit (Week 8 demo)",
   "currency": "USD",
   "environment": "dev",
   "shopName": "ShopLite DEV"
 }
 
 GET /api/catalog/products → 200
-{"servedBy":"catalog-7fc8544678-7x65d","items":[{"id":1,"sku":"SKU-001","name":"Mechanical keyboard","priceCents":8900,"stock":25},{"id":2,"sku":"SKU-002","name":"USB-C dock","priceCents":12900,"stock":10},{"id":3,"sku":
+{"servedBy":"catalog-545fd7cc48-gmkx4","items":[{"id":1,"sku":"SKU-001","name":"Mechanical keyboard","priceCents":8900,"stock":25},{"id":2,"sku":"SKU-002","name":"USB-C dock","priceCents":12900,"stock":10},{"id":3,"sku":
 POST /api/orders {productId:1, quantity:1}
-{"servedBy":"orders-664989c6d8-5jnp2","catalogServedBy":"catalog-7fc8544678-7x65d","order":{"id":1,"productId":1,"quantity":1,"totalCents":8900,"createdAt":"2026-11-03T14:03:47.899Z"}} → HTTP 201
+{"servedBy":"orders-548c99bdc4-wbqcp","catalogServedBy":"catalog-545fd7cc48-gmkx4","order":{"id":2,"productId":1,"quantity":1,"totalCents":8900,"createdAt":"2026-11-04T12:48:20.590Z"}} → HTTP 201
 
 ════ staging.shop.local ════
 GET /config/config.json
@@ -24,22 +24,23 @@ GET /config/config.json
 GET /api/catalog/products → 200
 {"servedBy":"catalog-ff448555b-hp4wb","items":[{"id":1,"sku":"SKU-001","name":"Mechanical keyboard","priceCents":8900,"stock":25},{"id":2,"sku":"SKU-002","name":"USB-C dock","priceCents":12900,"stock":10},{"id":3,"sku":"
 POST /api/orders {productId:1, quantity:1}
-{"servedBy":"orders-56f46b7ddc-s2s2f","catalogServedBy":"catalog-ff448555b-qwzq5","order":{"id":1,"productId":1,"quantity":1,"totalCents":8900,"createdAt":"2026-11-03T14:03:48.139Z"}} → HTTP 201
+{"servedBy":"orders-56f46b7ddc-j8n4t","catalogServedBy":"catalog-ff448555b-qwzq5","order":{"id":2,"productId":1,"quantity":1,"totalCents":8900,"createdAt":"2026-11-04T12:48:20.879Z"}} → HTTP 201
 
 ════ prod.shop.local ════
 GET /config/config.json
 {
-  "banner": "",
+  "banner": "Release 2026.11 approved for production",
   "currency": "USD",
   "environment": "prod",
   "shopName": "ShopLite"
 }
 
 GET /api/catalog/products → 200
-{"servedBy":"catalog-8589bfb5b6-djqr9","items":[{"id":1,"sku":"SKU-001","name":"Mechanical keyboard","priceCents":8900,"stock":25},{"id":2,"sku":"SKU-002","name":"USB-C dock","priceCents":12900,"stock":10},{"id":3,"sku":
+{"servedBy":"catalog-8589bfb5b6-txjmh","items":[{"id":1,"sku":"SKU-001","name":"Mechanical keyboard","priceCents":8900,"stock":25},{"id":2,"sku":"SKU-002","name":"USB-C dock","priceCents":12900,"stock":10},{"id":3,"sku":
 POST /api/orders {productId:1, quantity:1}
-{"servedBy":"orders-54cdfc549c-j4k97","catalogServedBy":"catalog-8589bfb5b6-zhnwd","order":{"id":1,"productId":1,"quantity":1,"totalCents":8900,"createdAt":"2026-11-03T14:03:48.261Z"}} → HTTP 201
+{"servedBy":"orders-54cdfc549c-j4k97","catalogServedBy":"catalog-8589bfb5b6-txjmh","order":{"id":2,"productId":1,"quantity":1,"totalCents":8900,"createdAt":"2026-11-04T12:48:21.109Z"}} → HTTP 201
 
 isolation: probe pod labelled app.kubernetes.io/name=orders in shop-dev
+postgres.shop-dev:5432 REACHABLE
 postgres.shop-staging:5432 BLOCKED
 postgres.shop-prod:5432 BLOCKED
