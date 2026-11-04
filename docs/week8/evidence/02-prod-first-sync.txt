@@ -1076,3 +1076,94 @@ apps               Deployment           shop-prod  orders                       
 apps               Deployment           shop-prod  web                            Synced  Healthy        deployment.apps/web created
 apps               StatefulSet          shop-prod  postgres                       Synced  Healthy        statefulset.apps/postgres created
 networking.k8s.io  Ingress              shop-prod  shop                           Synced  Healthy        ingress.networking.k8s.io/shop created
+
+# Follow-up: chart 0.1.1 (commit 5eaaf28) promoted to prod after approval — 17:48:13
+===== /ConfigMap shop-prod/catalog-config ======
+===== /ConfigMap shop-prod/orders-config ======
+===== /ConfigMap shop-prod/postgres-init ======
+===== /ConfigMap shop-prod/web-config ======
+===== /Service shop-prod/catalog ======
+===== /Service shop-prod/orders ======
+===== /Service shop-prod/postgres ======
+===== /Service shop-prod/web ======
+===== apps/Deployment shop-prod/catalog ======
+===== apps/Deployment shop-prod/orders ======
+===== apps/Deployment shop-prod/web ======
+===== apps/StatefulSet shop-prod/postgres ======
+===== networking.k8s.io/Ingress shop-prod/shop ======
+===== networking.k8s.io/NetworkPolicy shop-prod/allow-apps-to-postgres ======
+===== networking.k8s.io/NetworkPolicy shop-prod/allow-from-ingress-controller ======
+===== networking.k8s.io/NetworkPolicy shop-prod/allow-to-catalog ======
+===== networking.k8s.io/NetworkPolicy shop-prod/default-deny-ingress ======
+===== policy/PodDisruptionBudget shop-prod/catalog ======
+===== policy/PodDisruptionBudget shop-prod/orders ======
+===== policy/PodDisruptionBudget shop-prod/web ======
+2026-11-04T17:48:17+05:00  policy             PodDisruptionBudget   shop-prod                   web             Synced   Healthy              poddisruptionbudget.policy/web configured
+2026-11-04T17:48:17+05:00                      ConfigMap            shop-prod         orders-config             Synced                        configmap/orders-config configured
+2026-11-04T17:48:17+05:00                        Service            shop-prod              postgres             Synced   Healthy              service/postgres configured
+2026-11-04T17:48:17+05:00  networking.k8s.io  NetworkPolicy         shop-prod  default-deny-ingress             Synced                        networkpolicy.networking.k8s.io/default-deny-ingress configured
+2026-11-04T17:48:17+05:00  networking.k8s.io  NetworkPolicy         shop-prod  allow-from-ingress-controller    Synced                        networkpolicy.networking.k8s.io/allow-from-ingress-controller configured
+2026-11-04T17:48:17+05:00  policy             PodDisruptionBudget   shop-prod                orders             Synced   Healthy              poddisruptionbudget.policy/orders configured
+2026-11-04T17:48:17+05:00                        Service            shop-prod               catalog             Synced   Healthy              service/catalog configured
+2026-11-04T17:48:17+05:00                        Service            shop-prod                orders             Synced   Healthy              service/orders configured
+2026-11-04T17:48:17+05:00   apps              Deployment            shop-prod               catalog           OutOfSync  Healthy              deployment.apps/catalog configured
+2026-11-04T17:48:17+05:00   apps              Deployment            shop-prod                   web           OutOfSync  Healthy              deployment.apps/web configured
+2026-11-04T17:48:17+05:00  networking.k8s.io  NetworkPolicy         shop-prod      allow-to-catalog             Synced                        networkpolicy.networking.k8s.io/allow-to-catalog configured
+2026-11-04T17:48:17+05:00                      ConfigMap            shop-prod        catalog-config             Synced                        configmap/catalog-config configured
+2026-11-04T17:48:17+05:00                      ConfigMap            shop-prod            web-config             Synced                        configmap/web-config configured
+2026-11-04T17:48:17+05:00                      ConfigMap            shop-prod         postgres-init             Synced                        configmap/postgres-init configured
+2026-11-04T17:48:17+05:00   apps              Deployment            shop-prod                orders           OutOfSync  Healthy              deployment.apps/orders configured
+2026-11-04T17:48:17+05:00  networking.k8s.io  NetworkPolicy         shop-prod  allow-apps-to-postgres           Synced                        networkpolicy.networking.k8s.io/allow-apps-to-postgres configured
+2026-11-04T17:48:17+05:00   apps              StatefulSet           shop-prod              postgres           OutOfSync  Healthy              statefulset.apps/postgres configured
+2026-11-04T17:48:17+05:00  networking.k8s.io     Ingress            shop-prod                  shop           OutOfSync  Healthy              ingress.networking.k8s.io/shop configured
+2026-11-04T17:48:17+05:00                        Service            shop-prod                   web             Synced   Healthy              service/web configured
+2026-11-04T17:48:17+05:00  policy             PodDisruptionBudget   shop-prod               catalog             Synced   Healthy              poddisruptionbudget.policy/catalog configured
+2026-11-04T17:48:17+05:00   apps  Deployment   shop-prod               catalog    Synced  Healthy              deployment.apps/catalog configured
+2026-11-04T17:48:17+05:00   apps  Deployment   shop-prod                   web    Synced  Healthy              deployment.apps/web configured
+2026-11-04T17:48:17+05:00   apps  Deployment   shop-prod                orders    Synced  Healthy              deployment.apps/orders configured
+Sync Policy:        Manual
+Sync Status:        Synced to week8-gitops-helm (4f8ad1b)
+Health Status:      Healthy
+networking.k8s.io  NetworkPolicy        shop-prod  allow-apps-to-postgres         Synced                 networkpolicy.networking.k8s.io/allow-apps-to-postgres configured
+networking.k8s.io  NetworkPolicy        shop-prod  default-deny-ingress           Synced                 networkpolicy.networking.k8s.io/default-deny-ingress configured
+networking.k8s.io  NetworkPolicy        shop-prod  allow-to-catalog               Synced                 networkpolicy.networking.k8s.io/allow-to-catalog configured
+networking.k8s.io  NetworkPolicy        shop-prod  allow-from-ingress-controller  Synced                 networkpolicy.networking.k8s.io/allow-from-ingress-controller configured
+policy             PodDisruptionBudget  shop-prod  catalog                        Synced  Healthy        poddisruptionbudget.policy/catalog configured
+policy             PodDisruptionBudget  shop-prod  web                            Synced  Healthy        poddisruptionbudget.policy/web configured
+policy             PodDisruptionBudget  shop-prod  orders                         Synced  Healthy        poddisruptionbudget.policy/orders configured
+                   ConfigMap            shop-prod  catalog-config                 Synced                 configmap/catalog-config configured
+                   ConfigMap            shop-prod  web-config                     Synced                 configmap/web-config configured
+                   ConfigMap            shop-prod  orders-config                  Synced                 configmap/orders-config configured
+                   ConfigMap            shop-prod  postgres-init                  Synced                 configmap/postgres-init configured
+                   Service              shop-prod  postgres                       Synced  Healthy        service/postgres configured
+                   Service              shop-prod  catalog                        Synced  Healthy        service/catalog configured
+                   Service              shop-prod  web                            Synced  Healthy        service/web configured
+                   Service              shop-prod  orders                         Synced  Healthy        service/orders configured
+apps               Deployment           shop-prod  orders                         Synced  Healthy        deployment.apps/orders configured
+apps               Deployment           shop-prod  catalog                        Synced  Healthy        deployment.apps/catalog configured
+apps               Deployment           shop-prod  web                            Synced  Healthy        deployment.apps/web configured
+apps               StatefulSet          shop-prod  postgres                       Synced  Healthy        statefulset.apps/postgres configured
+networking.k8s.io  Ingress              shop-prod  shop                           Synced  Healthy        ingress.networking.k8s.io/shop configured
+Sync Policy:        Manual
+Sync Status:        Synced to week8-gitops-helm (4f8ad1b)
+Health Status:      Healthy
+networking.k8s.io  NetworkPolicy        shop-prod  allow-apps-to-postgres         Synced                 networkpolicy.networking.k8s.io/allow-apps-to-postgres configured
+networking.k8s.io  NetworkPolicy        shop-prod  default-deny-ingress           Synced                 networkpolicy.networking.k8s.io/default-deny-ingress configured
+networking.k8s.io  NetworkPolicy        shop-prod  allow-to-catalog               Synced                 networkpolicy.networking.k8s.io/allow-to-catalog configured
+networking.k8s.io  NetworkPolicy        shop-prod  allow-from-ingress-controller  Synced                 networkpolicy.networking.k8s.io/allow-from-ingress-controller configured
+policy             PodDisruptionBudget  shop-prod  catalog                        Synced  Healthy        poddisruptionbudget.policy/catalog configured
+policy             PodDisruptionBudget  shop-prod  web                            Synced  Healthy        poddisruptionbudget.policy/web configured
+policy             PodDisruptionBudget  shop-prod  orders                         Synced  Healthy        poddisruptionbudget.policy/orders configured
+                   ConfigMap            shop-prod  catalog-config                 Synced                 configmap/catalog-config configured
+                   ConfigMap            shop-prod  web-config                     Synced                 configmap/web-config configured
+                   ConfigMap            shop-prod  orders-config                  Synced                 configmap/orders-config configured
+                   ConfigMap            shop-prod  postgres-init                  Synced                 configmap/postgres-init configured
+                   Service              shop-prod  postgres                       Synced  Healthy        service/postgres configured
+                   Service              shop-prod  catalog                        Synced  Healthy        service/catalog configured
+                   Service              shop-prod  web                            Synced  Healthy        service/web configured
+                   Service              shop-prod  orders                         Synced  Healthy        service/orders configured
+apps               Deployment           shop-prod  orders                         Synced  Healthy        deployment.apps/orders configured
+apps               Deployment           shop-prod  catalog                        Synced  Healthy        deployment.apps/catalog configured
+apps               Deployment           shop-prod  web                            Synced  Healthy        deployment.apps/web configured
+apps               StatefulSet          shop-prod  postgres                       Synced  Healthy        statefulset.apps/postgres configured
+networking.k8s.io  Ingress              shop-prod  shop                           Synced  Healthy        ingress.networking.k8s.io/shop configured
