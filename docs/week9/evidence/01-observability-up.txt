@@ -1,0 +1,21 @@
+generated k8s/observability/grafana-admin.env
+application.argoproj.io/observability condition met
+application.argoproj.io/observability condition met
+application.argoproj.io/platform condition met
+application.argoproj.io/platform condition met
+application.argoproj.io/shoplite-dev condition met
+application.argoproj.io/shoplite-dev condition met
+application.argoproj.io/shoplite-staging condition met
+application.argoproj.io/shoplite-staging condition met
+APP                SYNC        HEALTH    REVISION
+observability      Synced      Healthy   cd5fd2f59872a20eefb9c7438a27c9eeb087c516
+platform           Synced      Healthy   cd5fd2f59872a20eefb9c7438a27c9eeb087c516
+root               Synced      Healthy   cd5fd2f59872a20eefb9c7438a27c9eeb087c516
+shoplite-dev       Synced      Healthy   cd5fd2f59872a20eefb9c7438a27c9eeb087c516
+shoplite-prod      OutOfSync   Healthy   cd5fd2f59872a20eefb9c7438a27c9eeb087c516
+shoplite-staging   Synced      Healthy   cd5fd2f59872a20eefb9c7438a27c9eeb087c516
+
+prod (manual): ./scripts/gitops-sync-prod.sh
+Grafana: kubectl -n observability port-forward svc/grafana 3000  →  http://localhost:3000 (user/password in k8s/observability/grafana-admin.env)
+Jaeger:  kubectl -n observability port-forward svc/jaeger 16686  →  http://localhost:16686
+exit=0

@@ -1,0 +1,24 @@
+$ curl -si http://orders-55965c7d6c-h4gxf:8080/metrics   # 2026-11-10T11:58:40Z, via kubectl port-forward (pod network is NetworkPolicy-protected)
+HTTP/1.1 200 OK
+Content-Type: application/openmetrics-text; version=1.0.0; charset=utf-8
+… (excerpt)
+process_cpu_seconds_total{service="orders"} 25.590001000000008
+nodejs_eventloop_lag_p99_seconds{service="orders"} 0.012836863
+# HELP http_server_request_duration_seconds Duration of inbound HTTP requests.
+# TYPE http_server_request_duration_seconds histogram
+http_server_request_duration_seconds_bucket{le="2.5",service="orders",http_request_method="POST",http_route="/api/orders",http_response_status_code="502"} 53 # {trace_id="491dddc72846c644bf10824d06bde0c3",span_id="0c96e20bf4a35ee0"} 2.001671835 1794311529.85
+    ↑ bucket le=2.5 s of the 502s during the outage; after "#" = OpenMetrics exemplar (trace_id, span_id, value, timestamp)
+http_server_request_duration_seconds_sum{service="orders",http_request_method="POST",http_route="/api/orders",http_response_status_code="201"} 5.232486174999995
+http_server_request_duration_seconds_count{service="orders",http_request_method="POST",http_route="/api/orders",http_response_status_code="201"} 349
+http_server_request_duration_seconds_sum{service="orders",http_request_method="POST",http_route="/api/orders",http_response_status_code="502"} 86.36353783000001
+http_server_request_duration_seconds_count{service="orders",http_request_method="POST",http_route="/api/orders",http_response_status_code="502"} 53
+# HELP http_server_active_requests Inbound HTTP requests currently being served.
+# TYPE http_server_active_requests gauge
+http_server_active_requests{http_request_method="GET",service="orders"} 0
+http_server_active_requests{http_request_method="POST",service="orders"} 0
+# HELP http_client_request_duration_seconds Duration of outbound HTTP requests to dependencies.
+# TYPE http_client_request_duration_seconds histogram
+http_client_request_duration_seconds_count{service="orders",server_address="catalog.shop-prod.svc.cluster.local",http_response_status_code="200"} 728
+http_client_request_duration_seconds_count{service="orders",server_address="catalog.shop-prod.svc.cluster.local",http_response_status_code="error"} 10
+http_client_request_duration_seconds_count{service="orders",server_address="catalog.shop-prod.svc.cluster.local",http_response_status_code="timeout"} 43
+… total lines:      305, series: 236

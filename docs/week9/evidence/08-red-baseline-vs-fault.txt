@@ -1,0 +1,16 @@
+# RED per service, environment=prod, 1 m windows (PromQL against Prometheus, recorded rules where available)
+# fault: catalog scaled to 0 at 11:50:03Z, restored 11:52:03Z (ready 11:52:10Z)
+
+moment     time      service  rate req/s  5xx ratio        p95
+baseline   11:49:30  catalog       13.16       0.0%       7 ms
+baseline   11:49:30  orders         8.84       0.0%      22 ms
+baseline   11:49:30  edge          22.25       0.0%              codes: 200=11.1, 201=2.2, 404=4.4, 409=2.2, 422=2.3
+
+fault      11:51:30  catalog     no data          —          —
+fault      11:51:30  orders         2.31      49.0%    2347 ms
+fault      11:51:30  edge           5.80      19.5%              codes: 200=4.1, 201=0.0, 409=0.0, 422=0.6, 502=1.1
+
+recovered  11:54:00  catalog       13.80       0.0%       9 ms
+recovered  11:54:00  orders         9.27       0.0%      22 ms
+recovered  11:54:00  edge          23.02       0.0%              codes: 200=11.5, 201=2.3, 404=4.6, 409=2.3, 422=2.3, 502=0.0
+

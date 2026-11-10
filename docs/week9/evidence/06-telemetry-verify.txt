@@ -1,0 +1,64 @@
+# telemetry-verify 2026-11-10T11:54:47Z  (query window 11:47:00–11:55:30Z)
+
+## GitOps state
+PASS  Argo CD app observability Synced/Healthy  —  Synced/Healthy @ 72db3e8
+PASS  Argo CD app platform Synced/Healthy  —  Synced/Healthy @ 72db3e8
+PASS  Argo CD app root Synced/Healthy  —  Synced/Healthy @ 72db3e8
+PASS  Argo CD app shoplite-dev Synced/Healthy  —  Synced/Healthy @ 72db3e8
+PASS  Argo CD app shoplite-prod Synced/Healthy  —  Synced/Healthy @ 72db3e8
+PASS  Argo CD app shoplite-staging Synced/Healthy  —  Synced/Healthy @ 72db3e8
+PASS  observability pod grafana ready  —  grafana/grafana:13.2.5
+PASS  observability pod jaeger ready  —  jaegertracing/jaeger:2.20.0
+PASS  observability pod otel-collector ready  —  otel/opentelemetry-collector-contrib:0.163.2
+PASS  observability pod prometheus ready  —  prom/prometheus:v3.15.1
+
+## ① App runtime → Collector (pull: /metrics, push: OTLP)
+PASS  scrape target shop-dev/catalog up  —  2 pod(s)
+PASS  scrape target shop-dev/orders up  —  1 pod(s)
+PASS  scrape target shop-staging/catalog up  —  2 pod(s)
+PASS  scrape target shop-staging/orders up  —  2 pod(s)
+PASS  scrape target shop-prod/catalog up  —  3 pod(s)
+PASS  scrape target shop-prod/orders up  —  3 pod(s)
+PASS  scrape target ingress-traefik/traefik up
+PASS  web (nginx, not instrumented) is NOT scraped
+PASS  Collector receives OTLP spans, refuses none  —  206.5 spans/s accepted, 0.0 refused
+
+## ② Collector → Prometheus (remote write) — RED metrics
+PASS  RED series for dev: catalog + orders  —  catalog 8.6 req/s, orders 5.8 req/s
+PASS  RED series for staging: catalog + orders  —  catalog 8.7 req/s, orders 5.8 req/s
+PASS  RED series for prod: catalog + orders  —  catalog 6.4 req/s, orders 5.8 req/s
+PASS  http_route is a bounded template (no raw ids)  —  /api/catalog/products, /api/catalog/products/:id, /api/orders, /healthz, /readyz, unmatched
+PASS  trace_id exemplars stored on duration buckets  —  2974 exemplars
+PASS  Traefik edge metrics present
+PASS  client-side histogram orders → catalog present
+PASS  RED recording + alert rules loaded  —  5 rules
+
+## ③ Collector → Jaeger (OTLP) — distributed traces
+PASS  Jaeger has traefik, orders, catalog  —  catalog, jaeger, orders, traefik
+PASS  POST /api/orders traces span traefik → orders → catalog  —  50/50 traces cross 3 services
+PASS  traceparent propagation: one trace id, every parent span present  —  trace 79081985e4b61dc1…, 9 spans, 0 orphans
+PASS  spans enriched with k8s.* by the Collector
+PASS  no SQL parameters recorded (enhancedDatabaseReporting off)
+PASS  probes and scrapes are not traced (/healthz, /readyz, /metrics)  —  0 traces found
+
+## ④ Grafana → Prometheus / Jaeger (what the dashboard shows)
+PASS  Grafana data source prometheus healthy  —  Successfully queried the Prometheus API.
+PASS  Grafana data source jaeger healthy  —  Data source is working
+PASS  RED dashboard provisioned from git  —  ShopLite — RED (Rate · Errors · Duration) · 12 panels
+PASS  panel “Rate” returns data (prod)  —  1 series/frames
+PASS  panel “Errors (5xx ratio)” returns data (prod)  —  1 series/frames
+PASS  panel “Duration p95” returns data (prod)  —  1 series/frames
+PASS  panel “In-flight requests” returns data (prod)  —  1 series/frames
+PASS  panel “Rate by route” returns data (prod)  —  3 series/frames
+PASS  panel “Errors by status code” returns data (prod)  —  4 series/frames
+PASS  panel “Duration p50 / p95 / p99” returns data (prod)  —  7 series/frames
+PASS  panel “Latency distribution (all API requests)” returns data (prod)  —  11 series/frames
+PASS  panel “orders → catalog (client view)” returns data (prod)  —  4 series/frames
+PASS  panel “Edge (Traefik) requests by code” returns data (prod)  —  7 series/frames
+PASS  panel “Recent orders traces” returns data (prod)  —  1 series/frames
+PASS  panel “Failed traces” returns data (prod)  —  1 series/frames
+
+## NetworkPolicy: only the Collector may scrape
+PASS  pod in shop-prod (not the Collector) cannot read orders /metrics  —  BLOCKED
+
+49/49 checks passed

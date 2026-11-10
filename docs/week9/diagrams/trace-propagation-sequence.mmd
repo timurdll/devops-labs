@@ -1,0 +1,33 @@
+%% Week 9 · distributed trace sequence: how one trace id crosses process boundaries in `traceparent`.
+%% All ids, offsets and durations are from a real trace (docs/week9/exports/traces/order-ok.json),
+%% trace_id 14091ffffccb0b599d907cb52b6832fc, POST /api/orders in shop-prod.
+sequenceDiagram
+    autonumber
+    participant U as client (curl)
+    participant T as Traefik (ingress-traefik)
+    participant O as orders (shop-prod)
+    participant C as catalog (shop-prod)
+    participant DB as postgres
+    participant X as OTel Collector → Jaeger
+
+    U->>T: POST /api/orders (no traceparent)
+    Note over T: new trace 14091fff…6832fc · sampled<br/>span 221ad0a7 "POST" (server) +0.00 ms<br/>child 504c964b "ReverseProxy" (client) +0.36 ms
+    T->>O: POST /api/orders<br/>traceparent: 00-14091ffffccb0b599d907cb52b6832fc-504c964b6375b3c9-01
+    Note over O: http instrumentation extracts the context<br/>span 13e97037 "POST /api/orders" (server)<br/>parent = 504c964b · +1.60 ms
+    O->>C: GET /api/catalog/products/1 (fetch → undici span 68d559fa)<br/>traceparent: 00-14091ffffccb0b599d907cb52b6832fc-68d559fac901924f-01
+    Note over C: span 452e9166 "GET /api/catalog/products/:id"<br/>parent = 68d559fa · +3.60 ms
+    C->>DB: SELECT … (span 467c2735, 0.60 ms)
+    DB-->>C: row
+    C-->>O: 200 {item} · catalog span 1.91 ms
+    O->>DB: INSERT order (span e80e14fe, 1.69 ms)
+    DB-->>O: id
+    O-->>T: 201 · orders span 6.82 ms
+    T-->>U: 201 Created · end-to-end 9.23 ms
+    par each process exports its own spans asynchronously (batch, OTLP/HTTP :4318)
+        T--)X: 2 spans
+    and
+        O--)X: 4 spans
+    and
+        C--)X: 3 spans
+    end
+    Note over X: Jaeger joins the 9 spans by trace_id and nests them by parent span id<br/>(waterfall: trace-waterfall-ok.png)

@@ -1,0 +1,31 @@
+2026-11-10T11:47:33Z load start: dev, staging, prod for 420s
+2026-11-10T11:50:03Z FAULT: kubectl -n shop-prod scale deploy/catalog --replicas=0 (was 3)
+2026-11-10T11:52:03Z RECOVER: kubectl -n shop-prod scale deploy/catalog --replicas=3
+2026-11-10T11:52:10Z catalog ready again
+2026-11-10T11:54:34Z load done
+--- dev
+env=dev duration=420s workers=2 requests=6210 (~14 req/s)
+status codes:
+3105 200
+1242 404
+ 621 422
+ 621 409
+ 621 201
+--- staging
+env=staging duration=420s workers=2 requests=6220 (~14 req/s)
+status codes:
+3110 200
+1244 404
+ 622 422
+ 622 409
+ 622 201
+--- prod
+env=prod duration=420s workers=3 requests=7370 (~17 req/s)
+status codes:
+3715 200
+1285 404
+ 737 422
+ 654 409
+ 652 201
+ 168 502
+ 159 503

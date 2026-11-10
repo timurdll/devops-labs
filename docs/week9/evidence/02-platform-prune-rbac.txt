@@ -1,0 +1,21 @@
+$ argocd app sync platform --core --prune (only the 4 retired Week 8 RBAC objects)
+2026-11-10T16:29:10+05:00  rbac.authorization.k8s.io  RoleBinding   shop-prod         traefik-ingress        OutOfSync                       
+2026-11-10T16:29:10+05:00  rbac.authorization.k8s.io  RoleBinding  shop-staging       traefik-ingress        OutOfSync                       
+2026-11-10T16:29:10+05:00  rbac.authorization.k8s.io  ClusterRole                traefik-ingress-namespaced  OutOfSync                       
+2026-11-10T16:29:10+05:00  rbac.authorization.k8s.io  RoleBinding    shop-dev         traefik-ingress        OutOfSync                       
+2026-11-10T16:29:10+05:00  rbac.authorization.k8s.io  RoleBinding    shop-dev         traefik-ingress        OutOfSync                       pruned
+2026-11-10T16:29:10+05:00  rbac.authorization.k8s.io  RoleBinding  shop-staging       traefik-ingress        OutOfSync                       pruned
+2026-11-10T16:29:10+05:00  rbac.authorization.k8s.io  RoleBinding   shop-prod         traefik-ingress        OutOfSync                       pruned
+2026-11-10T16:29:10+05:00  rbac.authorization.k8s.io  ClusterRole                traefik-ingress-namespaced  OutOfSync                       pruned
+Sync Status:        Synced to week9-observability (cd5fd2f)
+Health Status:      Healthy
+Phase:              Succeeded
+rbac.authorization.k8s.io  RoleBinding         shop-prod        traefik-ingress             Succeeded  Pruned         pruned
+rbac.authorization.k8s.io  ClusterRole                          traefik-ingress-namespaced  Succeeded  Pruned         pruned
+rbac.authorization.k8s.io  RoleBinding         shop-dev         traefik-ingress             Succeeded  Pruned         pruned
+rbac.authorization.k8s.io  RoleBinding         shop-staging     traefik-ingress             Succeeded  Pruned         pruned
+rbac.authorization.k8s.io  Role                shop-dev         traefik-ingress-env         Synced                    
+rbac.authorization.k8s.io  Role                shop-prod        traefik-ingress-env         Synced                    
+rbac.authorization.k8s.io  Role                shop-staging     traefik-ingress-env         Synced                    
+rbac.authorization.k8s.io  Role                shop             traefik-ingress             Synced                    
+rbac.authorization.k8s.io  RoleBinding         shop-dev         traefik-ingress-env         Synced                    

@@ -1,0 +1,52 @@
+[
+  {
+    "uid": "jaeger",
+    "name": "Jaeger",
+    "type": "jaeger",
+    "access": "proxy",
+    "url": "http://jaeger.observability.svc.cluster.local:16686",
+    "isDefault": false,
+    "readOnly": true,
+    "jsonData": {
+      "tracesToMetrics": {
+        "datasourceUid": "prometheus",
+        "queries": [
+          {
+            "name": "Request rate",
+            "query": "sum(rate(http_server_request_duration_seconds_count{$__tags}[1m]))"
+          },
+          {
+            "name": "p95 latency",
+            "query": "histogram_quantile(0.95, sum by (le) (rate(http_server_request_duration_seconds_bucket{$__tags}[1m])))"
+          }
+        ],
+        "spanEndTimeShift": "2m",
+        "spanStartTimeShift": "-2m",
+        "tags": [
+          {
+            "key": "service.name",
+            "value": "service"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "uid": "prometheus",
+    "name": "Prometheus",
+    "type": "prometheus",
+    "access": "proxy",
+    "url": "http://prometheus.observability.svc.cluster.local:9090",
+    "isDefault": true,
+    "readOnly": true,
+    "jsonData": {
+      "exemplarTraceIdDestinations": [
+        {
+          "datasourceUid": "jaeger",
+          "name": "trace_id"
+        }
+      ],
+      "timeInterval": "15s"
+    }
+  }
+]

@@ -1,0 +1,678 @@
+{
+ "data": [
+  {
+   "traceID": "38d78d79140249e50d11e090fb4a0795",
+   "spans": [
+    {
+     "traceID": "38d78d79140249e50d11e090fb4a0795",
+     "spanID": "b15bede3946f9f2f",
+     "operationName": "POST /api/orders",
+     "references": [
+      {
+       "refType": "CHILD_OF",
+       "traceID": "38d78d79140249e50d11e090fb4a0795",
+       "spanID": "790d2a7536545cc1"
+      }
+     ],
+     "startTime": 1794311487859000,
+     "duration": 2013265,
+     "tags": [
+      {
+       "key": "otel.scope.name",
+       "type": "string",
+       "value": "@opentelemetry/instrumentation-http"
+      },
+      {
+       "key": "otel.scope.version",
+       "type": "string",
+       "value": "0.300.0"
+      },
+      {
+       "key": "client.address",
+       "type": "string",
+       "value": "172.27.0.4"
+      },
+      {
+       "key": "error.type",
+       "type": "string",
+       "value": "502"
+      },
+      {
+       "key": "http.request.method",
+       "type": "string",
+       "value": "POST"
+      },
+      {
+       "key": "http.response.status_code",
+       "type": "int64",
+       "value": 502
+      },
+      {
+       "key": "http.route",
+       "type": "string",
+       "value": "/api/orders"
+      },
+      {
+       "key": "network.peer.address",
+       "type": "string",
+       "value": "::ffff:10.244.2.36"
+      },
+      {
+       "key": "network.peer.port",
+       "type": "int64",
+       "value": 33362
+      },
+      {
+       "key": "network.protocol.version",
+       "type": "string",
+       "value": "1.1"
+      },
+      {
+       "key": "server.address",
+       "type": "string",
+       "value": "prod.shop.local"
+      },
+      {
+       "key": "server.port",
+       "type": "int64",
+       "value": 80
+      },
+      {
+       "key": "url.path",
+       "type": "string",
+       "value": "/api/orders"
+      },
+      {
+       "key": "url.scheme",
+       "type": "string",
+       "value": "http"
+      },
+      {
+       "key": "user_agent.original",
+       "type": "string",
+       "value": "curl/8.7.1"
+      },
+      {
+       "key": "span.kind",
+       "type": "string",
+       "value": "server"
+      },
+      {
+       "key": "otel.status_code",
+       "type": "string",
+       "value": "ERROR"
+      },
+      {
+       "key": "error",
+       "type": "bool",
+       "value": true
+      }
+     ],
+     "logs": [
+      {
+       "timestamp": 1794311489870171,
+       "fields": [
+        {
+         "key": "event",
+         "type": "string",
+         "value": "exception"
+        },
+        {
+         "key": "exception.message",
+         "type": "string",
+         "value": "The operation was aborted due to timeout"
+        },
+        {
+         "key": "exception.stacktrace",
+         "type": "string",
+         "value": "TimeoutError: The operation was aborted due to timeout"
+        },
+        {
+         "key": "exception.type",
+         "type": "string",
+         "value": "23"
+        }
+       ]
+      }
+     ],
+     "processID": "p1",
+     "warnings": null
+    },
+    {
+     "traceID": "38d78d79140249e50d11e090fb4a0795",
+     "spanID": "790d2a7536545cc1",
+     "operationName": "ReverseProxy",
+     "references": [
+      {
+       "refType": "CHILD_OF",
+       "traceID": "38d78d79140249e50d11e090fb4a0795",
+       "spanID": "346de5005aa90aaa"
+      }
+     ],
+     "startTime": 1794311487858696,
+     "duration": 2013165,
+     "tags": [
+      {
+       "key": "otel.scope.name",
+       "type": "string",
+       "value": "github.com/traefik/traefik"
+      },
+      {
+       "key": "http.request.method",
+       "type": "string",
+       "value": "POST"
+      },
+      {
+       "key": "http.response.status_code",
+       "type": "int64",
+       "value": 502
+      },
+      {
+       "key": "network.peer.address",
+       "type": "string",
+       "value": "10.244.2.49"
+      },
+      {
+       "key": "network.peer.port",
+       "type": "int64",
+       "value": 8080
+      },
+      {
+       "key": "network.protocol.version",
+       "type": "string",
+       "value": "1.1"
+      },
+      {
+       "key": "server.address",
+       "type": "string",
+       "value": "10.244.2.49"
+      },
+      {
+       "key": "server.port",
+       "type": "int64",
+       "value": 8080
+      },
+      {
+       "key": "url.full",
+       "type": "string",
+       "value": "http://10.244.2.49:8080/api/orders"
+      },
+      {
+       "key": "url.scheme",
+       "type": "string",
+       "value": "http"
+      },
+      {
+       "key": "user_agent.original",
+       "type": "string",
+       "value": "curl/8.7.1"
+      },
+      {
+       "key": "span.kind",
+       "type": "string",
+       "value": "client"
+      },
+      {
+       "key": "otel.status_code",
+       "type": "string",
+       "value": "ERROR"
+      },
+      {
+       "key": "error",
+       "type": "bool",
+       "value": true
+      }
+     ],
+     "logs": [],
+     "processID": "p2",
+     "warnings": null
+    },
+    {
+     "traceID": "38d78d79140249e50d11e090fb4a0795",
+     "spanID": "346de5005aa90aaa",
+     "operationName": "POST",
+     "references": [],
+     "startTime": 1794311487858494,
+     "duration": 2013521,
+     "tags": [
+      {
+       "key": "otel.scope.name",
+       "type": "string",
+       "value": "github.com/traefik/traefik"
+      },
+      {
+       "key": "client.address",
+       "type": "string",
+       "value": "172.27.0.4"
+      },
+      {
+       "key": "client.port",
+       "type": "int64",
+       "value": 25300
+      },
+      {
+       "key": "entry_point",
+       "type": "string",
+       "value": "web"
+      },
+      {
+       "key": "http.request.body.size",
+       "type": "int64",
+       "value": 29
+      },
+      {
+       "key": "http.request.method",
+       "type": "string",
+       "value": "POST"
+      },
+      {
+       "key": "http.response.status_code",
+       "type": "int64",
+       "value": 502
+      },
+      {
+       "key": "network.peer.address",
+       "type": "string",
+       "value": "172.27.0.4"
+      },
+      {
+       "key": "network.peer.port",
+       "type": "int64",
+       "value": 25300
+      },
+      {
+       "key": "network.protocol.version",
+       "type": "string",
+       "value": "1.1"
+      },
+      {
+       "key": "server.address",
+       "type": "string",
+       "value": "prod.shop.local"
+      },
+      {
+       "key": "url.path",
+       "type": "string",
+       "value": "/api/orders"
+      },
+      {
+       "key": "url.query",
+       "type": "string",
+       "value": ""
+      },
+      {
+       "key": "url.scheme",
+       "type": "string",
+       "value": "http"
+      },
+      {
+       "key": "user_agent.original",
+       "type": "string",
+       "value": "curl/8.7.1"
+      },
+      {
+       "key": "span.kind",
+       "type": "string",
+       "value": "server"
+      },
+      {
+       "key": "otel.status_code",
+       "type": "string",
+       "value": "ERROR"
+      },
+      {
+       "key": "error",
+       "type": "bool",
+       "value": true
+      }
+     ],
+     "logs": [],
+     "processID": "p2",
+     "warnings": null
+    },
+    {
+     "traceID": "38d78d79140249e50d11e090fb4a0795",
+     "spanID": "8867695a3b234c4e",
+     "operationName": "GET",
+     "references": [
+      {
+       "refType": "CHILD_OF",
+       "traceID": "38d78d79140249e50d11e090fb4a0795",
+       "spanID": "b15bede3946f9f2f"
+      }
+     ],
+     "startTime": 1794311487860000,
+     "duration": 10326176,
+     "tags": [
+      {
+       "key": "otel.scope.name",
+       "type": "string",
+       "value": "@opentelemetry/instrumentation-undici"
+      },
+      {
+       "key": "otel.scope.version",
+       "type": "string",
+       "value": "0.34.0"
+      },
+      {
+       "key": "error.type",
+       "type": "string",
+       "value": "UND_ERR_CONNECT_TIMEOUT"
+      },
+      {
+       "key": "http.request.method",
+       "type": "string",
+       "value": "GET"
+      },
+      {
+       "key": "http.request.method_original",
+       "type": "string",
+       "value": "GET"
+      },
+      {
+       "key": "server.address",
+       "type": "string",
+       "value": "catalog.shop-prod.svc.cluster.local"
+      },
+      {
+       "key": "server.port",
+       "type": "int64",
+       "value": 80
+      },
+      {
+       "key": "url.full",
+       "type": "string",
+       "value": "http://catalog.shop-prod.svc.cluster.local/api/catalog/products/1"
+      },
+      {
+       "key": "url.path",
+       "type": "string",
+       "value": "/api/catalog/products/1"
+      },
+      {
+       "key": "url.query",
+       "type": "string",
+       "value": ""
+      },
+      {
+       "key": "url.scheme",
+       "type": "string",
+       "value": "http"
+      },
+      {
+       "key": "user_agent.original",
+       "type": "string",
+       "value": "node"
+      },
+      {
+       "key": "span.kind",
+       "type": "string",
+       "value": "client"
+      },
+      {
+       "key": "otel.status_code",
+       "type": "string",
+       "value": "ERROR"
+      },
+      {
+       "key": "error",
+       "type": "bool",
+       "value": true
+      },
+      {
+       "key": "otel.status_description",
+       "type": "string",
+       "value": "Connect Timeout Error (attempted address: catalog.shop-prod.svc.cluster.local:80, timeout: 10000ms)"
+      }
+     ],
+     "logs": [
+      {
+       "timestamp": 1794311498186142,
+       "fields": [
+        {
+         "key": "event",
+         "type": "string",
+         "value": "exception"
+        },
+        {
+         "key": "exception.message",
+         "type": "string",
+         "value": "Connect Timeout Error (attempted address: catalog.shop-prod.svc.cluster.local:80, timeout: 10000ms)"
+        },
+        {
+         "key": "exception.stacktrace",
+         "type": "string",
+         "value": "ConnectTimeoutError: Connect Timeout Error (attempted address: catalog.shop-prod.svc.cluster.local:80, timeout: 10000ms)\n    at onConnectTimeout (node:internal/deps/undici/undici:1991:23)\n    at Immediate._onImmediate (node:internal/deps/undici/undici:1972:11)\n    at process.processImmediate (node:internal/timers:574:21)"
+        },
+        {
+         "key": "exception.type",
+         "type": "string",
+         "value": "UND_ERR_CONNECT_TIMEOUT"
+        }
+       ]
+      }
+     ],
+     "processID": "p1",
+     "warnings": null
+    }
+   ],
+   "processes": {
+    "p1": {
+     "serviceName": "orders",
+     "tags": [
+      {
+       "key": "deployment.environment.name",
+       "type": "string",
+       "value": "prod"
+      },
+      {
+       "key": "host.arch",
+       "type": "string",
+       "value": "arm64"
+      },
+      {
+       "key": "host.name",
+       "type": "string",
+       "value": "orders-55965c7d6c-h4gxf"
+      },
+      {
+       "key": "k8s.deployment.name",
+       "type": "string",
+       "value": "orders"
+      },
+      {
+       "key": "k8s.namespace.name",
+       "type": "string",
+       "value": "shop-prod"
+      },
+      {
+       "key": "k8s.node.name",
+       "type": "string",
+       "value": "shoplite-worker"
+      },
+      {
+       "key": "k8s.pod.name",
+       "type": "string",
+       "value": "orders-55965c7d6c-h4gxf"
+      },
+      {
+       "key": "process.command",
+       "type": "string",
+       "value": "/app/src/server.js"
+      },
+      {
+       "key": "process.command_args",
+       "type": "string",
+       "value": "[\"/nodejs/bin/node\",\"/app/src/server.js\"]"
+      },
+      {
+       "key": "process.executable.name",
+       "type": "string",
+       "value": "/nodejs/bin/node"
+      },
+      {
+       "key": "process.executable.path",
+       "type": "string",
+       "value": "/nodejs/bin/node"
+      },
+      {
+       "key": "process.owner",
+       "type": "string",
+       "value": "nonroot"
+      },
+      {
+       "key": "process.pid",
+       "type": "int64",
+       "value": 1
+      },
+      {
+       "key": "process.runtime.description",
+       "type": "string",
+       "value": "Node.js"
+      },
+      {
+       "key": "process.runtime.name",
+       "type": "string",
+       "value": "nodejs"
+      },
+      {
+       "key": "process.runtime.version",
+       "type": "string",
+       "value": "24.22.0"
+      },
+      {
+       "key": "service.namespace",
+       "type": "string",
+       "value": "shoplite"
+      },
+      {
+       "key": "service.version",
+       "type": "string",
+       "value": "1.1.0"
+      },
+      {
+       "key": "telemetry.sdk.language",
+       "type": "string",
+       "value": "nodejs"
+      },
+      {
+       "key": "telemetry.sdk.name",
+       "type": "string",
+       "value": "opentelemetry"
+      },
+      {
+       "key": "telemetry.sdk.version",
+       "type": "string",
+       "value": "3.0.0"
+      }
+     ]
+    },
+    "p2": {
+     "serviceName": "traefik",
+     "tags": [
+      {
+       "key": "host.name",
+       "type": "string",
+       "value": "traefik-6849c8785d-8n6md"
+      },
+      {
+       "key": "k8s.deployment.name",
+       "type": "string",
+       "value": "traefik"
+      },
+      {
+       "key": "k8s.namespace.name",
+       "type": "string",
+       "value": "ingress-traefik"
+      },
+      {
+       "key": "k8s.node.name",
+       "type": "string",
+       "value": "shoplite-worker"
+      },
+      {
+       "key": "k8s.pod.name",
+       "type": "string",
+       "value": "traefik-6849c8785d-8n6md"
+      },
+      {
+       "key": "os.description",
+       "type": "string",
+       "value": "Alpine Linux 3.24.2 (Linux traefik-6849c8785d-8n6md 6.11.11-linuxkit #1 SMP Wed Oct 22 09:37:46 UTC 2025 aarch64)"
+      },
+      {
+       "key": "os.type",
+       "type": "string",
+       "value": "linux"
+      },
+      {
+       "key": "process.command_args",
+       "type": "string",
+       "value": "[\"traefik\",\"traefik\",\"--entryPoints.web.address=:8000\",\"--entryPoints.web.transport.lifeCycle.requestAcceptGraceTimeout=5s\",\"--entryPoints.web.transport.lifeCycle.graceTimeOut=10s\",\"--entryPoints.traefik.address=:9000\",\"--ping=true\",\"--ping.entryPoint=traefik\",\"--providers.kubernetesingress=true\",\"--providers.kubernetesingress.ingressclass=traefik\",\"--providers.kubernetesingress.namespaces=shop,shop-dev,shop-staging,shop-prod\",\"--providers.kubernetesingress.ingressendpoint.ip=127.0.0.1\",\"--tracing.serviceName=traefik\",\"--tracing.sampleRate=1.0\",\"--tracing.otlp.http.endpoint=http://otel-collector.observability.svc.cluster.local:4318/v1/traces\",\"--metrics.prometheus=true\",\"--metrics.prometheus.entryPoint=traefik\",\"--metrics.prometheus.addRoutersLabels=true\",\"--metrics.prometheus.addServicesLabels=true\",\"--metrics.prometheus.buckets=0.005,0.01,0.025,0.05,0.1,0.25,0.5,1,2.5,5\",\"--accesslog=true\",\"--log.level=INFO\",\"--global.checknewversion=false\",\"--global.sendanonymoususage=false\"]"
+      },
+      {
+       "key": "process.executable.name",
+       "type": "string",
+       "value": "traefik"
+      },
+      {
+       "key": "process.executable.path",
+       "type": "string",
+       "value": "/usr/local/bin/traefik"
+      },
+      {
+       "key": "process.owner",
+       "type": "string",
+       "value": "traefik"
+      },
+      {
+       "key": "process.pid",
+       "type": "int64",
+       "value": 1
+      },
+      {
+       "key": "process.runtime.description",
+       "type": "string",
+       "value": "go version go1.26.8 linux/arm64"
+      },
+      {
+       "key": "process.runtime.name",
+       "type": "string",
+       "value": "go"
+      },
+      {
+       "key": "process.runtime.version",
+       "type": "string",
+       "value": "go1.26.8"
+      },
+      {
+       "key": "service.version",
+       "type": "string",
+       "value": "3.7.14"
+      },
+      {
+       "key": "telemetry.sdk.language",
+       "type": "string",
+       "value": "go"
+      },
+      {
+       "key": "telemetry.sdk.name",
+       "type": "string",
+       "value": "opentelemetry"
+      },
+      {
+       "key": "telemetry.sdk.version",
+       "type": "string",
+       "value": "1.46.0"
+      }
+     ]
+    }
+   },
+   "warnings": null
+  }
+ ],
+ "total": 0,
+ "limit": 0,
+ "offset": 0,
+ "errors": null
+}

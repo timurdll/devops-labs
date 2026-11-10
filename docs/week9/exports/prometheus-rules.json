@@ -1,0 +1,56 @@
+[
+  {
+    "name": "shoplite-red",
+    "file": "/etc/prometheus/shoplite-red.rules.yml",
+    "rules": [
+      {
+        "name": "shoplite:http_requests:rate1m",
+        "query": "sum by (environment, service, http_route) (rate(http_server_request_duration_seconds_count{http_route=~\"/api/.*\"}[1m]))",
+        "labels": {},
+        "type": "recording"
+      },
+      {
+        "name": "shoplite:http_errors:ratio_rate1m",
+        "query": "sum by (environment, service) (rate(http_server_request_duration_seconds_count{http_response_status_code=~\"5..\",http_route=~\"/api/.*\"}[1m])) / sum by (environment, service) (rate(http_server_request_duration_seconds_count{http_route=~\"/api/.*\"}[1m]))",
+        "labels": {},
+        "type": "recording"
+      },
+      {
+        "name": "shoplite:http_request_duration_seconds:p95_1m",
+        "query": "histogram_quantile(0.95, sum by (environment, service, le) (rate(http_server_request_duration_seconds_bucket{http_route=~\"/api/.*\"}[1m])))",
+        "labels": {},
+        "type": "recording"
+      },
+      {
+        "name": "ShopLiteHighErrorRate",
+        "query": "shoplite:http_errors:ratio_rate1m > 0.05",
+        "duration": 60,
+        "keepFiringFor": 0,
+        "labels": {
+          "severity": "page"
+        },
+        "annotations": {
+          "summary": "{{ $labels.service }} in {{ $labels.environment }}: {{ $value | humanizePercentage }} of API requests fail (SLO: < 5 %)"
+        },
+        "type": "alerting"
+      },
+      {
+        "name": "ShopLiteSlowRequests",
+        "query": "shoplite:http_request_duration_seconds:p95_1m > 0.5",
+        "duration": 120,
+        "keepFiringFor": 0,
+        "labels": {
+          "severity": "ticket"
+        },
+        "annotations": {
+          "summary": "{{ $labels.service }} in {{ $labels.environment }}: p95 latency {{ $value | humanizeDuration }} (SLO: < 500 ms)"
+        },
+        "type": "alerting"
+      }
+    ],
+    "interval": 15,
+    "limit": 0,
+    "evaluationTime": 0.005700708,
+    "lastEvaluation": "2026-11-10T11:58:11.390934626Z"
+  }
+]

@@ -1,0 +1,5 @@
+$ curl -s http://prometheus:9090/api/v1/alerts   # 2026-11-10T11:52:10Z, catalog in shop-prod scaled to 0 at 11:50:03Z
+firing   ShopLiteHighErrorRate    env=prod service=orders severity=page activeAt=2026-11-10T11:50:41Z
+         orders in prod: 50.96% of API requests fail (SLO: < 5 %)
+pending  ShopLiteSlowRequests     env=prod service=orders severity=ticket activeAt=2026-11-10T11:50:41Z
+         orders in prod: p95 latency 2.353s (SLO: < 500 ms)

@@ -1,0 +1,36 @@
+# promtool test rules — replays the Week 9 outage (catalog 3 → 0 pods at minute 10) offline.
+rule_files:
+  - ../shoplite-red.rules.yml
+evaluation_interval: 15s
+tests:
+  - interval: 15s
+    input_series:
+      # catalog: healthy, then its target disappears (staleness marker, as the scrape loop writes it)
+      - series: 'up{job="kubernetes-pods",namespace="shop-prod",app="catalog",pod="catalog-a"}'
+        values: '1x40 stale'
+      - series: 'up{job="kubernetes-pods",namespace="shop-prod",app="orders",pod="orders-a"}'
+        values: '1x80'
+      # orders RED: 10 req/s, half of them 502 from minute 10
+      - series: 'http_server_request_duration_seconds_count{environment="prod",service="orders",http_route="/api/orders",http_response_status_code="201"}'
+        values: '0+150x40 6000+75x40'
+      - series: 'http_server_request_duration_seconds_count{environment="prod",service="orders",http_route="/api/orders",http_response_status_code="502"}'
+        values: '0x40 0+75x40'
+    alert_rule_test:
+      - eval_time: 9m
+        alertname: ShopLiteServiceNoTargets
+        exp_alerts: []
+      - eval_time: 9m
+        alertname: ShopLiteHighErrorRate
+        exp_alerts: []
+      - eval_time: 13m
+        alertname: ShopLiteServiceNoTargets
+        exp_alerts:
+          - exp_labels: { severity: page, namespace: shop-prod, app: catalog }
+            exp_annotations:
+              summary: "catalog in shop-prod has no healthy scrape target (scaled to 0 or crash-looping)"
+      - eval_time: 13m
+        alertname: ShopLiteHighErrorRate
+        exp_alerts:
+          - exp_labels: { severity: page, environment: prod, service: orders }
+            exp_annotations:
+              summary: "orders in prod: 50% of API requests fail (SLO: < 5 %)"

@@ -1,0 +1,1001 @@
+{
+ "data": [
+  {
+   "traceID": "14091ffffccb0b599d907cb52b6832fc",
+   "spans": [
+    {
+     "traceID": "14091ffffccb0b599d907cb52b6832fc",
+     "spanID": "504c964b6375b3c9",
+     "operationName": "ReverseProxy",
+     "references": [
+      {
+       "refType": "CHILD_OF",
+       "traceID": "14091ffffccb0b599d907cb52b6832fc",
+       "spanID": "221ad0a72c123fbf"
+      }
+     ],
+     "startTime": 1794311314339760,
+     "duration": 8709,
+     "tags": [
+      {
+       "key": "otel.scope.name",
+       "type": "string",
+       "value": "github.com/traefik/traefik"
+      },
+      {
+       "key": "http.request.method",
+       "type": "string",
+       "value": "POST"
+      },
+      {
+       "key": "http.response.status_code",
+       "type": "int64",
+       "value": 201
+      },
+      {
+       "key": "network.peer.address",
+       "type": "string",
+       "value": "10.244.2.49"
+      },
+      {
+       "key": "network.peer.port",
+       "type": "int64",
+       "value": 8080
+      },
+      {
+       "key": "network.protocol.version",
+       "type": "string",
+       "value": "1.1"
+      },
+      {
+       "key": "server.address",
+       "type": "string",
+       "value": "10.244.2.49"
+      },
+      {
+       "key": "server.port",
+       "type": "int64",
+       "value": 8080
+      },
+      {
+       "key": "url.full",
+       "type": "string",
+       "value": "http://10.244.2.49:8080/api/orders"
+      },
+      {
+       "key": "url.scheme",
+       "type": "string",
+       "value": "http"
+      },
+      {
+       "key": "user_agent.original",
+       "type": "string",
+       "value": "curl/8.7.1"
+      },
+      {
+       "key": "span.kind",
+       "type": "string",
+       "value": "client"
+      }
+     ],
+     "logs": [],
+     "processID": "p1",
+     "warnings": null
+    },
+    {
+     "traceID": "14091ffffccb0b599d907cb52b6832fc",
+     "spanID": "221ad0a72c123fbf",
+     "operationName": "POST",
+     "references": [],
+     "startTime": 1794311314339402,
+     "duration": 9229,
+     "tags": [
+      {
+       "key": "otel.scope.name",
+       "type": "string",
+       "value": "github.com/traefik/traefik"
+      },
+      {
+       "key": "client.address",
+       "type": "string",
+       "value": "172.27.0.4"
+      },
+      {
+       "key": "client.port",
+       "type": "int64",
+       "value": 36513
+      },
+      {
+       "key": "entry_point",
+       "type": "string",
+       "value": "web"
+      },
+      {
+       "key": "http.request.body.size",
+       "type": "int64",
+       "value": 28
+      },
+      {
+       "key": "http.request.method",
+       "type": "string",
+       "value": "POST"
+      },
+      {
+       "key": "http.response.status_code",
+       "type": "int64",
+       "value": 201
+      },
+      {
+       "key": "network.peer.address",
+       "type": "string",
+       "value": "172.27.0.4"
+      },
+      {
+       "key": "network.peer.port",
+       "type": "int64",
+       "value": 36513
+      },
+      {
+       "key": "network.protocol.version",
+       "type": "string",
+       "value": "1.1"
+      },
+      {
+       "key": "server.address",
+       "type": "string",
+       "value": "prod.shop.local"
+      },
+      {
+       "key": "url.path",
+       "type": "string",
+       "value": "/api/orders"
+      },
+      {
+       "key": "url.query",
+       "type": "string",
+       "value": ""
+      },
+      {
+       "key": "url.scheme",
+       "type": "string",
+       "value": "http"
+      },
+      {
+       "key": "user_agent.original",
+       "type": "string",
+       "value": "curl/8.7.1"
+      },
+      {
+       "key": "span.kind",
+       "type": "string",
+       "value": "server"
+      }
+     ],
+     "logs": [],
+     "processID": "p1",
+     "warnings": null
+    },
+    {
+     "traceID": "14091ffffccb0b599d907cb52b6832fc",
+     "spanID": "274f0f2efba55c53",
+     "operationName": "pg-pool.connect",
+     "references": [
+      {
+       "refType": "CHILD_OF",
+       "traceID": "14091ffffccb0b599d907cb52b6832fc",
+       "spanID": "452e9166f52fc3a0"
+      }
+     ],
+     "startTime": 1794311314343000,
+     "duration": 170,
+     "tags": [
+      {
+       "key": "otel.scope.name",
+       "type": "string",
+       "value": "@opentelemetry/instrumentation-pg"
+      },
+      {
+       "key": "otel.scope.version",
+       "type": "string",
+       "value": "0.77.0"
+      },
+      {
+       "key": "db.postgresql.idle.timeout.millis",
+       "type": "int64",
+       "value": 10000
+      },
+      {
+       "key": "db.system.name",
+       "type": "string",
+       "value": "postgresql"
+      },
+      {
+       "key": "span.kind",
+       "type": "string",
+       "value": "client"
+      }
+     ],
+     "logs": [],
+     "processID": "p2",
+     "warnings": null
+    },
+    {
+     "traceID": "14091ffffccb0b599d907cb52b6832fc",
+     "spanID": "467c273585e82470",
+     "operationName": "pg.query:SELECT catalog",
+     "references": [
+      {
+       "refType": "CHILD_OF",
+       "traceID": "14091ffffccb0b599d907cb52b6832fc",
+       "spanID": "452e9166f52fc3a0"
+      }
+     ],
+     "startTime": 1794311314343000,
+     "duration": 596,
+     "tags": [
+      {
+       "key": "otel.scope.name",
+       "type": "string",
+       "value": "@opentelemetry/instrumentation-pg"
+      },
+      {
+       "key": "otel.scope.version",
+       "type": "string",
+       "value": "0.77.0"
+      },
+      {
+       "key": "db.namespace",
+       "type": "string",
+       "value": "catalog"
+      },
+      {
+       "key": "db.query.text",
+       "type": "string",
+       "value": "SELECT id, sku, name, price_cents AS \"priceCents\", stock FROM products WHERE id = $1"
+      },
+      {
+       "key": "db.system.name",
+       "type": "string",
+       "value": "postgresql"
+      },
+      {
+       "key": "server.address",
+       "type": "string",
+       "value": "postgres.shop-prod.svc.cluster.local"
+      },
+      {
+       "key": "server.port",
+       "type": "int64",
+       "value": 5432
+      },
+      {
+       "key": "span.kind",
+       "type": "string",
+       "value": "client"
+      }
+     ],
+     "logs": [],
+     "processID": "p2",
+     "warnings": null
+    },
+    {
+     "traceID": "14091ffffccb0b599d907cb52b6832fc",
+     "spanID": "452e9166f52fc3a0",
+     "operationName": "GET /api/catalog/products/:id",
+     "references": [
+      {
+       "refType": "CHILD_OF",
+       "traceID": "14091ffffccb0b599d907cb52b6832fc",
+       "spanID": "68d559fac901924f"
+      }
+     ],
+     "startTime": 1794311314343000,
+     "duration": 1913,
+     "tags": [
+      {
+       "key": "otel.scope.name",
+       "type": "string",
+       "value": "@opentelemetry/instrumentation-http"
+      },
+      {
+       "key": "otel.scope.version",
+       "type": "string",
+       "value": "0.300.0"
+      },
+      {
+       "key": "client.address",
+       "type": "string",
+       "value": "::ffff:10.244.2.49"
+      },
+      {
+       "key": "http.request.method",
+       "type": "string",
+       "value": "GET"
+      },
+      {
+       "key": "http.response.status_code",
+       "type": "int64",
+       "value": 200
+      },
+      {
+       "key": "http.route",
+       "type": "string",
+       "value": "/api/catalog/products/:id"
+      },
+      {
+       "key": "network.peer.address",
+       "type": "string",
+       "value": "::ffff:10.244.2.49"
+      },
+      {
+       "key": "network.peer.port",
+       "type": "int64",
+       "value": 42330
+      },
+      {
+       "key": "network.protocol.version",
+       "type": "string",
+       "value": "1.1"
+      },
+      {
+       "key": "server.address",
+       "type": "string",
+       "value": "catalog.shop-prod.svc.cluster.local"
+      },
+      {
+       "key": "server.port",
+       "type": "int64",
+       "value": 80
+      },
+      {
+       "key": "url.path",
+       "type": "string",
+       "value": "/api/catalog/products/1"
+      },
+      {
+       "key": "url.scheme",
+       "type": "string",
+       "value": "http"
+      },
+      {
+       "key": "user_agent.original",
+       "type": "string",
+       "value": "node"
+      },
+      {
+       "key": "span.kind",
+       "type": "string",
+       "value": "server"
+      }
+     ],
+     "logs": [],
+     "processID": "p2",
+     "warnings": null
+    },
+    {
+     "traceID": "14091ffffccb0b599d907cb52b6832fc",
+     "spanID": "2d183f30ba037489",
+     "operationName": "pg-pool.connect",
+     "references": [
+      {
+       "refType": "CHILD_OF",
+       "traceID": "14091ffffccb0b599d907cb52b6832fc",
+       "spanID": "13e9703786628077"
+      }
+     ],
+     "startTime": 1794311314345000,
+     "duration": 275,
+     "tags": [
+      {
+       "key": "otel.scope.name",
+       "type": "string",
+       "value": "@opentelemetry/instrumentation-pg"
+      },
+      {
+       "key": "otel.scope.version",
+       "type": "string",
+       "value": "0.77.0"
+      },
+      {
+       "key": "db.postgresql.idle.timeout.millis",
+       "type": "int64",
+       "value": 10000
+      },
+      {
+       "key": "db.system.name",
+       "type": "string",
+       "value": "postgresql"
+      },
+      {
+       "key": "span.kind",
+       "type": "string",
+       "value": "client"
+      }
+     ],
+     "logs": [],
+     "processID": "p3",
+     "warnings": null
+    },
+    {
+     "traceID": "14091ffffccb0b599d907cb52b6832fc",
+     "spanID": "e80e14febe2143d8",
+     "operationName": "pg.query:INSERT orders",
+     "references": [
+      {
+       "refType": "CHILD_OF",
+       "traceID": "14091ffffccb0b599d907cb52b6832fc",
+       "spanID": "13e9703786628077"
+      }
+     ],
+     "startTime": 1794311314346000,
+     "duration": 1692,
+     "tags": [
+      {
+       "key": "otel.scope.name",
+       "type": "string",
+       "value": "@opentelemetry/instrumentation-pg"
+      },
+      {
+       "key": "otel.scope.version",
+       "type": "string",
+       "value": "0.77.0"
+      },
+      {
+       "key": "db.namespace",
+       "type": "string",
+       "value": "orders"
+      },
+      {
+       "key": "db.query.text",
+       "type": "string",
+       "value": "INSERT INTO orders (product_id, quantity, total_cents) VALUES ($1, $2, $3)\n         RETURNING id, product_id AS \"productId\", quantity, total_cents AS \"totalCents\",\n                   created_at AS \"createdAt\""
+      },
+      {
+       "key": "db.system.name",
+       "type": "string",
+       "value": "postgresql"
+      },
+      {
+       "key": "server.address",
+       "type": "string",
+       "value": "postgres.shop-prod.svc.cluster.local"
+      },
+      {
+       "key": "server.port",
+       "type": "int64",
+       "value": 5432
+      },
+      {
+       "key": "span.kind",
+       "type": "string",
+       "value": "client"
+      }
+     ],
+     "logs": [],
+     "processID": "p3",
+     "warnings": null
+    },
+    {
+     "traceID": "14091ffffccb0b599d907cb52b6832fc",
+     "spanID": "13e9703786628077",
+     "operationName": "POST /api/orders",
+     "references": [
+      {
+       "refType": "CHILD_OF",
+       "traceID": "14091ffffccb0b599d907cb52b6832fc",
+       "spanID": "504c964b6375b3c9"
+      }
+     ],
+     "startTime": 1794311314341000,
+     "duration": 6817,
+     "tags": [
+      {
+       "key": "otel.scope.name",
+       "type": "string",
+       "value": "@opentelemetry/instrumentation-http"
+      },
+      {
+       "key": "otel.scope.version",
+       "type": "string",
+       "value": "0.300.0"
+      },
+      {
+       "key": "client.address",
+       "type": "string",
+       "value": "172.27.0.4"
+      },
+      {
+       "key": "http.request.method",
+       "type": "string",
+       "value": "POST"
+      },
+      {
+       "key": "http.response.status_code",
+       "type": "int64",
+       "value": 201
+      },
+      {
+       "key": "http.route",
+       "type": "string",
+       "value": "/api/orders"
+      },
+      {
+       "key": "network.peer.address",
+       "type": "string",
+       "value": "::ffff:10.244.2.36"
+      },
+      {
+       "key": "network.peer.port",
+       "type": "int64",
+       "value": 43190
+      },
+      {
+       "key": "network.protocol.version",
+       "type": "string",
+       "value": "1.1"
+      },
+      {
+       "key": "server.address",
+       "type": "string",
+       "value": "prod.shop.local"
+      },
+      {
+       "key": "server.port",
+       "type": "int64",
+       "value": 80
+      },
+      {
+       "key": "url.path",
+       "type": "string",
+       "value": "/api/orders"
+      },
+      {
+       "key": "url.scheme",
+       "type": "string",
+       "value": "http"
+      },
+      {
+       "key": "user_agent.original",
+       "type": "string",
+       "value": "curl/8.7.1"
+      },
+      {
+       "key": "span.kind",
+       "type": "string",
+       "value": "server"
+      }
+     ],
+     "logs": [],
+     "processID": "p3",
+     "warnings": null
+    },
+    {
+     "traceID": "14091ffffccb0b599d907cb52b6832fc",
+     "spanID": "68d559fac901924f",
+     "operationName": "GET",
+     "references": [
+      {
+       "refType": "CHILD_OF",
+       "traceID": "14091ffffccb0b599d907cb52b6832fc",
+       "spanID": "13e9703786628077"
+      }
+     ],
+     "startTime": 1794311314342000,
+     "duration": 2991,
+     "tags": [
+      {
+       "key": "otel.scope.name",
+       "type": "string",
+       "value": "@opentelemetry/instrumentation-undici"
+      },
+      {
+       "key": "otel.scope.version",
+       "type": "string",
+       "value": "0.34.0"
+      },
+      {
+       "key": "http.request.method",
+       "type": "string",
+       "value": "GET"
+      },
+      {
+       "key": "http.request.method_original",
+       "type": "string",
+       "value": "GET"
+      },
+      {
+       "key": "http.response.status_code",
+       "type": "int64",
+       "value": 200
+      },
+      {
+       "key": "network.peer.address",
+       "type": "string",
+       "value": "10.96.93.154"
+      },
+      {
+       "key": "network.peer.port",
+       "type": "int64",
+       "value": 80
+      },
+      {
+       "key": "network.protocol.version",
+       "type": "string",
+       "value": "1.1"
+      },
+      {
+       "key": "server.address",
+       "type": "string",
+       "value": "catalog.shop-prod.svc.cluster.local"
+      },
+      {
+       "key": "server.port",
+       "type": "int64",
+       "value": 80
+      },
+      {
+       "key": "url.full",
+       "type": "string",
+       "value": "http://catalog.shop-prod.svc.cluster.local/api/catalog/products/1"
+      },
+      {
+       "key": "url.path",
+       "type": "string",
+       "value": "/api/catalog/products/1"
+      },
+      {
+       "key": "url.query",
+       "type": "string",
+       "value": ""
+      },
+      {
+       "key": "url.scheme",
+       "type": "string",
+       "value": "http"
+      },
+      {
+       "key": "user_agent.original",
+       "type": "string",
+       "value": "node"
+      },
+      {
+       "key": "span.kind",
+       "type": "string",
+       "value": "client"
+      }
+     ],
+     "logs": [],
+     "processID": "p3",
+     "warnings": null
+    }
+   ],
+   "processes": {
+    "p1": {
+     "serviceName": "traefik",
+     "tags": [
+      {
+       "key": "host.name",
+       "type": "string",
+       "value": "traefik-6849c8785d-8n6md"
+      },
+      {
+       "key": "k8s.deployment.name",
+       "type": "string",
+       "value": "traefik"
+      },
+      {
+       "key": "k8s.namespace.name",
+       "type": "string",
+       "value": "ingress-traefik"
+      },
+      {
+       "key": "k8s.node.name",
+       "type": "string",
+       "value": "shoplite-worker"
+      },
+      {
+       "key": "k8s.pod.name",
+       "type": "string",
+       "value": "traefik-6849c8785d-8n6md"
+      },
+      {
+       "key": "os.description",
+       "type": "string",
+       "value": "Alpine Linux 3.24.2 (Linux traefik-6849c8785d-8n6md 6.11.11-linuxkit #1 SMP Wed Oct 22 09:37:46 UTC 2025 aarch64)"
+      },
+      {
+       "key": "os.type",
+       "type": "string",
+       "value": "linux"
+      },
+      {
+       "key": "process.command_args",
+       "type": "string",
+       "value": "[\"traefik\",\"traefik\",\"--entryPoints.web.address=:8000\",\"--entryPoints.web.transport.lifeCycle.requestAcceptGraceTimeout=5s\",\"--entryPoints.web.transport.lifeCycle.graceTimeOut=10s\",\"--entryPoints.traefik.address=:9000\",\"--ping=true\",\"--ping.entryPoint=traefik\",\"--providers.kubernetesingress=true\",\"--providers.kubernetesingress.ingressclass=traefik\",\"--providers.kubernetesingress.namespaces=shop,shop-dev,shop-staging,shop-prod\",\"--providers.kubernetesingress.ingressendpoint.ip=127.0.0.1\",\"--tracing.serviceName=traefik\",\"--tracing.sampleRate=1.0\",\"--tracing.otlp.http.endpoint=http://otel-collector.observability.svc.cluster.local:4318/v1/traces\",\"--metrics.prometheus=true\",\"--metrics.prometheus.entryPoint=traefik\",\"--metrics.prometheus.addRoutersLabels=true\",\"--metrics.prometheus.addServicesLabels=true\",\"--metrics.prometheus.buckets=0.005,0.01,0.025,0.05,0.1,0.25,0.5,1,2.5,5\",\"--accesslog=true\",\"--log.level=INFO\",\"--global.checknewversion=false\",\"--global.sendanonymoususage=false\"]"
+      },
+      {
+       "key": "process.executable.name",
+       "type": "string",
+       "value": "traefik"
+      },
+      {
+       "key": "process.executable.path",
+       "type": "string",
+       "value": "/usr/local/bin/traefik"
+      },
+      {
+       "key": "process.owner",
+       "type": "string",
+       "value": "traefik"
+      },
+      {
+       "key": "process.pid",
+       "type": "int64",
+       "value": 1
+      },
+      {
+       "key": "process.runtime.description",
+       "type": "string",
+       "value": "go version go1.26.8 linux/arm64"
+      },
+      {
+       "key": "process.runtime.name",
+       "type": "string",
+       "value": "go"
+      },
+      {
+       "key": "process.runtime.version",
+       "type": "string",
+       "value": "go1.26.8"
+      },
+      {
+       "key": "service.version",
+       "type": "string",
+       "value": "3.7.14"
+      },
+      {
+       "key": "telemetry.sdk.language",
+       "type": "string",
+       "value": "go"
+      },
+      {
+       "key": "telemetry.sdk.name",
+       "type": "string",
+       "value": "opentelemetry"
+      },
+      {
+       "key": "telemetry.sdk.version",
+       "type": "string",
+       "value": "1.46.0"
+      }
+     ]
+    },
+    "p2": {
+     "serviceName": "catalog",
+     "tags": [
+      {
+       "key": "deployment.environment.name",
+       "type": "string",
+       "value": "prod"
+      },
+      {
+       "key": "host.arch",
+       "type": "string",
+       "value": "arm64"
+      },
+      {
+       "key": "host.name",
+       "type": "string",
+       "value": "catalog-75ddd69b88-cfjpw"
+      },
+      {
+       "key": "k8s.deployment.name",
+       "type": "string",
+       "value": "catalog"
+      },
+      {
+       "key": "k8s.namespace.name",
+       "type": "string",
+       "value": "shop-prod"
+      },
+      {
+       "key": "k8s.node.name",
+       "type": "string",
+       "value": "shoplite-worker"
+      },
+      {
+       "key": "k8s.pod.name",
+       "type": "string",
+       "value": "catalog-75ddd69b88-cfjpw"
+      },
+      {
+       "key": "process.command",
+       "type": "string",
+       "value": "/app/src/server.js"
+      },
+      {
+       "key": "process.command_args",
+       "type": "string",
+       "value": "[\"/nodejs/bin/node\",\"/app/src/server.js\"]"
+      },
+      {
+       "key": "process.executable.name",
+       "type": "string",
+       "value": "/nodejs/bin/node"
+      },
+      {
+       "key": "process.executable.path",
+       "type": "string",
+       "value": "/nodejs/bin/node"
+      },
+      {
+       "key": "process.owner",
+       "type": "string",
+       "value": "nonroot"
+      },
+      {
+       "key": "process.pid",
+       "type": "int64",
+       "value": 1
+      },
+      {
+       "key": "process.runtime.description",
+       "type": "string",
+       "value": "Node.js"
+      },
+      {
+       "key": "process.runtime.name",
+       "type": "string",
+       "value": "nodejs"
+      },
+      {
+       "key": "process.runtime.version",
+       "type": "string",
+       "value": "24.22.0"
+      },
+      {
+       "key": "service.namespace",
+       "type": "string",
+       "value": "shoplite"
+      },
+      {
+       "key": "service.version",
+       "type": "string",
+       "value": "1.1.0"
+      },
+      {
+       "key": "telemetry.sdk.language",
+       "type": "string",
+       "value": "nodejs"
+      },
+      {
+       "key": "telemetry.sdk.name",
+       "type": "string",
+       "value": "opentelemetry"
+      },
+      {
+       "key": "telemetry.sdk.version",
+       "type": "string",
+       "value": "3.0.0"
+      }
+     ]
+    },
+    "p3": {
+     "serviceName": "orders",
+     "tags": [
+      {
+       "key": "deployment.environment.name",
+       "type": "string",
+       "value": "prod"
+      },
+      {
+       "key": "host.arch",
+       "type": "string",
+       "value": "arm64"
+      },
+      {
+       "key": "host.name",
+       "type": "string",
+       "value": "orders-55965c7d6c-h4gxf"
+      },
+      {
+       "key": "k8s.deployment.name",
+       "type": "string",
+       "value": "orders"
+      },
+      {
+       "key": "k8s.namespace.name",
+       "type": "string",
+       "value": "shop-prod"
+      },
+      {
+       "key": "k8s.node.name",
+       "type": "string",
+       "value": "shoplite-worker"
+      },
+      {
+       "key": "k8s.pod.name",
+       "type": "string",
+       "value": "orders-55965c7d6c-h4gxf"
+      },
+      {
+       "key": "process.command",
+       "type": "string",
+       "value": "/app/src/server.js"
+      },
+      {
+       "key": "process.command_args",
+       "type": "string",
+       "value": "[\"/nodejs/bin/node\",\"/app/src/server.js\"]"
+      },
+      {
+       "key": "process.executable.name",
+       "type": "string",
+       "value": "/nodejs/bin/node"
+      },
+      {
+       "key": "process.executable.path",
+       "type": "string",
+       "value": "/nodejs/bin/node"
+      },
+      {
+       "key": "process.owner",
+       "type": "string",
+       "value": "nonroot"
+      },
+      {
+       "key": "process.pid",
+       "type": "int64",
+       "value": 1
+      },
+      {
+       "key": "process.runtime.description",
+       "type": "string",
+       "value": "Node.js"
+      },
+      {
+       "key": "process.runtime.name",
+       "type": "string",
+       "value": "nodejs"
+      },
+      {
+       "key": "process.runtime.version",
+       "type": "string",
+       "value": "24.22.0"
+      },
+      {
+       "key": "service.namespace",
+       "type": "string",
+       "value": "shoplite"
+      },
+      {
+       "key": "service.version",
+       "type": "string",
+       "value": "1.1.0"
+      },
+      {
+       "key": "telemetry.sdk.language",
+       "type": "string",
+       "value": "nodejs"
+      },
+      {
+       "key": "telemetry.sdk.name",
+       "type": "string",
+       "value": "opentelemetry"
+      },
+      {
+       "key": "telemetry.sdk.version",
+       "type": "string",
+       "value": "3.0.0"
+      }
+     ]
+    }
+   },
+   "warnings": null
+  }
+ ],
+ "total": 0,
+ "limit": 0,
+ "offset": 0,
+ "errors": null
+}

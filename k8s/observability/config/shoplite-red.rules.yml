@@ -33,3 +33,16 @@ groups:
           severity: ticket
         annotations:
           summary: "{{ $labels.service }} in {{ $labels.environment }}: p95 latency {{ $value | humanizeDuration }} (SLO: < 500 ms)"
+      # Found in the Week 9 outage experiment: with 0 pods a service has no RED series at all, so the
+      # error-ratio alert above stays silent for it ("no data" is not "0 % errors"). This fires when
+      # a service that was scraped 5 minutes ago has no healthy target now.
+      - alert: ShopLiteServiceNoTargets
+        expr: >-
+          count by (namespace, app) (up{job="kubernetes-pods",app=~"catalog|orders"} offset 5m)
+          unless
+          count by (namespace, app) (up{job="kubernetes-pods",app=~"catalog|orders"} == 1)
+        for: 1m
+        labels:
+          severity: page
+        annotations:
+          summary: "{{ $labels.app }} in {{ $labels.namespace }} has no healthy scrape target (scaled to 0 or crash-looping)"
