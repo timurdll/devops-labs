@@ -1,4 +1,4 @@
-# Jaeger v2 (itself an OpenTelemetry Collector build): OTLP in, in-memory trace store, query UI/API.
+# Jaeger v2.20 (itself an OpenTelemetry Collector build): OTLP in, in-memory trace store, query UI/API.
 # In-memory = traces are lost on restart; fine for the lab, Badger/Cassandra/OpenSearch in production.
 service:
   extensions: [jaeger_storage, jaeger_query, healthcheckv2]

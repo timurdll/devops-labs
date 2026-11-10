@@ -1,0 +1,58 @@
+%% Week 9 · Observability data flow: App runtime → OpenTelemetry Collector → Prometheus / Jaeger → Grafana.
+%% Solid = traces (push), dashed = metrics (pull, then push), dotted = queries.
+flowchart LR
+    U(["👤 client<br/>curl / browser"])
+
+    subgraph RT["① App runtime · namespaces shop-dev / shop-staging / shop-prod / ingress-traefik"]
+        direction TB
+        T["<b>Traefik</b> v3.7<br/>root span · injects <code>traceparent</code><br/>:9000/metrics (edge RED)"]
+        W["<b>web</b> nginx<br/>static, no SDK"]
+        O["<b>orders</b> 1.1.0<br/>OTel SDK: http · undici · pg<br/>prom-client /metrics"]
+        C["<b>catalog</b> 1.1.0<br/>OTel SDK: http · pg<br/>prom-client /metrics"]
+        P[("postgres")]
+        T -->|"traceparent"| W
+        T -->|"traceparent"| O
+        T -->|"traceparent"| C
+        O -->|"fetch + traceparent"| C
+        O --> P
+        C --> P
+    end
+
+    subgraph OBS["② namespace observability"]
+        direction TB
+        subgraph COL["<b>OpenTelemetry Collector</b> 0.163 (gateway, 1 replica)"]
+            direction TB
+            R1["receiver <b>otlp</b><br/>:4317 gRPC · :4318 HTTP"]
+            R2["receiver <b>prometheus</b><br/>kubernetes_sd role=pod<br/>prometheus.io/scrape=true · 15 s"]
+            PR["memory_limiter → k8s_attributes → batch"]
+            E1["exporter <b>otlp_grpc/jaeger</b>"]
+            E2["exporter <b>prometheus_remote_write</b>"]
+            R1 --> PR --> E1
+            R2 --> PR --> E2
+        end
+        J[("<b>Jaeger</b> v2.20<br/>in-memory, 20 000 traces<br/>query API :16686")]
+        PM[("<b>Prometheus</b> v3.15<br/>remote-write receiver<br/>exemplar storage · RED rules")]
+        G["<b>Grafana</b> 13.2<br/>RED dashboard<br/>exemplar → trace link"]
+        E1 -->|"OTLP gRPC"| J
+        E2 -->|"remote write<br/>(+ trace_id exemplars)"| PM
+        G -.->|"PromQL"| PM
+        G -.->|"Jaeger API"| J
+    end
+
+    U -->|"HTTP Host: &lt;env&gt;.shop.local<br/>:8080 → NodePort 30080"| T
+    T ==>|"OTLP/HTTP spans"| R1
+    O ==>|"OTLP/HTTP spans"| R1
+    C ==>|"OTLP/HTTP spans"| R1
+    R2 -. "GET /metrics :8080" .-> O
+    R2 -. "GET /metrics :8080" .-> C
+    R2 -. "GET /metrics :9000" .-> T
+    OP(["🧑‍💻 operator<br/>kubectl port-forward"]) -.-> G
+
+    classDef app fill:#E8F1FB,stroke:#2E74B5,color:#1F4E79
+    classDef col fill:#FFF4E5,stroke:#E69138,color:#783F04
+    classDef store fill:#EAF5EA,stroke:#38761D,color:#274E13
+    classDef viz fill:#F3E8FB,stroke:#8E44AD,color:#4A235A
+    class T,W,O,C,P app
+    class R1,R2,PR,E1,E2 col
+    class J,PM store
+    class G viz
