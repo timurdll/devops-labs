@@ -1,0 +1,354 @@
+{{- if .Values.mesh.enabled }}
+{{- /*
+Week 10 — Istio service mesh objects of one environment. The control plane (istiod) watches them
+and pushes the result as Envoy configuration (xDS) to every sidecar and to the gateway:
+
+  north-south  Traefik ─► shop-gateway (Envoy, Gateway + VirtualService shop-edge) ─mTLS─► services
+  east-west    orders ─► catalog through both sidecars (VirtualService <svc> for canaries)
+  transport    PeerAuthentication: mTLS mode of every sidecar in the namespace
+  policy       DestinationRule: subsets, mTLS origination, connect timeout, outlier detection
+  identity     AuthorizationPolicy: default deny + ALLOW per edge of the call graph (SPIFFE IDs)
+*/ -}}
+{{- $ns := .Release.Namespace }}
+{{- $m := .Values.mesh }}
+{{- $gw := "shop-gateway" }}
+{{- $principal := printf "cluster.local/ns/%s/sa/%%s" $ns }}
+{{- $exposed := dict }}
+{{- range $name, $svc := .Values.services }}
+{{- if and $svc.enabled $svc.ingressPath }}{{ $_ := set $exposed $svc.ingressPath $name }}{{ end }}
+{{- end }}
+# ── Ingress gateway of this environment ────────────────────────────────────────────────────────
+# A plain Deployment whose pod is turned into an Envoy gateway by istiod's "gateway" injection
+# template (image: auto). One gateway per environment namespace: config, identity and blast radius
+# stay inside the environment, and prod's gateway changes only with prod's approved sync.
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: {{ $gw }}
+  labels:
+    {{- include "shoplite.labels" . | nindent 4 }}
+    app.kubernetes.io/name: {{ $gw }}
+automountServiceAccountToken: false
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ $gw }}
+  labels:
+    {{- include "shoplite.labels" . | nindent 4 }}
+    app.kubernetes.io/name: {{ $gw }}
+    app.kubernetes.io/component: gateway
+spec:
+  replicas: {{ $m.gateway.replicas }}
+  revisionHistoryLimit: {{ .Values.podDefaults.revisionHistoryLimit }}
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: {{ $gw }}
+  template:
+    metadata:
+      annotations:
+        inject.istio.io/templates: gateway
+      labels:
+        app.kubernetes.io/name: {{ $gw }}
+        app.kubernetes.io/component: gateway
+        app.kubernetes.io/part-of: shoplite
+        shoplite.io/environment: {{ .Values.global.environment }}
+        istio: {{ $gw }} # selector of the Gateway resource below
+        sidecar.istio.io/inject: "true"
+    spec:
+      serviceAccountName: {{ $gw }}
+      automountServiceAccountToken: false
+      terminationGracePeriodSeconds: 30
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1337
+        runAsGroup: 1337
+        seccompProfile:
+          type: RuntimeDefault
+      {{- if .Values.podDefaults.topologySpread.enabled }}
+      topologySpreadConstraints:
+        - maxSkew: 1
+          topologyKey: kubernetes.io/hostname
+          whenUnsatisfiable: ScheduleAnyway
+          labelSelector:
+            matchLabels:
+              app.kubernetes.io/name: {{ $gw }}
+      {{- end }}
+      containers:
+        - name: istio-proxy
+          image: auto # replaced by docker.io/istio/proxyv2:<istiod version> at admission
+          ports:
+            - name: http
+              containerPort: 8080
+          resources:
+            {{- toYaml $m.gateway.resources | nindent 12 }}
+          # Merged over the injection template: keeps the gateway inside PSA "restricted".
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            runAsNonRoot: true
+            capabilities:
+              drop: ["ALL"]
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ $gw }}
+  labels:
+    {{- include "shoplite.labels" . | nindent 4 }}
+    app.kubernetes.io/name: {{ $gw }}
+spec:
+  type: ClusterIP
+  selector:
+    app.kubernetes.io/name: {{ $gw }}
+  ports:
+    - name: http
+      port: 80
+      targetPort: http
+      appProtocol: http
+{{- if and .Values.podDisruptionBudget.enabled (gt (int $m.gateway.replicas) 1) }}
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: {{ $gw }}
+  labels:
+    {{- include "shoplite.labels" . | nindent 4 }}
+    app.kubernetes.io/name: {{ $gw }}
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: {{ $gw }}
+{{- end }}
+---
+apiVersion: networking.istio.io/v1
+kind: Gateway
+metadata:
+  name: {{ $gw }}
+  labels:
+    {{- include "shoplite.labels" . | nindent 4 }}
+spec:
+  # Matches only gateway pods in this namespace (PILOT_SCOPE_GATEWAY_TO_NAMESPACE in istiod).
+  selector:
+    istio: {{ $gw }}
+  servers:
+    - port:
+        number: 8080
+        name: http
+        protocol: HTTP
+      # TLS terminates at Traefik, the cluster edge (Week 7); Traefik → gateway stays in-cluster.
+      hosts:
+        - {{ .Values.ingress.host | quote }}
+---
+# North-south routing: the path table of the Week 8 Ingress, now executed by Envoy. A service
+# with a canary gets a weighted split right here, so browser traffic is shifted too.
+apiVersion: networking.istio.io/v1
+kind: VirtualService
+metadata:
+  name: shop-edge
+  labels:
+    {{- include "shoplite.labels" . | nindent 4 }}
+spec:
+  hosts:
+    - {{ .Values.ingress.host | quote }}
+  gateways:
+    - {{ $gw }}
+  http:
+    {{- range $path := keys $exposed | sortAlpha | reverse }}
+    {{- $name := get $exposed $path }}
+    {{- $svc := get $.Values.services $name }}
+    - name: {{ $name }}
+      match:
+        - uri:
+            prefix: {{ $path }}
+      route:
+        {{- include "shoplite.meshRoute" (dict "name" $name "svc" $svc "ns" $ns) | nindent 8 }}
+    {{- end }}
+{{- range $name, $svc := .Values.services }}
+{{- if and $svc.enabled $svc.canary $svc.canary.enabled }}
+---
+# East-west canary: every sidecar that calls {{ $name }} (e.g. orders → catalog) applies the same
+# split, so the canary sees the same share of internal and external traffic.
+apiVersion: networking.istio.io/v1
+kind: VirtualService
+metadata:
+  name: {{ $name }}
+  labels:
+    {{- include "shoplite.labels" $ | nindent 4 }}
+spec:
+  hosts:
+    - {{ $name }}.{{ $ns }}.svc.cluster.local
+  gateways:
+    - mesh
+  http:
+    - name: {{ $name }}-canary
+      route:
+        {{- include "shoplite.meshRoute" (dict "name" $name "svc" $svc "ns" $ns) | nindent 8 }}
+{{- end }}
+{{- end }}
+{{- range $name, $svc := .Values.services }}
+{{- if $svc.enabled }}
+---
+apiVersion: networking.istio.io/v1
+kind: DestinationRule
+metadata:
+  name: {{ $name }}
+  labels:
+    {{- include "shoplite.labels" $ | nindent 4 }}
+spec:
+  host: {{ $name }}.{{ $ns }}.svc.cluster.local
+  trafficPolicy:
+    {{- include "shoplite.meshTrafficPolicy" $m.trafficPolicy | nindent 4 }}
+  {{- if and $svc.canary $svc.canary.enabled }}
+  subsets:
+    - name: {{ $svc.version | default "v1" }}
+      labels:
+        version: {{ $svc.version | default "v1" }}
+    - name: {{ $svc.canary.version }}
+      labels:
+        version: {{ $svc.canary.version }}
+  {{- end }}
+{{- end }}
+{{- end }}
+{{- if .Values.postgres.enabled }}
+---
+apiVersion: networking.istio.io/v1
+kind: DestinationRule
+metadata:
+  name: postgres
+  labels:
+    {{- include "shoplite.labels" . | nindent 4 }}
+spec:
+  host: postgres.{{ $ns }}.svc.cluster.local
+  trafficPolicy:
+    tls:
+      mode: ISTIO_MUTUAL
+    connectionPool:
+      tcp:
+        connectTimeout: {{ $m.trafficPolicy.connectTimeout }}
+{{- end }}
+---
+# Transport security of every sidecar in this namespace. Overrides the mesh-wide STRICT default
+# only while mesh.mtlsMode is PERMISSIVE (migration window, ADR-W10-04).
+apiVersion: security.istio.io/v1
+kind: PeerAuthentication
+metadata:
+  name: default
+  labels:
+    {{- include "shoplite.labels" . | nindent 4 }}
+spec:
+  mtls:
+    mode: {{ $m.mtlsMode }}
+---
+# Gateway access log (Envoy → stdout): one line per request with the upstream cluster, e.g.
+# outbound|80|v2|catalog.shop-prod.svc.cluster.local — the subset that served the request.
+apiVersion: telemetry.istio.io/v1
+kind: Telemetry
+metadata:
+  name: gateway-access-log
+  labels:
+    {{- include "shoplite.labels" . | nindent 4 }}
+spec:
+  selector:
+    matchLabels:
+      istio: {{ $gw }}
+  accessLogging:
+    - providers:
+        - name: envoy
+{{- if $m.authorization }}
+---
+# Zero trust: an ALLOW policy without rules denies every request to every workload of the
+# namespace. The policies below re-open exactly the edges of the call graph, by SPIFFE identity
+# (the ServiceAccount in the peer's mTLS certificate), not by IP.
+apiVersion: security.istio.io/v1
+kind: AuthorizationPolicy
+metadata:
+  name: default-deny
+  labels:
+    {{- include "shoplite.labels" . | nindent 4 }}
+spec: {}
+---
+# The gateway is the entry point: it accepts plaintext HTTP from Traefik (NetworkPolicy limits the
+# source to the Traefik pods).
+apiVersion: security.istio.io/v1
+kind: AuthorizationPolicy
+metadata:
+  name: allow-to-{{ $gw }}
+  labels:
+    {{- include "shoplite.labels" . | nindent 4 }}
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: {{ $gw }}
+  action: ALLOW
+  rules:
+    - to:
+        - operation:
+            ports: ["8080"]
+{{- range $name, $svc := .Values.services }}
+{{- if $svc.enabled }}
+{{- $callers := list }}
+{{- if $svc.ingressPath }}{{ $callers = append $callers $gw }}{{ end }}
+{{- range $c := ($svc.allowFrom | default list) }}{{ $callers = append $callers $c }}{{ end }}
+{{- if $callers }}
+---
+apiVersion: security.istio.io/v1
+kind: AuthorizationPolicy
+metadata:
+  name: allow-to-{{ $name }}
+  labels:
+    {{- include "shoplite.labels" $ | nindent 4 }}
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: {{ $name }}
+  action: ALLOW
+  rules:
+    - from:
+        - source:
+            principals:
+              {{- range $c := $callers }}
+              - {{ printf $principal $c }}
+              {{- end }}
+      to:
+        - operation:
+            ports: ["8080"]
+{{- end }}
+{{- end }}
+{{- end }}
+{{- if .Values.postgres.enabled }}
+{{- $dbClients := list }}
+{{- range $name, $svc := .Values.services }}
+{{- if and $svc.enabled $svc.database }}{{ $dbClients = append $dbClients $name }}{{ end }}
+{{- end }}
+---
+apiVersion: security.istio.io/v1
+kind: AuthorizationPolicy
+metadata:
+  name: allow-to-postgres
+  labels:
+    {{- include "shoplite.labels" . | nindent 4 }}
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: postgres
+  action: ALLOW
+  rules:
+    - from:
+        - source:
+            principals:
+              {{- range $c := $dbClients }}
+              - {{ printf $principal $c }}
+              {{- end }}
+      to:
+        - operation:
+            ports: ["5432"]
+{{- end }}
+{{- end }}
+{{- end }}

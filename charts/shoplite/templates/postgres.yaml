@@ -18,6 +18,7 @@ spec:
     - name: postgres
       port: 5432
       targetPort: postgres
+      appProtocol: tcp # Istio: opaque TCP (mTLS-wrapped), no protocol sniffing
 ---
 apiVersion: apps/v1
 kind: StatefulSet
@@ -41,11 +42,18 @@ spec:
         app.kubernetes.io/part-of: shoplite
         shoplite.io/environment: {{ .Values.global.environment }}
         tier: data
+        {{- if .Values.mesh.enabled }}
+        sidecar.istio.io/inject: "true"
+        version: v1
+        {{- end }}
       annotations:
         # The init script only runs on an empty data directory, but a changed script should
         # still be visible as a new pod revision.
         checksum/init: {{ include "shoplite.postgresInitScript" . | sha256sum | trunc 16 }}
     spec:
+      {{- if .Values.mesh.enabled }}
+      serviceAccountName: postgres # SPIFFE identity of the database (AuthorizationPolicy target)
+      {{- end }}
       automountServiceAccountToken: false
       enableServiceLinks: false
       terminationGracePeriodSeconds: 30
@@ -124,4 +132,15 @@ spec:
         resources:
           requests:
             storage: {{ $pg.storage.size }}
+{{- end }}
+{{- if and .Values.mesh.enabled .Values.postgres.enabled }}
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: postgres
+  labels:
+    {{- include "shoplite.labels" . | nindent 4 }}
+    app.kubernetes.io/name: postgres
+automountServiceAccountToken: false
 {{- end }}

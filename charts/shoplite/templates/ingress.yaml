@@ -19,6 +19,18 @@ spec:
     - host: {{ .Values.ingress.host }}
       http:
         paths:
+          {{- if .Values.mesh.enabled }}
+          # Week 10: Traefik stays the cluster edge (host port, TLS, edge metrics/traces) and hands
+          # the whole host to this environment's Envoy gateway; path routing moved to the
+          # VirtualService shop-edge (templates/mesh.yaml).
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: shop-gateway
+                port:
+                  name: http
+          {{- else }}
           {{- range $path := keys $byPath | sortAlpha | reverse }}
           - path: {{ $path }}
             pathType: Prefix
@@ -27,5 +39,6 @@ spec:
                 name: {{ get $byPath $path }}
                 port:
                   name: http
+          {{- end }}
           {{- end }}
 {{- end }}

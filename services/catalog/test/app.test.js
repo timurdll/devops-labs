@@ -52,6 +52,19 @@ test('GET /api/catalog/products lists products', async () => {
   assert.ok(body.servedBy);
 });
 
+test('GET /api/catalog/products?q= filters by name or SKU (1.2.0)', async () => {
+  const byName = await (await fetch(`${base}/api/catalog/products?q=KEYB`)).json();
+  assert.deepEqual(byName.items.map((p) => p.id), [1]);
+  assert.equal(byName.query, 'keyb');
+  const bySku = await (await fetch(`${base}/api/catalog/products?q=sku-002`)).json();
+  assert.deepEqual(bySku.items.map((p) => p.id), [2]);
+  const none = await (await fetch(`${base}/api/catalog/products?q=zzz`)).json();
+  assert.deepEqual(none.items, []);
+  const blank = await (await fetch(`${base}/api/catalog/products?q=%20`)).json();
+  assert.equal(blank.items.length, 2);
+  assert.equal((await fetch(`${base}/api/catalog/products?q=${'x'.repeat(65)}`)).status, 400);
+});
+
 test('GET /api/catalog/products/:id returns one product or 404', async () => {
   const ok = await fetch(`${base}/api/catalog/products/1`);
   assert.equal(ok.status, 200);

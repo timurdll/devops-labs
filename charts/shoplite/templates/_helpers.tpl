@@ -47,7 +47,6 @@ Tag precedence: services.<name>.image.tag → image.tag → Chart.appVersion.
 {{- $_ := set $env "CATALOG_URL" (printf "http://%s" (include "shoplite.svcHost" (dict "name" "catalog" "ctx" $root))) -}}
 {{- end -}}
 {{- if and $root.Values.telemetry.enabled $svc.instrumented -}}
-{{- $tag := $svc.image.tag | default $root.Values.image.tag | default $root.Chart.AppVersion -}}
 {{- $_ := set $env "OTEL_SERVICE_NAME" $name -}}
 {{- $_ := set $env "OTEL_EXPORTER_OTLP_ENDPOINT" $root.Values.telemetry.otlpEndpoint -}}
 {{- $_ := set $env "OTEL_EXPORTER_OTLP_PROTOCOL" "http/protobuf" -}}
@@ -56,7 +55,7 @@ Tag precedence: services.<name>.image.tag → image.tag → Chart.appVersion.
 {{- $_ := set $env "OTEL_PROPAGATORS" "tracecontext,baggage" -}}
 {{- $_ := set $env "OTEL_METRICS_EXPORTER" "none" -}}{{/* metrics are pulled from /metrics */}}
 {{- $_ := set $env "OTEL_LOGS_EXPORTER" "none" -}}
-{{- $_ := set $env "OTEL_RESOURCE_ATTRIBUTES" (printf "deployment.environment.name=%s,service.namespace=shoplite,service.version=%s" $root.Values.global.environment $tag) -}}
+{{- /* OTEL_RESOURCE_ATTRIBUTES is set per Deployment (services.yaml): it carries the version. */ -}}
 {{- end -}}
 {{- toYaml (merge (deepCopy ($svc.env | default dict)) $env) -}}
 {{- end }}
@@ -77,4 +76,49 @@ REVOKE ALL ON DATABASE {{ $svc.database.name }} FROM PUBLIC;
 EOSQL
 {{- end }}
 {{- end }}
+{{- end }}
+
+{{/*
+Week 10: route of a VirtualService to one service. Without a canary: the whole Service. With a
+canary: two DestinationRule subsets, weight = services.<name>.canary.weight percent to the canary.
+*/}}
+{{- define "shoplite.meshRoute" -}}
+{{- $host := printf "%s.%s.svc.cluster.local" .name .ns -}}
+{{- if and .svc.canary .svc.canary.enabled -}}
+- destination:
+    host: {{ $host }}
+    subset: {{ .svc.version | default "v1" }}
+    port:
+      number: 80
+  weight: {{ sub 100 (int .svc.canary.weight) }}
+- destination:
+    host: {{ $host }}
+    subset: {{ .svc.canary.version }}
+    port:
+      number: 80
+  weight: {{ int .svc.canary.weight }}
+{{- else -}}
+- destination:
+    host: {{ $host }}
+    port:
+      number: 80
+{{- end -}}
+{{- end }}
+
+{{/* Week 10: client-side policy every caller's sidecar applies to a service (DestinationRule). */}}
+{{- define "shoplite.meshTrafficPolicy" -}}
+tls:
+  mode: ISTIO_MUTUAL # originate mTLS with the workload certificate (explicit; auto-mTLS would too)
+connectionPool:
+  tcp:
+    # Week 9 finding: a fetch to a missing catalog hung in TCP connect for 10 s. Envoy fails the
+    # connect after this timeout instead and answers 503 (no healthy upstream).
+    connectTimeout: {{ .connectTimeout }}
+outlierDetection:
+  # Passive health checking: eject an endpoint that keeps failing, so one bad pod (e.g. a broken
+  # canary replica) stops receiving traffic until it recovers.
+  consecutive5xxErrors: {{ .outlierDetection.consecutive5xxErrors }}
+  interval: {{ .outlierDetection.interval }}
+  baseEjectionTime: {{ .outlierDetection.baseEjectionTime }}
+  maxEjectionPercent: {{ .outlierDetection.maxEjectionPercent }}
 {{- end }}

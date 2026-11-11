@@ -10,7 +10,8 @@
     "ingress",
     "services",
     "postgres",
-    "database"
+    "database",
+    "mesh"
   ],
   "$defs": {
     "quantity": {
@@ -211,8 +212,78 @@
         "instrumented": {
           "type": "boolean",
           "description": "Exposes /metrics and emits OpenTelemetry spans."
+        },
+        "version": {
+          "type": "string",
+          "pattern": "^v[0-9]+$",
+          "description": "pod label `version` of the stable Deployment (mesh subset)"
+        },
+        "canary": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "enabled",
+            "version",
+            "image",
+            "replicas",
+            "weight"
+          ],
+          "description": "Week 10: weighted canary release through the mesh",
+          "properties": {
+            "enabled": {
+              "type": "boolean"
+            },
+            "version": {
+              "type": "string",
+              "pattern": "^v[0-9]+$"
+            },
+            "image": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "tag"
+              ],
+              "properties": {
+                "tag": {
+                  "$ref": "#/$defs/tag"
+                }
+              }
+            },
+            "replicas": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 10
+            },
+            "weight": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 100
+            }
+          },
+          "if": {
+            "properties": {
+              "enabled": {
+                "const": true
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "image": {
+                "properties": {
+                  "tag": {
+                    "minLength": 1
+                  }
+                }
+              }
+            }
+          }
         }
       }
+    },
+    "duration": {
+      "type": "string",
+      "pattern": "^[0-9]+(ms|s|m)$"
     }
   },
   "properties": {
@@ -356,6 +427,121 @@
             },
             "podName": {
               "type": "string"
+            }
+          }
+        }
+      }
+    },
+    "mesh": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "enabled",
+        "mtlsMode",
+        "authorization",
+        "gateway",
+        "trafficPolicy"
+      ],
+      "description": "Week 10: Istio service mesh",
+      "properties": {
+        "enabled": {
+          "type": "boolean"
+        },
+        "mtlsMode": {
+          "enum": [
+            "STRICT",
+            "PERMISSIVE"
+          ]
+        },
+        "authorization": {
+          "type": "boolean"
+        },
+        "gateway": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "replicas",
+            "resources"
+          ],
+          "properties": {
+            "replicas": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 5
+            },
+            "resources": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "requests",
+                "limits"
+              ],
+              "properties": {
+                "requests": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "cpu": {
+                      "$ref": "#/$defs/quantity"
+                    },
+                    "memory": {
+                      "$ref": "#/$defs/quantity"
+                    }
+                  }
+                },
+                "limits": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "cpu": {
+                      "$ref": "#/$defs/quantity"
+                    },
+                    "memory": {
+                      "$ref": "#/$defs/quantity"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "trafficPolicy": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "connectTimeout",
+            "outlierDetection"
+          ],
+          "properties": {
+            "connectTimeout": {
+              "$ref": "#/$defs/duration"
+            },
+            "outlierDetection": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "consecutive5xxErrors",
+                "interval",
+                "baseEjectionTime",
+                "maxEjectionPercent"
+              ],
+              "properties": {
+                "consecutive5xxErrors": {
+                  "type": "integer",
+                  "minimum": 1
+                },
+                "interval": {
+                  "$ref": "#/$defs/duration"
+                },
+                "baseEjectionTime": {
+                  "$ref": "#/$defs/duration"
+                },
+                "maxEjectionPercent": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 100
+                }
+              }
             }
           }
         }

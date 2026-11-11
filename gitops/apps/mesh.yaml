@@ -1,0 +1,141 @@
+# Week 10: Istio service mesh (sidecar mode), installed from the official Helm charts and
+# pinned to one version. Order (sync waves, enforced through the Application health check in
+# gitops/argocd/argocd-cm.yaml):
+#   -3 istio-base   CRDs + default validating webhook
+#   -2 istio-cni    node agent that installs the traffic redirection (pods stay PSA "restricted")
+#   -2 istiod       control plane: xDS config server, sidecar injector, CA (SPIFFE certificates)
+#   -1 mesh-config  mesh-wide PeerAuthentication + Telemetry (k8s/mesh)
+# Environment-specific mesh objects (Gateway, VirtualService, DestinationRule, PeerAuthentication,
+# AuthorizationPolicy) are rendered by the ShopLite chart, so prod stays behind its approval gate.
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: istio-base
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "-3"
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: mesh
+  source:
+    repoURL: https://blob.istio.io/istio-release/charts
+    chart: base
+    targetRevision: 1.31.4
+    helm:
+      releaseName: istio-base
+      valuesObject:
+        defaultRevision: default
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: istio-system
+  # istiod sets failurePolicy: Fail once its webhook is reachable.
+  ignoreDifferences:
+    - group: admissionregistration.k8s.io
+      kind: ValidatingWebhookConfiguration
+      jqPathExpressions:
+        - .webhooks[]?.failurePolicy
+        - .webhooks[]?.clientConfig.caBundle
+  syncPolicy:
+    automated: { prune: true, selfHeal: true }
+    managedNamespaceMetadata:
+      labels:
+        # istio-cni is a node agent (hostPath for the CNI config/binaries): it cannot run under
+        # "restricted". The application namespaces stay "restricted" thanks to it.
+        pod-security.kubernetes.io/enforce: privileged
+    syncOptions:
+      - CreateNamespace=true
+      - ServerSideApply=true
+      - RespectIgnoreDifferences=true
+---
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: istio-cni
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "-2"
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: mesh
+  sources:
+    - repoURL: https://blob.istio.io/istio-release/charts
+      chart: cni
+      targetRevision: 1.31.4
+      helm:
+        releaseName: istio-cni
+        valueFiles: [$values/k8s/mesh/cni-values.yaml]
+    - repoURL: https://github.com/timurdll/devops-labs.git
+      targetRevision: week10-service-mesh
+      ref: values
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: istio-system
+  syncPolicy:
+    automated: { prune: true, selfHeal: true }
+    syncOptions: [ServerSideApply=true]
+---
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: istiod
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "-2"
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: mesh
+  sources:
+    - repoURL: https://blob.istio.io/istio-release/charts
+      chart: istiod
+      targetRevision: 1.31.4
+      helm:
+        releaseName: istiod
+        valueFiles: [$values/k8s/mesh/istiod-values.yaml]
+    - repoURL: https://github.com/timurdll/devops-labs.git
+      targetRevision: week10-service-mesh
+      ref: values
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: istio-system
+  # istiod patches its own webhooks at runtime (CA bundle, failurePolicy).
+  ignoreDifferences:
+    - group: admissionregistration.k8s.io
+      kind: ValidatingWebhookConfiguration
+      jqPathExpressions:
+        - .webhooks[]?.failurePolicy
+        - .webhooks[]?.clientConfig.caBundle
+    - group: admissionregistration.k8s.io
+      kind: MutatingWebhookConfiguration
+      jqPathExpressions:
+        - .webhooks[]?.clientConfig.caBundle
+  syncPolicy:
+    automated: { prune: true, selfHeal: true }
+    syncOptions: [ServerSideApply=true, RespectIgnoreDifferences=true]
+---
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: mesh-config
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "-1"
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: mesh
+  source:
+    repoURL: https://github.com/timurdll/devops-labs.git
+    targetRevision: week10-service-mesh
+    path: k8s/mesh
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: istio-system
+  syncPolicy:
+    automated: { prune: true, selfHeal: true }
+    syncOptions: [ServerSideApply=true]
+    retry:
+      limit: 5
+      backoff: { duration: 10s, factor: 2, maxDuration: 3m }

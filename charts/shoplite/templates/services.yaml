@@ -1,23 +1,27 @@
 {{- /*
-One Deployment + ClusterIP Service per entry in .Values.services (catalog, orders, web).
-Hardening is identical for every service and is not configurable on purpose: the Week 6 gates
-(kubeconform -strict, trivy config) and Pod Security Admission "restricted" both depend on it.
+One Deployment of a service. Called once for the stable version and, when
+services.<name>.canary.enabled, once more for the canary (Week 10). Both share the Service, the
+ConfigMap and the ServiceAccount; they differ in name, replica count, image tag and `version`.
 */ -}}
-{{- $pd := .Values.podDefaults }}
-{{- range $name, $svc := .Values.services }}
-{{- if $svc.enabled }}
-{{- $env := include "shoplite.serviceEnv" (dict "name" $name "svc" $svc "ctx" $) | fromYaml }}
+{{- define "shoplite.deployment" -}}
+{{- $name := .name }}{{ $svc := .svc }}{{ $deploy := .deploy }}{{ $version := .version }}
+{{- $replicas := .replicas }}{{ $canary := .canary }}{{ $env := .env }}
+{{- $root := .ctx }}{{ $pd := $root.Values.podDefaults }}{{ $mesh := $root.Values.mesh.enabled }}
+{{- $tag := $svc.image.tag | default $root.Values.image.tag | default $root.Chart.AppVersion }}
 ---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: {{ $name }}
+  name: {{ $deploy }}
   labels:
-    {{- include "shoplite.labels" $ | nindent 4 }}
+    {{- include "shoplite.labels" $root | nindent 4 }}
     app.kubernetes.io/name: {{ $name }}
     app.kubernetes.io/component: {{ $svc.component }}
+    {{- if $mesh }}
+    version: {{ $version }}
+    {{- end }}
 spec:
-  replicas: {{ $svc.replicas }}
+  replicas: {{ $replicas }}
   revisionHistoryLimit: {{ $pd.revisionHistoryLimit }}
   strategy:
     type: RollingUpdate
@@ -27,15 +31,24 @@ spec:
   selector:
     matchLabels:
       app.kubernetes.io/name: {{ $name }}
+      {{- if $canary }}
+      version: {{ $version }}
+      {{- end }}
   template:
     metadata:
       labels:
         app.kubernetes.io/name: {{ $name }}
         app.kubernetes.io/component: {{ $svc.component }}
         app.kubernetes.io/part-of: shoplite
-        shoplite.io/environment: {{ $.Values.global.environment }}
+        shoplite.io/environment: {{ $root.Values.global.environment }}
         tier: {{ $svc.tier }}
-      {{- $scrape := and $.Values.telemetry.enabled $svc.instrumented }}
+        {{- if $mesh }}
+        # Week 10: Envoy sidecar (native sidecar container) injected by istiod; `version` selects
+        # the DestinationRule subset and is reported as destination_version in Istio metrics.
+        sidecar.istio.io/inject: "true"
+        version: {{ $version }}
+        {{- end }}
+      {{- $scrape := and $root.Values.telemetry.enabled $svc.instrumented }}
       {{- if or $env $scrape }}
       annotations:
         {{- if $env }}
@@ -50,6 +63,11 @@ spec:
         {{- end }}
       {{- end }}
     spec:
+      {{- if $mesh }}
+      # One ServiceAccount per workload = one SPIFFE identity (spiffe://cluster.local/ns/<ns>/sa/<name>)
+      # in the mTLS certificate; AuthorizationPolicies allow callers by this identity.
+      serviceAccountName: {{ $name }}
+      {{- end }}
       automountServiceAccountToken: false
       terminationGracePeriodSeconds: {{ $pd.terminationGracePeriodSeconds }}
       enableServiceLinks: false # no legacy <SVC>_SERVICE_HOST/_PORT env vars; use DNS
@@ -74,8 +92,8 @@ spec:
       {{- end }}
       containers:
         - name: {{ $name }}
-          image: {{ include "shoplite.image" (dict "svc" $svc "ctx" $) }}
-          imagePullPolicy: {{ $.Values.image.pullPolicy }}
+          image: {{ include "shoplite.image" (dict "svc" $svc "ctx" $root) }}
+          imagePullPolicy: {{ $root.Values.image.pullPolicy }}
           ports:
             - name: http
               containerPort: 8080
@@ -89,11 +107,16 @@ spec:
               valueFrom:
                 fieldRef:
                   fieldPath: metadata.name
-            {{- if and $svc.database $.Values.postgres.enabled }}
+            {{- if and $root.Values.telemetry.enabled $svc.instrumented }}
+            # Per Deployment (not in the shared ConfigMap): the canary reports its own version.
+            - name: OTEL_RESOURCE_ATTRIBUTES
+              value: {{ printf "deployment.environment.name=%s,service.namespace=shoplite,service.version=%s" $root.Values.global.environment $tag | quote }}
+            {{- end }}
+            {{- if and $svc.database $root.Values.postgres.enabled }}
             - name: PGPASSWORD
               valueFrom:
                 secretKeyRef:
-                  name: {{ $.Values.database.existingSecret }}
+                  name: {{ $root.Values.database.existingSecret }}
                   key: {{ $svc.database.passwordKey }}
             {{- end }}
           lifecycle:
@@ -132,6 +155,34 @@ spec:
           emptyDir:
             sizeLimit: 32Mi
           {{- end }}
+{{- end }}
+{{- /*
+One Deployment + ClusterIP Service per entry in .Values.services (catalog, orders, web).
+Hardening is identical for every service and is not configurable on purpose: the Week 6 gates
+(kubeconform -strict, trivy config) and Pod Security Admission "restricted" both depend on it.
+*/ -}}
+{{- range $name, $svc := .Values.services }}
+{{- if $svc.enabled }}
+{{- $env := include "shoplite.serviceEnv" (dict "name" $name "svc" $svc "ctx" $) | fromYaml }}
+{{- $mesh := $.Values.mesh.enabled }}
+{{- $stableVersion := $svc.version | default "v1" }}
+{{ include "shoplite.deployment" (dict "name" $name "svc" $svc "deploy" $name "version" $stableVersion "replicas" $svc.replicas "canary" false "env" $env "ctx" $) }}
+{{- if and $svc.canary $svc.canary.enabled }}
+{{- $c := $svc.canary }}
+{{- $csvc := deepCopy $svc }}{{ $_ := set $csvc.image "tag" $c.image.tag }}
+{{ include "shoplite.deployment" (dict "name" $name "svc" $csvc "deploy" (printf "%s-%s" $name $c.version) "version" $c.version "replicas" $c.replicas "canary" true "env" $env "ctx" $) }}
+{{- end }}
+{{- if $mesh }}
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: {{ $name }}
+  labels:
+    {{- include "shoplite.labels" $ | nindent 4 }}
+    app.kubernetes.io/name: {{ $name }}
+automountServiceAccountToken: false
+{{- end }}
 ---
 apiVersion: v1
 kind: Service
@@ -148,6 +199,7 @@ spec:
     - name: http
       port: 80
       targetPort: http
+      appProtocol: http # Istio: HTTP routing/metrics instead of protocol sniffing
 {{- if and $.Values.podDisruptionBudget.enabled (gt (int $svc.replicas) 1) }}
 ---
 apiVersion: policy/v1

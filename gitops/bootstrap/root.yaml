@@ -11,7 +11,7 @@ spec:
   project: default
   source:
     repoURL: https://github.com/timurdll/devops-labs.git
-    targetRevision: week9-observability
+    targetRevision: week10-service-mesh
     path: gitops/apps
   destination:
     server: https://kubernetes.default.svc

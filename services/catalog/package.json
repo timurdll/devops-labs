@@ -1,6 +1,6 @@
 {
   "name": "shoplite-catalog",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "private": true,
   "description": "ShopLite catalog microservice",
   "main": "src/server.js",

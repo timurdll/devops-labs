@@ -1,0 +1,41 @@
+# Week 10 — values of the istiod chart (control plane), consumed by gitops/apps/mesh.yaml.
+# Only what differs from the chart defaults is listed.
+global:
+  # Envoy sidecar sizing: ~25 meshed pods on a 3-node kind cluster with 7.6 GiB in total.
+  # Measured: 35–60 MiB per idle sidecar (docs/week10/evidence).
+  proxy:
+    resources:
+      requests: { cpu: 10m, memory: 40Mi }
+      limits: { cpu: 500m, memory: 256Mi }
+  logAsJson: true
+
+pilot:
+  autoscaleEnabled: false
+  replicaCount: 1 # lab: one replica, the data plane keeps the last config if istiod is down
+  resources:
+    requests: { cpu: 100m, memory: 192Mi }
+  # Pods are PSA "restricted": no NET_ADMIN init container — the istio-cni DaemonSet sets up the
+  # iptables redirection instead (ADR-W10-03).
+  cni:
+    enabled: true
+  env:
+    # A Gateway resource selects gateway pods in its own namespace only. Without this, the
+    # selector `istio: shop-gateway` of shop-dev would also program prod's gateway (one host
+    # table across environments) — ADR-W10-02.
+    PILOT_SCOPE_GATEWAY_TO_NAMESPACE: "true"
+
+meshConfig:
+  # Zero-trust egress: a sidecar only routes to hosts in the service registry (Kubernetes
+  # Services + ServiceEntries). Anything else → BlackHoleCluster (502).
+  outboundTrafficPolicy:
+    mode: REGISTRY_ONLY
+  defaultConfig:
+    # Belt and braces: native sidecars (default since 1.27) already start before the app.
+    holdApplicationUntilProxyStarts: true
+  # Envoy spans → the Week 9 OpenTelemetry Collector (activated by the Telemetry resource in
+  # k8s/mesh/telemetry.yaml). Envoy continues the W3C traceparent started by Traefik.
+  extensionProviders:
+    - name: otel-collector
+      opentelemetry:
+        service: otel-collector.observability.svc.cluster.local
+        port: 4317

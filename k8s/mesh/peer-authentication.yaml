@@ -1,0 +1,11 @@
+# Mesh-wide default (a PeerAuthentication in the root namespace istio-system applies to every
+# sidecar): inbound plaintext is rejected, only mutual TLS with an Istio-issued SPIFFE
+# certificate is accepted. A namespace may override it only explicitly (the ShopLite chart
+# renders one per environment: PERMISSIVE during the migration, then STRICT — ADR-W10-04).
+apiVersion: security.istio.io/v1
+kind: PeerAuthentication
+metadata:
+  name: default
+spec:
+  mtls:
+    mode: STRICT

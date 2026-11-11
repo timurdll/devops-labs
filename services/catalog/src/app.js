@@ -5,6 +5,7 @@ const { trace, SpanStatusCode } = require('@opentelemetry/api');
 const { createMetrics } = require('./telemetry/metrics');
 
 const POD_NAME = process.env.POD_NAME || os.hostname();
+const MAX_QUERY_LENGTH = 64;
 
 function send(res, status, body) {
   const payload = JSON.stringify(body);
@@ -57,8 +58,13 @@ function createHandler({ repo, logger = console, metrics = createMetrics({ servi
       }
 
       if (req.method === 'GET' && path === '/api/catalog/products') {
+        // 1.2.0: optional case-insensitive search over name and SKU (?q=keyb).
+        const q = (url.searchParams.get('q') || '').trim().toLowerCase();
+        if (q.length > MAX_QUERY_LENGTH) return send(res, 400, { error: `q must be at most ${MAX_QUERY_LENGTH} characters` });
         const products = await repo.list();
-        return send(res, 200, { servedBy: POD_NAME, items: products });
+        if (!q) return send(res, 200, { servedBy: POD_NAME, items: products });
+        const items = products.filter((p) => p.name.toLowerCase().includes(q) || p.sku.toLowerCase().includes(q));
+        return send(res, 200, { servedBy: POD_NAME, query: q, items });
       }
 
       const match = path.match(/^\/api\/catalog\/products\/(\d+)$/);

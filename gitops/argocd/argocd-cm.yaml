@@ -13,3 +13,17 @@ data:
   # Track the resources of an Application by annotation (Argo CD 3.x default), so labels set by
   # the chart (app.kubernetes.io/instance) never collide with Argo CD bookkeeping.
   application.resourceTrackingMethod: annotation
+  # Week 10: health of an Application = its own health. Without this, Argo CD treats a child
+  # Application as healthy as soon as it exists, and the sync waves of the root app-of-apps do not
+  # wait (istiod would be applied before the Istio CRDs are established).
+  resource.customizations.health.argoproj.io_Application: |
+    hs = {}
+    hs.status = "Progressing"
+    hs.message = ""
+    if obj.status ~= nil and obj.status.health ~= nil then
+      hs.status = obj.status.health.status
+      if obj.status.health.message ~= nil then
+        hs.message = obj.status.health.message
+      end
+    end
+    return hs

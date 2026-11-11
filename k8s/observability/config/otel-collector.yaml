@@ -24,7 +24,7 @@ receivers:
           kubernetes_sd_configs:
             - role: pod
               namespaces:
-                names: [shop-dev, shop-staging, shop-prod, ingress-traefik]
+                names: [shop-dev, shop-staging, shop-prod, ingress-traefik, istio-system]
           relabel_configs:
             - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_scrape]
               regex: "true"
@@ -32,10 +32,15 @@ receivers:
             - source_labels: [__meta_kubernetes_pod_phase]
               regex: Running
               action: keep
-            # role: pod yields one target per declared container port; keep the annotated one.
-            - source_labels: [__meta_kubernetes_pod_container_port_number]
-              target_label: __meta_kubernetes_pod_annotation_prometheus_io_port
-              action: keepequal
+            # role: pod yields one target per declared container port. Scrape pod IP + annotated
+            # port; the duplicates collapse into one target (identical labels after relabeling).
+            # Week 10: istiod rewrites the annotations of meshed pods to istio-agent's :15020
+            # (app /metrics merged with Envoy's), a port no container declares — the Week 9
+            # `keepequal` on declared ports would have dropped every meshed pod.
+            - source_labels: [__meta_kubernetes_pod_ip, __meta_kubernetes_pod_annotation_prometheus_io_port]
+              regex: (.+);([0-9]+)
+              replacement: $$1:$$2
+              target_label: __address__
             - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_path]
               regex: (.+)
               target_label: __metrics_path__
@@ -51,6 +56,11 @@ receivers:
             - source_labels: [__meta_kubernetes_namespace]
               regex: ingress-traefik
               replacement: edge
+              target_label: environment
+            # Week 10: istiod (xDS pushes, certificates signed) is shared by all environments too.
+            - source_labels: [__meta_kubernetes_namespace]
+              regex: istio-system
+              replacement: control-plane
               target_label: environment
         - job_name: otel-collector # self-monitoring: queue sizes, refused/dropped spans
           static_configs:

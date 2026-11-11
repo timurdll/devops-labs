@@ -6,7 +6,12 @@ Ingress isolation inside the release namespace:
   3. services.<name>.allowFrom → <name> on :8080 (east-west)
   4. services with a database → postgres on :5432
   5. OpenTelemetry Collector → instrumented services on :8080 (GET /metrics), when telemetry is on
+With mesh.enabled (Week 10) the ingress controller reaches only shop-gateway, the gateway reaches
+the exposed services, and the Collector scrapes :15020 (istio-agent: app metrics merged with
+Envoy's) on every pod. NetworkPolicy (L3/L4, by pod label) and AuthorizationPolicy (L7, by mTLS
+identity) are two independent layers: either one alone blocks an unexpected caller.
 */ -}}
+{{- $mesh := .Values.mesh.enabled }}
 {{- $ic := .Values.networkPolicies.ingressController }}
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
@@ -40,7 +45,7 @@ spec:
     matchExpressions:
       - key: app.kubernetes.io/name
         operator: In
-        values: {{ $exposed | toJson }}
+        values: {{ ternary (list "shop-gateway") $exposed $mesh | toJson }}
   policyTypes: ["Ingress"]
   ingress:
     - from:
@@ -50,6 +55,30 @@ spec:
           podSelector:
             matchLabels:
               app.kubernetes.io/name: {{ $ic.podName }}
+      ports:
+        - port: 8080
+          protocol: TCP
+{{- end }}
+{{- if and $mesh $exposed }}
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-from-gateway
+  labels:
+    {{- include "shoplite.labels" . | nindent 4 }}
+spec:
+  podSelector:
+    matchExpressions:
+      - key: app.kubernetes.io/name
+        operator: In
+        values: {{ $exposed | toJson }}
+  policyTypes: ["Ingress"]
+  ingress:
+    - from:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: shop-gateway
       ports:
         - port: 8080
           protocol: TCP
@@ -114,11 +143,15 @@ metadata:
   labels:
     {{- include "shoplite.labels" . | nindent 4 }}
 spec:
+  {{- if $mesh }}
+  podSelector: {} # every pod has a sidecar, and every sidecar exports Envoy metrics
+  {{- else }}
   podSelector:
     matchExpressions:
       - key: app.kubernetes.io/name
         operator: In
         values: {{ $scraped | toJson }}
+  {{- end }}
   policyTypes: ["Ingress"]
   ingress:
     - from:
@@ -129,7 +162,9 @@ spec:
             matchLabels:
               app.kubernetes.io/name: {{ $col.podName }}
       ports:
-        - port: 8080
+        # Without the mesh: the app's own /metrics. In the mesh, a plaintext scrape of :8080
+        # would be rejected (STRICT mTLS), so the Collector reads istio-agent's merged endpoint.
+        - port: {{ ternary 15020 8080 $mesh }}
           protocol: TCP
 {{- end }}
 {{- end }}

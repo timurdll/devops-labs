@@ -31,7 +31,7 @@ spec:
       project: shoplite
       source:
         repoURL: https://github.com/timurdll/devops-labs.git
-        targetRevision: week9-observability
+        targetRevision: week10-service-mesh
         path: charts/shoplite
         helm:
           releaseName: shoplite

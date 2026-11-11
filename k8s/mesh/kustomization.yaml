@@ -1,0 +1,9 @@
+# Week 10 — mesh-wide Istio configuration (Argo CD Application mesh-config, after istiod).
+# istiod-values.yaml / cni-values.yaml next to it are Helm values for gitops/apps/mesh.yaml,
+# not Kubernetes objects.
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: istio-system
+resources:
+  - peer-authentication.yaml
+  - telemetry.yaml

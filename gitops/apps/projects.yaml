@@ -52,3 +52,37 @@ spec:
     - { group: networking.k8s.io, kind: Ingress }
     - { group: networking.k8s.io, kind: NetworkPolicy }
     - { group: policy, kind: PodDisruptionBudget }
+    # Week 10: one ServiceAccount per workload = one SPIFFE identity; Istio routing and security.
+    - { group: "", kind: ServiceAccount }
+    - { group: networking.istio.io, kind: Gateway }
+    - { group: networking.istio.io, kind: VirtualService }
+    - { group: networking.istio.io, kind: DestinationRule }
+    - { group: security.istio.io, kind: PeerAuthentication }
+    - { group: security.istio.io, kind: AuthorizationPolicy }
+    - { group: telemetry.istio.io, kind: Telemetry }
+---
+# Week 10: the Istio control plane. Separate from "platform" because it needs more cluster-scoped
+# power (CRDs, admission webhooks) — only this project can create them, and only from the pinned
+# Istio chart repository or this repo.
+apiVersion: argoproj.io/v1alpha1
+kind: AppProject
+metadata:
+  name: mesh
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "-4"
+spec:
+  description: Istio service mesh control plane (base, cni, istiod, mesh-wide config)
+  sourceRepos:
+    - https://github.com/timurdll/devops-labs.git
+    - https://blob.istio.io/istio-release/charts
+  destinations:
+    - server: https://kubernetes.default.svc
+      namespace: istio-system
+  clusterResourceWhitelist:
+    - { group: "", kind: Namespace }
+    - { group: apiextensions.k8s.io, kind: CustomResourceDefinition }
+    - { group: admissionregistration.k8s.io, kind: MutatingWebhookConfiguration }
+    - { group: admissionregistration.k8s.io, kind: ValidatingWebhookConfiguration }
+    - { group: rbac.authorization.k8s.io, kind: ClusterRole }
+    - { group: rbac.authorization.k8s.io, kind: ClusterRoleBinding }

@@ -1,0 +1,5 @@
+# Week 10 — values of the istio-cni chart. Chained after kindnet: the plugin installs the
+# iptables rules that redirect pod traffic to Envoy, so pods need no NET_ADMIN capability.
+cni:
+  resources:
+    requests: { cpu: 10m, memory: 40Mi }

@@ -59,6 +59,34 @@ telemetry:
     namespace: observability
     podName: otel-collector
 
+# Week 10 — Istio service mesh (sidecar mode). Needs the control plane of gitops/apps/mesh.yaml.
+# When enabled, every pod gets an Envoy sidecar and a ServiceAccount of its own (its SPIFFE
+# identity), north-south traffic enters through a per-environment Envoy gateway (Traefik → gateway)
+# and the chart renders Gateway, VirtualService, DestinationRule, PeerAuthentication and
+# AuthorizationPolicy objects (templates/mesh.yaml).
+mesh:
+  enabled: false
+  # mTLS mode of the namespace's sidecars (PeerAuthentication):
+  #   PERMISSIVE  mTLS and plaintext — only while workloads are being moved into the mesh
+  #   STRICT      mTLS only; the mesh-wide default (k8s/mesh/peer-authentication.yaml)
+  mtlsMode: STRICT
+  # Identity-based authorization: default deny + one ALLOW per edge of the call graph
+  # (gateway → exposed services, services.<name>.allowFrom, database clients → postgres).
+  authorization: true
+  gateway:
+    replicas: 1
+    resources:
+      requests: { cpu: 20m, memory: 64Mi }
+      limits: { cpu: "1", memory: 256Mi }
+  # Client-side policy applied by every caller's sidecar (DestinationRule per service).
+  trafficPolicy:
+    connectTimeout: 1s
+    outlierDetection:
+      consecutive5xxErrors: 5
+      interval: 10s
+      baseEjectionTime: 30s
+      maxEjectionPercent: 50
+
 # Stateless services. The key is the Kubernetes name (Deployment, Service, DNS name).
 services:
   catalog:
@@ -86,8 +114,19 @@ services:
       passwordKey: CATALOG_DB_PASSWORD
     # Extra non-secret settings → <service>-config ConfigMap → envFrom.
     env: {}
-    # Other services allowed to call this one (NetworkPolicy).
+    # Other services allowed to call this one (NetworkPolicy + AuthorizationPolicy in the mesh).
     allowFrom: [orders]
+    # Week 10: canary release through the mesh. A second Deployment <name>-<version> with
+    # canary.image.tag runs next to the stable one (pod label version: v1); the VirtualServices
+    # send canary.weight % of all requests to it — at the gateway and between services.
+    # Promotion = raising the weight in git; rollback = weight 0 (or enabled: false).
+    canary:
+      enabled: false
+      version: v2
+      image:
+        tag: ""
+      replicas: 1
+      weight: 10
 
   orders:
     enabled: true

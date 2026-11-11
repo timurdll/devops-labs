@@ -1,0 +1,12 @@
+# Mesh-wide telemetry: Envoy spans go to the Week 9 Collector (extension provider defined in
+# istiod-values.yaml). 100 % = "follow the edge": Traefik makes the sampling decision and Envoy
+# honours the sampled flag of the incoming traceparent (ADR-W9-06).
+apiVersion: telemetry.istio.io/v1
+kind: Telemetry
+metadata:
+  name: mesh-default
+spec:
+  tracing:
+    - providers:
+        - name: otel-collector
+      randomSamplingPercentage: 100
