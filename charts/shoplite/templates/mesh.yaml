@@ -64,10 +64,10 @@ spec:
       serviceAccountName: {{ $gw }}
       automountServiceAccountToken: false
       terminationGracePeriodSeconds: 30
+      # No pod-level UID (istioctl analyze IST0144: UID 1337 is reserved for the proxy and must not
+      # be inherited by other containers); it is set on the istio-proxy container below.
       securityContext:
         runAsNonRoot: true
-        runAsUser: 1337
-        runAsGroup: 1337
         seccompProfile:
           type: RuntimeDefault
       {{- if .Values.podDefaults.topologySpread.enabled }}
@@ -92,6 +92,8 @@ spec:
             allowPrivilegeEscalation: false
             readOnlyRootFilesystem: true
             runAsNonRoot: true
+            runAsUser: 1337 # the proxy's own UID, on the proxy container only
+            runAsGroup: 1337
             capabilities:
               drop: ["ALL"]
 ---
@@ -109,7 +111,7 @@ spec:
   ports:
     - name: http
       port: 80
-      targetPort: http
+      targetPort: 8080 # numeric: istiod maps the Gateway's port 80 to this listener port
       appProtocol: http
 {{- if and .Values.podDisruptionBudget.enabled (gt (int $m.gateway.replicas) 1) }}
 ---
@@ -139,7 +141,9 @@ spec:
     istio: {{ $gw }}
   servers:
     - port:
-        number: 8080
+        # The Service port; Envoy listens on its targetPort 8080 (unprivileged). istioctl analyze
+        # IST0162 flags a Gateway port that no Service of the gateway pods exposes.
+        number: 80
         name: http
         protocol: HTTP
       # TLS terminates at Traefik, the cluster edge (Week 7); Traefik → gateway stays in-cluster.
