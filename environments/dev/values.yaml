@@ -8,6 +8,13 @@ telemetry:
   enabled: true
   samplingRatio: 1.0
 
+# Week 10 · phase 1 — into the mesh: sidecars + gateway, mTLS PERMISSIVE (plaintext still accepted)
+# until every workload of the namespace has a sidecar; then phase 2 switches to STRICT + authz.
+mesh:
+  enabled: true
+  mtlsMode: PERMISSIVE
+  authorization: false
+
 services:
   catalog:
     replicas: 2
@@ -23,4 +30,4 @@ services:
     replicas: 2
     uiConfig:
       shopName: ShopLite DEV
-      banner: "dev: instrumented build 1.1.0 (Week 9)"
+      banner: "dev: service mesh (Week 10)"

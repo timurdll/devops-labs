@@ -12,6 +12,15 @@ telemetry:
   enabled: true
   samplingRatio: 1.0
 
+# Week 10 · phase 1 — into the mesh: sidecars + gateway, mTLS PERMISSIVE (plaintext still accepted)
+# until every workload of the namespace has a sidecar; then phase 2 switches to STRICT + authz.
+mesh:
+  enabled: true
+  mtlsMode: PERMISSIVE
+  authorization: false
+  gateway:
+    replicas: 2 # the gateway is now on the request path: same availability as the APIs
+
 services:
   catalog:
     replicas: 3
