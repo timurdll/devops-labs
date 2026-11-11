@@ -20,6 +20,17 @@ mesh:
   authorization: true
 
 services:
+  # Week 10 · phase 3 — canary release of catalog 1.2.0 (product search). 10 % of all requests to
+  # catalog — from the gateway and from orders — go to the v2 Deployment, independent of how many
+  # replicas each version runs. Promote by raising weight in git; roll back with weight: 0.
+  catalog:
+    canary:
+      enabled: true
+      version: v2
+      image:
+        tag: "1.2.0"
+      replicas: 1
+      weight: 10
   web:
     uiConfig:
       shopName: ShopLite STAGING
