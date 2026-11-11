@@ -8,12 +8,13 @@ telemetry:
   enabled: true
   samplingRatio: 1.0
 
-# Week 10 · phase 1 — into the mesh: sidecars + gateway, mTLS PERMISSIVE (plaintext still accepted)
-# until every workload of the namespace has a sidecar; then phase 2 switches to STRICT + authz.
+# Week 10 · phase 2 — zero trust: every workload has a sidecar (phase 1 verified with
+# istioctl proxy-status), so plaintext is no longer accepted (STRICT) and every call must come
+# from an allowed SPIFFE identity (AuthorizationPolicy default deny + call-graph ALLOWs).
 mesh:
   enabled: true
-  mtlsMode: PERMISSIVE
-  authorization: false
+  mtlsMode: STRICT
+  authorization: true
 
 services:
   catalog:
