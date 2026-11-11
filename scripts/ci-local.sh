@@ -22,6 +22,8 @@ PROMETHEUS_IMAGE=$(ci_env PROMETHEUS_IMAGE)
 TRIVY_IMAGE=aquasec/trivy:0.75.0@sha256:af6acf9a6b85dfe389a1941505c0ce9efef52a4719635e1a962f022a3d855daa
 SEVERITY=HIGH,CRITICAL
 K8S_VERSION=${K8S_VERSION:-1.37.0}
+# CRD schemas (Argo CD, Istio) for kubeconform
+CRD_SCHEMAS='https://raw.githubusercontent.com/datreeio/CRDs-catalog/main/{{.Group}}/{{.ResourceKind}}_{{.ResourceAPIVersion}}.json'
 
 trivy() {
   docker run --rm -e TRIVY_NO_PROGRESS=true -e TRIVY_SKIP_VERSION_CHECK=true \
@@ -83,12 +85,16 @@ PY
       -f "environments/$env/values.yaml" --set "global.environment=$env" > "$EVIDENCE/helm/$env.yaml" || rc=1
   done
   docker run --rm -v "$PWD/$EVIDENCE/helm:/work" "$KUBECONFORM_IMAGE" \
-    -strict -summary -kubernetes-version "$K8S_VERSION" /work/dev.yaml /work/staging.yaml /work/prod.yaml || rc=1
+    -strict -summary -kubernetes-version "$K8S_VERSION" -schema-location default -schema-location "$CRD_SCHEMAS" \
+    /work/dev.yaml /work/staging.yaml /work/prod.yaml || rc=1
   echo "• kubeconform gitops/ (Argo CD CRDs)"
   docker run --rm -v "$PWD/gitops:/work" "$KUBECONFORM_IMAGE" -strict -summary -kubernetes-version "$K8S_VERSION" \
     -schema-location default \
-    -schema-location 'https://raw.githubusercontent.com/datreeio/CRDs-catalog/main/{{.Group}}/{{.ResourceKind}}_{{.ResourceAPIVersion}}.json' \
-    /work/bootstrap /work/apps || rc=1
+    -schema-location "$CRD_SCHEMAS" /work/bootstrap /work/apps || rc=1
+  echo "• kubeconform k8s/mesh (Week 10, Istio CRD schemas)"
+  kubectl kustomize k8s/mesh > "$EVIDENCE/rendered-mesh.yaml"
+  docker run --rm -v "$PWD/$EVIDENCE:/work" "$KUBECONFORM_IMAGE" -strict -summary -kubernetes-version "$K8S_VERSION" \
+    -schema-location default -schema-location "$CRD_SCHEMAS" /work/rendered-mesh.yaml || rc=1
   echo "• kubeconform + config check k8s/observability (Week 9)"
   kubectl kustomize k8s/observability > "$EVIDENCE/rendered-observability.yaml"
   docker run --rm -v "$PWD/$EVIDENCE:/work" "$KUBECONFORM_IMAGE" \

@@ -126,14 +126,25 @@ jobs:
             docker run --rm -v "$PWD:/repo" -w /repo "$HELM_IMAGE" template shoplite charts/shoplite \
               -n "shop-$env" -f "environments/$env/values.yaml" --set "global.environment=$env" > "/tmp/helm/$env.yaml"
           done
+          # Week 10: with mesh.enabled the chart also renders Istio CRs → their schemas come from the datree catalog
           docker run --rm -v /tmp/helm:/work "$KUBECONFORM_IMAGE" \
-            -strict -summary -kubernetes-version 1.37.0 /work/dev.yaml /work/staging.yaml /work/prod.yaml
+            -strict -summary -kubernetes-version 1.37.0 \
+            -schema-location default \
+            -schema-location 'https://raw.githubusercontent.com/datreeio/CRDs-catalog/main/{{.Group}}/{{.ResourceKind}}_{{.ResourceAPIVersion}}.json' \
+            /work/dev.yaml /work/staging.yaml /work/prod.yaml
       - name: Argo CD manifests (CRD schemas from the datree catalog)
         run: |
           docker run --rm -v "$PWD/gitops:/work" "$KUBECONFORM_IMAGE" -strict -summary -kubernetes-version 1.37.0 \
             -schema-location default \
             -schema-location 'https://raw.githubusercontent.com/datreeio/CRDs-catalog/main/{{.Group}}/{{.ResourceKind}}_{{.ResourceAPIVersion}}.json' \
             /work/bootstrap /work/apps
+      - name: Service mesh control-plane config (kubeconform, Istio CRD schemas) — Week 10
+        run: |
+          kubectl kustomize k8s/mesh > /tmp/mesh.yaml
+          docker run --rm -v /tmp:/work "$KUBECONFORM_IMAGE" -strict -summary -kubernetes-version 1.37.0 \
+            -schema-location default \
+            -schema-location 'https://raw.githubusercontent.com/datreeio/CRDs-catalog/main/{{.Group}}/{{.ResourceKind}}_{{.ResourceAPIVersion}}.json' \
+            /work/mesh.yaml
       - name: Observability stack (kubeconform + Collector / Jaeger / Prometheus config check) — Week 9
         run: |
           kubectl kustomize k8s/observability > /tmp/observability.yaml

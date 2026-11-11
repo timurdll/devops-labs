@@ -1,0 +1,50 @@
+# 2026-11-11T18:06:44Z  cost of the data plane: container working-set memory from the kubelet resource metrics
+# (kubectl get --raw /api/v1/nodes/<node>/proxy/metrics/resource; no metrics-server in this cluster)
+
+NAMESPACE      POD                              CONTAINER         MiB
+shop-dev       catalog-69ccbd5869-dc889         catalog          40.7
+shop-dev       catalog-69ccbd5869-dc889         istio-proxy      42.4
+shop-dev       catalog-69ccbd5869-w84rb         catalog          36.4
+shop-dev       catalog-69ccbd5869-w84rb         istio-proxy      36.6
+shop-dev       orders-5b7d6dd6f7-nx4lh          istio-proxy      35.4
+shop-dev       orders-5b7d6dd6f7-nx4lh          orders           62.9
+shop-dev       postgres-0                       istio-proxy      33.6
+shop-dev       postgres-0                       postgres         28.9
+shop-dev       shop-gateway-694bb44d74-t2wtr    istio-proxy      36.7
+shop-dev       web-cd844dc56-58h66              istio-proxy      34.3
+shop-dev       web-cd844dc56-58h66              web               7.1
+shop-dev       web-cd844dc56-gfr7n              istio-proxy      34.2
+shop-dev       web-cd844dc56-gfr7n              web               7.1
+shop-prod      catalog-75ddd69b88-k828g         catalog          44.9
+shop-prod      catalog-75ddd69b88-lrlpk         catalog          46.2
+shop-prod      catalog-75ddd69b88-nvmdr         catalog          46.5
+shop-prod      orders-55965c7d6c-h4gxf          orders           68.0
+shop-prod      orders-55965c7d6c-t2hhd          orders           65.1
+shop-prod      orders-55965c7d6c-xd2gq          orders           67.6
+shop-prod      postgres-0                       postgres         39.4
+shop-prod      web-997dd9cf4-7nt7c              web               7.0
+shop-prod      web-997dd9cf4-v6shq              web               7.0
+shop-staging   catalog-69898dc745-fx2v2         catalog          47.9
+shop-staging   catalog-69898dc745-fx2v2         istio-proxy      51.5
+shop-staging   catalog-69898dc745-g8rzf         catalog          46.4
+shop-staging   catalog-69898dc745-g8rzf         istio-proxy      38.1
+shop-staging   catalog-v2-cd949f67d-kxvvg       catalog          37.5
+shop-staging   catalog-v2-cd949f67d-kxvvg       istio-proxy      40.7
+shop-staging   orders-6ddfb79b6f-hmdkf          istio-proxy      51.6
+shop-staging   orders-6ddfb79b6f-hmdkf          orders           56.7
+shop-staging   orders-6ddfb79b6f-xdnx7          istio-proxy      38.5
+shop-staging   orders-6ddfb79b6f-xdnx7          orders           58.0
+shop-staging   postgres-0                       istio-proxy      35.3
+shop-staging   postgres-0                       postgres         29.9
+shop-staging   shop-gateway-5ff495f7b-p8cgh     istio-proxy      35.1
+shop-staging   web-976c9b4d6-d6m4c              istio-proxy      36.6
+shop-staging   web-976c9b4d6-d6m4c              web               7.0
+shop-staging   web-976c9b4d6-fhgcw              istio-proxy      35.8
+shop-staging   web-976c9b4d6-fhgcw              web               7.0
+
+app containers (dev+staging)     n=14  min   7.0  median  37.5  max  62.9  total  473.6 MiB
+app containers (prod, no mesh)   n= 9  min   7.0  median  46.2  max  68.0  total  391.8 MiB
+istio-proxy (dev+staging)        n=16  min  33.6  median  36.6  max  51.6  total  616.3 MiB
+
+# Envoy's own heap (envoy_server_memory_heap_size, Prometheus): 16–22 MiB per proxy; the rest is pilot-agent
+# (SDS, xDS proxy, health checks, metrics merging) and the stats/config of the proxy.

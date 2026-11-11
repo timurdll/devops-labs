@@ -1,0 +1,22 @@
+# Week 10 — one POST /api/orders in staging, as Jaeger stores it (exports/traces/order-through-mesh.json)
+# trace c4502efa4bdd4196a7ee8d23cc1bab33, 14 spans. Envoy spans (service name <workload>.<namespace>) come from the gateway and
+# the sidecars (Telemetry → otel-collector:4317); app spans (catalog, orders) from the OpenTelemetry SDK.
+# W3C traceparent is propagated by the apps, so both kinds join into one trace.
+
+service                                  operation                              start  duration  upstream cluster / kind
+traefik                                  POST                               +   0.00ms  101.38ms  server
+  traefik                                ReverseProxy                       +   0.64ms   99.84ms  client
+    shop-gateway.shop-staging            orders.shop-staging.svc.cluster.lo +  15.15ms   81.16ms  outbound|80||orders.shop-staging.svc.cluster.local
+      shop-gateway.shop-staging          router outbound|80||orders.shop-st +  17.86ms   78.29ms  outbound|80||orders.shop-staging.svc.cluster.local
+        orders.shop-staging              orders.shop-staging.svc.cluster.lo +  30.33ms   64.03ms  inbound|8080||
+          orders                         POST /api/orders                   +  36.85ms   57.03ms  server
+            orders                       GET                                +  39.85ms   45.83ms  client
+              orders.shop-staging        catalog:80/*                       +  53.58ms   31.06ms  outbound|80|v1|catalog.shop-staging.svc.cluster.local
+                catalog.shop-staging     catalog:80/*                       +  55.38ms   28.24ms  inbound|8080||
+                  catalog                GET /api/catalog/products/:id      +  63.85ms   19.54ms  server
+                    catalog              pg-pool.connect                    +  75.85ms    1.04ms  client
+                    catalog              pg.query:SELECT catalog            +  76.85ms    4.04ms  client
+            orders                       pg-pool.connect                    +  87.85ms    0.09ms  client
+            orders                       pg.query:INSERT orders             +  87.85ms    5.23ms  client
+
+# Sidecar overhead on the orders → catalog hop: outbound span 31.06 ms vs catalog's own server span 19.54 ms.

@@ -1,0 +1,40 @@
+# 2026-11-11T17:46:25Z  namespace shop-staging
+
+## desired state (git → Argo CD → istiod)
+  VirtualService catalog (mesh):       subset v1 weight 90
+  VirtualService catalog (mesh):       subset v2 weight 10
+  VirtualService shop-edge (gateway):  subset v1 weight 90
+  VirtualService shop-edge (gateway):  subset v2 weight 10
+  DEPLOYMENT   VERSION   IMAGE                    READY
+catalog        v1        shoplite/catalog:1.1.0   2
+catalog-v2     v2        shoplite/catalog:1.2.0   1
+
+## what istiod pushed to the gateway (istioctl proxy-config route shop-gateway-84776dc7b8-p8w7x)
+   /api/catalog → outbound|80|v1|catalog.shop-staging.svc.cluster.local = 90, outbound|80|v2|catalog.shop-staging.svc.cluster.local = 10
+
+## 1. client side: 1000 × GET /api/catalog/products?q=zzz-canary-probe (16 in parallel)
+  HTTP codes: 1000 200
+  v1 (all products, no search): 881   v2 (search → []): 119   unparsable: 0
+  canary share 11.9%  (95 % Wilson interval 10.0% – 14.1%; target 10 %)
+    catalog-69898dc745-fx2v2           450
+    catalog-69898dc745-g8rzf           431
+    catalog-v2-cd949f67d-kxvvg         119
+
+## 2. gateway access log since 2026-11-11T17:46:26Z (upstream cluster per request)
+   881 outbound|80|v1|catalog.shop-staging.svc.cluster.local
+   119 outbound|80|v2|catalog.shop-staging.svc.cluster.local
+  sample line:
+    [2026-11-11T17:46:26.542Z] "GET /api/catalog/products?q=zzz-canary-probe HTTP/1.1" 200 - via_upstream - "-" 0 79 26 26 "172.27.0.4,10.244.1.35" "curl/8.7.1" "7038c63b-b9ed-9ade-a0a7-3aa66831e96e" "staging.shop.local" "10.244.1.61:8080" outbound|80|v2|catalog.shop-staging.svc.cluster.local 10.244.2.61:47702 10.244.2.61:8080 10.244.1.35:60320 - catalog
+
+## 3. east-west: 400 × POST /api/orders (each one: orders → catalog GET /products/:id)
+  HTTP  400 201
+  (waiting 35 s: two scrape intervals)
+
+## Envoy metrics (Prometheus): requests to catalog in the last 61s, reported by the catalog sidecars
+  (destination_canonical_service=catalog covers both Deployments; destination_workload would be catalog / catalog-v2)
+   shop-gateway → catalog v1      1194   mutual_tls
+         orders → catalog v1       491   mutual_tls
+   shop-gateway → catalog v2       161   mutual_tls
+         orders → catalog v2        52   mutual_tls
+   shop-gateway: canary share 11.9% of 1356
+         orders: canary share 9.5% of 542

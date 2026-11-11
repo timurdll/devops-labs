@@ -76,7 +76,11 @@ def main():
             v = by_app.get((ns, app_), [])
             check(f"scrape target {ns}/{app_} up", bool(v) and all(x == "1" for x in v), f"{len(v)} pod(s)")
     check("scrape target ingress-traefik/traefik up", all(x == "1" for x in by_app.get(("ingress-traefik", "traefik"), ["0"])))
-    check("web (nginx, not instrumented) is NOT scraped", not any(k[1] == "web" for k in by_app))
+    # Week 10: a meshed web pod IS scraped — on istio-agent :15020, for its Envoy metrics only. What must
+    # not exist is app-level RED from nginx (it has no /metrics), so check the series, not the target.
+    web_red = promq('count(http_server_request_duration_seconds_count{app="web"})')
+    check("web (nginx, not instrumented) has no app RED series", not web_red,
+          f"{len(web_red)} series; Envoy-only targets: {sum(len(v) for k, v in by_app.items() if k[1] == 'web')}")
     accepted = promq('sum(rate(otelcol_receiver_accepted_spans_total[5m]))')
     refused = promq('sum(rate(otelcol_receiver_refused_spans_total[5m]))')
     acc = float(accepted[0]["value"][1]) if accepted else 0.0

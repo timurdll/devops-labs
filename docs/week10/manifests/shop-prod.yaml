@@ -1,0 +1,229 @@
+# Istio custom resources rendered by charts/shoplite for shop-prod (helm template, values from
+# environments/prod/values.yaml). Do not edit — change the chart or the values and re-run
+# scripts/mesh-export-manifests.sh. 8 resources: Gateway, VirtualService, DestinationRule, PeerAuthentication, Telemetry
+---
+# Source: shoplite/templates/mesh.yaml
+apiVersion: networking.istio.io/v1
+kind: Gateway
+metadata:
+  name: shop-gateway
+  labels:
+    helm.sh/chart: shoplite-0.3.0
+    app.kubernetes.io/part-of: shoplite
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/instance: shoplite
+    app.kubernetes.io/version: "1.1.0"
+    shoplite.io/environment: prod
+spec:
+  # Matches only gateway pods in this namespace (PILOT_SCOPE_GATEWAY_TO_NAMESPACE in istiod).
+  selector:
+    istio: shop-gateway
+  servers:
+    - port:
+        # The Service port; Envoy listens on its targetPort 8080 (unprivileged). istioctl analyze
+        # IST0162 flags a Gateway port that no Service of the gateway pods exposes.
+        number: 80
+        name: http
+        protocol: HTTP
+      # TLS terminates at Traefik, the cluster edge (Week 7); Traefik → gateway stays in-cluster.
+      hosts:
+        - "prod.shop.local"
+---
+# Source: shoplite/templates/mesh.yaml
+# North-south routing: the path table of the Week 8 Ingress, now executed by Envoy. A service
+# with a canary gets a weighted split right here, so browser traffic is shifted too.
+apiVersion: networking.istio.io/v1
+kind: VirtualService
+metadata:
+  name: shop-edge
+  labels:
+    helm.sh/chart: shoplite-0.3.0
+    app.kubernetes.io/part-of: shoplite
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/instance: shoplite
+    app.kubernetes.io/version: "1.1.0"
+    shoplite.io/environment: prod
+spec:
+  hosts:
+    - "prod.shop.local"
+  gateways:
+    - shop-gateway
+  http:
+    - name: orders
+      match:
+        - uri:
+            prefix: /api/orders
+      route:
+        - destination:
+            host: orders.shop-prod.svc.cluster.local
+            port:
+              number: 80
+    - name: catalog
+      match:
+        - uri:
+            prefix: /api/catalog
+      route:
+        - destination:
+            host: catalog.shop-prod.svc.cluster.local
+            port:
+              number: 80
+    - name: web
+      match:
+        - uri:
+            prefix: /
+      route:
+        - destination:
+            host: web.shop-prod.svc.cluster.local
+            port:
+              number: 80
+---
+# Source: shoplite/templates/mesh.yaml
+apiVersion: networking.istio.io/v1
+kind: DestinationRule
+metadata:
+  name: catalog
+  labels:
+    helm.sh/chart: shoplite-0.3.0
+    app.kubernetes.io/part-of: shoplite
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/instance: shoplite
+    app.kubernetes.io/version: "1.1.0"
+    shoplite.io/environment: prod
+spec:
+  host: catalog.shop-prod.svc.cluster.local
+  trafficPolicy:
+    tls:
+      mode: ISTIO_MUTUAL # originate mTLS with the workload certificate (explicit; auto-mTLS would too)
+    connectionPool:
+      tcp:
+        # Week 9 finding: a fetch to a missing catalog hung in TCP connect for 10 s. Envoy fails the
+        # connect after this timeout instead and answers 503 (no healthy upstream).
+        connectTimeout: 1s
+    outlierDetection:
+      # Passive health checking: eject an endpoint that keeps failing, so one bad pod (e.g. a broken
+      # canary replica) stops receiving traffic until it recovers.
+      consecutive5xxErrors: 5
+      interval: 10s
+      baseEjectionTime: 30s
+      maxEjectionPercent: 50
+---
+# Source: shoplite/templates/mesh.yaml
+apiVersion: networking.istio.io/v1
+kind: DestinationRule
+metadata:
+  name: orders
+  labels:
+    helm.sh/chart: shoplite-0.3.0
+    app.kubernetes.io/part-of: shoplite
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/instance: shoplite
+    app.kubernetes.io/version: "1.1.0"
+    shoplite.io/environment: prod
+spec:
+  host: orders.shop-prod.svc.cluster.local
+  trafficPolicy:
+    tls:
+      mode: ISTIO_MUTUAL # originate mTLS with the workload certificate (explicit; auto-mTLS would too)
+    connectionPool:
+      tcp:
+        # Week 9 finding: a fetch to a missing catalog hung in TCP connect for 10 s. Envoy fails the
+        # connect after this timeout instead and answers 503 (no healthy upstream).
+        connectTimeout: 1s
+    outlierDetection:
+      # Passive health checking: eject an endpoint that keeps failing, so one bad pod (e.g. a broken
+      # canary replica) stops receiving traffic until it recovers.
+      consecutive5xxErrors: 5
+      interval: 10s
+      baseEjectionTime: 30s
+      maxEjectionPercent: 50
+---
+# Source: shoplite/templates/mesh.yaml
+apiVersion: networking.istio.io/v1
+kind: DestinationRule
+metadata:
+  name: web
+  labels:
+    helm.sh/chart: shoplite-0.3.0
+    app.kubernetes.io/part-of: shoplite
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/instance: shoplite
+    app.kubernetes.io/version: "1.1.0"
+    shoplite.io/environment: prod
+spec:
+  host: web.shop-prod.svc.cluster.local
+  trafficPolicy:
+    tls:
+      mode: ISTIO_MUTUAL # originate mTLS with the workload certificate (explicit; auto-mTLS would too)
+    connectionPool:
+      tcp:
+        # Week 9 finding: a fetch to a missing catalog hung in TCP connect for 10 s. Envoy fails the
+        # connect after this timeout instead and answers 503 (no healthy upstream).
+        connectTimeout: 1s
+    outlierDetection:
+      # Passive health checking: eject an endpoint that keeps failing, so one bad pod (e.g. a broken
+      # canary replica) stops receiving traffic until it recovers.
+      consecutive5xxErrors: 5
+      interval: 10s
+      baseEjectionTime: 30s
+      maxEjectionPercent: 50
+---
+# Source: shoplite/templates/mesh.yaml
+apiVersion: networking.istio.io/v1
+kind: DestinationRule
+metadata:
+  name: postgres
+  labels:
+    helm.sh/chart: shoplite-0.3.0
+    app.kubernetes.io/part-of: shoplite
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/instance: shoplite
+    app.kubernetes.io/version: "1.1.0"
+    shoplite.io/environment: prod
+spec:
+  host: postgres.shop-prod.svc.cluster.local
+  trafficPolicy:
+    tls:
+      mode: ISTIO_MUTUAL
+    connectionPool:
+      tcp:
+        connectTimeout: 1s
+---
+# Source: shoplite/templates/mesh.yaml
+# Transport security of every sidecar in this namespace. Overrides the mesh-wide STRICT default
+# only while mesh.mtlsMode is PERMISSIVE (migration window, ADR-W10-04).
+apiVersion: security.istio.io/v1
+kind: PeerAuthentication
+metadata:
+  name: default
+  labels:
+    helm.sh/chart: shoplite-0.3.0
+    app.kubernetes.io/part-of: shoplite
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/instance: shoplite
+    app.kubernetes.io/version: "1.1.0"
+    shoplite.io/environment: prod
+spec:
+  mtls:
+    mode: PERMISSIVE
+---
+# Source: shoplite/templates/mesh.yaml
+# Gateway access log (Envoy → stdout): one line per request with the upstream cluster, e.g.
+# outbound|80|v2|catalog.shop-prod.svc.cluster.local — the subset that served the request.
+apiVersion: telemetry.istio.io/v1
+kind: Telemetry
+metadata:
+  name: gateway-access-log
+  labels:
+    helm.sh/chart: shoplite-0.3.0
+    app.kubernetes.io/part-of: shoplite
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/instance: shoplite
+    app.kubernetes.io/version: "1.1.0"
+    shoplite.io/environment: prod
+spec:
+  selector:
+    matchLabels:
+      istio: shop-gateway
+  accessLogging:
+    - providers:
+        - name: envoy

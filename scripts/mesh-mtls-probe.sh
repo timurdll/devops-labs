@@ -93,7 +93,10 @@ def hello(d):
 kinds = Counter()
 for p in pkts:
     if p["len"] == 0:
-        if "R" in p["flags"]: print(f'  {p["t"]}  {p["src"]:>20} > {p["dst"]:<20} RST  ← connection rejected'); kinds["RST"] += 1
+        if "R" in p["flags"]:
+            by_catalog = p["src"].rsplit(".", 1)[0] == me
+            what = "RST from the catalog sidecar: connection rejected" if by_catalog else "RST from the client (closes a pooled connection)"
+            print(f'  {p["t"]}  {p["src"]:>20} > {p["dst"]:<20}       {what}'); kinds["RST by catalog" if by_catalog else "RST by client"] += 1
         continue
     d = payload(p)
     if d[:2] == b"\x16\x03": k = "TLS handshake" + (" (ClientHello" + hello(d) + ")" if len(d) > 5 and d[5] == 1 else "")

@@ -1,0 +1,54 @@
+# Week 10 · step 1 — Istio control plane delivered by Argo CD (commit 894da3c), 2026-11-11T10:53:42Z
+# root re-pointed to week10-service-mesh at 10:51:47Z; waves: project mesh -4 → istio-base -3 → istio-cni/istiod -2 → mesh-config -1
+# healthy: istio-base 10:52:36Z · istio-cni, istiod, mesh-config 10:53:12Z
+
+$ kubectl -n argocd get applications
+APP                PROJECT    WAVE     SYNC        HEALTH
+istio-base         mesh       -3       Synced      Healthy
+istio-cni          mesh       -2       Synced      Healthy
+istiod             mesh       -2       Synced      Healthy
+mesh-config        mesh       -1       Synced      Healthy
+observability      platform   -1       Synced      Healthy
+platform           platform   -1       Synced      Healthy
+root               default    <none>   Synced      Healthy
+shoplite-dev       shoplite   <none>   Synced      Healthy
+shoplite-prod      shoplite   <none>   OutOfSync   Healthy
+shoplite-staging   shoplite   <none>   Synced      Healthy
+
+$ kubectl -n istio-system get pods,svc
+NAME                          READY   STATUS    RESTARTS   AGE   IP            NODE                     NOMINATED NODE   READINESS GATES
+pod/istio-cni-node-k2tjv      1/1     Running   0          63s   10.244.0.5    shoplite-control-plane   <none>           <none>
+pod/istio-cni-node-tjwbp      1/1     Running   0          63s   10.244.2.56   shoplite-worker          <none>           <none>
+pod/istio-cni-node-zjq4h      1/1     Running   0          63s   10.244.1.47   shoplite-worker2         <none>           <none>
+pod/istiod-865fc88cfb-vmk9t   1/1     Running   0          63s   10.244.1.48   shoplite-worker2         <none>           <none>
+
+NAME             TYPE        CLUSTER-IP      EXTERNAL-IP   PORT(S)                                 AGE   SELECTOR
+service/istiod   ClusterIP   10.96.106.238   <none>        15010/TCP,15012/TCP,443/TCP,15014/TCP   63s   app=istiod,istio=pilot
+
+$ kubectl get ns istio-system --show-labels
+NAME           STATUS   AGE    LABELS
+istio-system   Active   108s   kubernetes.io/metadata.name=istio-system,pod-security.kubernetes.io/enforce=privileged
+
+$ istioctl version
+client version: 1.31.4
+control plane version: 1.31.4
+data plane version: none
+
+$ kubectl get crd | grep istio.io | wc -l
+15
+
+$ kubectl get mutatingwebhookconfigurations,validatingwebhookconfigurations | grep istio
+mutatingwebhookconfiguration.admissionregistration.k8s.io/istio-sidecar-injector   4          64s
+validatingwebhookconfiguration.admissionregistration.k8s.io/istio-validator-istio-system   1          64s
+validatingwebhookconfiguration.admissionregistration.k8s.io/istiod-default-validator       1          107s
+
+$ kubectl -n istio-system get peerauthentication,telemetry
+NAME                                           MODE     AGE
+peerauthentication.security.istio.io/default   STRICT   63s
+
+NAME                                        AGE
+telemetry.telemetry.istio.io/mesh-default   63s
+
+$ istioctl x precheck
+✔ No issues found when checking the cluster. Istio is safe to install or upgrade!
+  To get started, check out https://istio.io/latest/docs/setup/getting-started/.

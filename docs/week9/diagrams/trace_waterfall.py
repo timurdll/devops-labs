@@ -20,6 +20,7 @@ def mono(size):
     return ImageFont.load_default()
 
 COLORS = {"traefik": "#2E74B5", "orders": "#E69138", "catalog": "#38761D", "web": "#8E44AD"}
+ENVOY = "#7B8794"  # Week 10: spans from Istio's Envoy gateway/sidecars, service name "<workload>.<namespace>"
 src, out, title = sys.argv[1], sys.argv[2], sys.argv[3]
 trace = json.load(open(src))["data"][0]
 procs = {k: v["serviceName"] for k, v in trace["processes"].items()}
@@ -59,11 +60,14 @@ for i, (sid, depth) in enumerate(order):
     s = spans[sid]; svc = procs[s["processID"]]; y = TOP + i * ROW
     if i % 2 == 0:
         d.rectangle((0, y, W, y + ROW), fill="#F8FAFC")
-    color = COLORS.get(svc, "#52606D")
+    color = ENVOY if "." in svc else COLORS.get(svc, "#52606D")
     err = tag(s, "error") in (True, "true") or tag(s, "otel.status_code") == "ERROR"
     kind = tag(s, "span.kind") or ""
     label = f"{svc}  {s['operationName']}"
-    d.text((24 + depth * 18, y + 9), ("└ " if depth else "") + label, font=F_B, fill="#C0392B" if err else "#1F2933")
+    label = ("└ " if depth else "") + label
+    while d.textlength(label, font=F_B) > LEFT - 200 - 24 - depth * 18:  # keep clear of the id column
+        label = label[:-2] + "…"
+    d.text((24 + depth * 18, y + 9), label, font=F_B, fill="#C0392B" if err else "#1F2933")
     d.text((LEFT - 190, y + 10), f"{sid[:8]}←{(parent[sid] or '—')[:8]}", font=F_M, fill="#9AA5B1")
     x0 = LEFT + BAR_W * (s["startTime"] - t0) / total
     x1 = max(x0 + 3, LEFT + BAR_W * (s["startTime"] + s["duration"] - t0) / total)
@@ -71,13 +75,17 @@ for i, (sid, depth) in enumerate(order):
     txt = f"{s['duration'] / 1000:.2f} ms" + (f" · {kind}" if kind else "") + ("  ERROR" if err else "")
     if x1 + 190 < W:  # label right of the bar
         d.text((x1 + 6, y + 9), txt, font=F_S, fill="#C0392B" if err else "#3E4C59")
-    else:  # long bar: label inside it
+    elif x1 - x0 > d.textlength(txt, font=F_S) + 16:  # long bar: label inside it
         d.text((x1 - 8, y + 9), txt, font=F_S, fill="white", anchor="ra")
+    else:  # short bar near the right edge: label left of it
+        d.text((x0 - 6, y + 9), txt, font=F_S, fill="#C0392B" if err else "#3E4C59", anchor="ra")
 ly = H - 52
 d.text((24, ly), "span ← parent (ids as propagated in traceparent)", font=F_S, fill="#9AA5B1")
 x = 420
 for svc, c in COLORS.items():
     if svc in procs.values():
         d.rectangle((x, ly + 2, x + 14, ly + 16), fill=c); d.text((x + 20, ly), svc, font=F_S, fill="#1F2933"); x += 110
+if any("." in v for v in procs.values()):
+    d.rectangle((x, ly + 2, x + 14, ly + 16), fill=ENVOY); d.text((x + 20, ly), "Envoy", font=F_S, fill="#1F2933"); x += 110
 d.rectangle((x, ly + 2, x + 14, ly + 16), fill="#C0392B"); d.text((x + 20, ly), "error", font=F_S, fill="#1F2933")
 img.save(out); print("wrote", out, img.size)

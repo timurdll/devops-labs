@@ -1,0 +1,100 @@
+# 2026-11-11T17:53:00Z  rollout phases per environment (git → Argo CD → istiod)
+
+## Argo CD Applications
+NAME               SYNC        HEALTH    REVISION                                   AUTO-SYNC
+istio-base         Synced      Healthy   1.31.4                                     true
+istio-cni          Synced      Healthy   <none>                                     true
+istiod             Synced      Healthy   <none>                                     true
+mesh-config        Synced      Healthy   e1d83c23deece63e9664ad7da495447b0efc7229   true
+observability      Synced      Healthy   e1d83c23deece63e9664ad7da495447b0efc7229   true
+platform           Synced      Healthy   e1d83c23deece63e9664ad7da495447b0efc7229   true
+root               Synced      Healthy   e1d83c23deece63e9664ad7da495447b0efc7229   true
+shoplite-dev       Synced      Healthy   e1d83c23deece63e9664ad7da495447b0efc7229   true
+shoplite-prod      OutOfSync   Healthy   e1d83c23deece63e9664ad7da495447b0efc7229   <none>
+shoplite-staging   Synced      Healthy   e1d83c23deece63e9664ad7da495447b0efc7229   true
+
+## shop-dev
+  namespace labels: kubernetes.io/metadata.name:shop-dev,pod-security.kubernetes.io/enforce:restricted,pod-security.kubernetes.io/enforce-version:latest,shoplite.io/environment:dev
+  PeerAuthentication default: STRICT
+  AuthorizationPolicies: allow-to-catalog allow-to-orders allow-to-postgres allow-to-shop-gateway allow-to-web default-deny
+  VirtualServices: shop-edge   DestinationRules: catalog orders postgres web
+    POD                           CONTAINERS    INIT(native sidecar)           SA             VERSION
+  catalog-69ccbd5869-dc889        catalog       istio-validation,istio-proxy   catalog        v1
+  catalog-69ccbd5869-w84rb        catalog       istio-validation,istio-proxy   catalog        v1
+  orders-5b7d6dd6f7-nx4lh         orders        istio-validation,istio-proxy   orders         v1
+  postgres-0                      postgres      istio-validation,istio-proxy   postgres       v1
+  shop-gateway-694bb44d74-t2wtr   istio-proxy   <none>                         shop-gateway   <none>
+  web-cd844dc56-58h66             web           istio-validation,istio-proxy   web            v1
+  web-cd844dc56-gfr7n             web           istio-validation,istio-proxy   web            v1
+
+## shop-staging
+  namespace labels: kubernetes.io/metadata.name:shop-staging,pod-security.kubernetes.io/enforce:restricted,pod-security.kubernetes.io/enforce-version:latest,shoplite.io/environment:staging
+  PeerAuthentication default: STRICT
+  AuthorizationPolicies: allow-to-catalog allow-to-orders allow-to-postgres allow-to-shop-gateway allow-to-web default-deny
+  VirtualServices: catalog shop-edge   DestinationRules: catalog orders postgres web
+    POD                          CONTAINERS    INIT(native sidecar)           SA             VERSION
+  catalog-69898dc745-fx2v2       catalog       istio-validation,istio-proxy   catalog        v1
+  catalog-69898dc745-g8rzf       catalog       istio-validation,istio-proxy   catalog        v1
+  catalog-v2-cd949f67d-kxvvg     catalog       istio-validation,istio-proxy   catalog        v2
+  orders-6ddfb79b6f-hmdkf        orders        istio-validation,istio-proxy   orders         v1
+  orders-6ddfb79b6f-xdnx7        orders        istio-validation,istio-proxy   orders         v1
+  postgres-0                     postgres      istio-validation,istio-proxy   postgres       v1
+  shop-gateway-5ff495f7b-p8cgh   istio-proxy   <none>                         shop-gateway   <none>
+  web-976c9b4d6-d6m4c            web           istio-validation,istio-proxy   web            v1
+  web-976c9b4d6-fhgcw            web           istio-validation,istio-proxy   web            v1
+
+## shop-prod
+  namespace labels: kubernetes.io/metadata.name:shop-prod,pod-security.kubernetes.io/enforce:restricted,pod-security.kubernetes.io/enforce-version:latest,shoplite.io/environment:prod
+  PeerAuthentication default: (none)
+  AuthorizationPolicies: 
+  VirtualServices:    DestinationRules: 
+    POD                      CONTAINERS   INIT(native sidecar)   SA        VERSION
+  catalog-75ddd69b88-k828g   catalog      <none>                 default   <none>
+  catalog-75ddd69b88-lrlpk   catalog      <none>                 default   <none>
+  catalog-75ddd69b88-nvmdr   catalog      <none>                 default   <none>
+  orders-55965c7d6c-h4gxf    orders       <none>                 default   <none>
+  orders-55965c7d6c-t2hhd    orders       <none>                 default   <none>
+  orders-55965c7d6c-xd2gq    orders       <none>                 default   <none>
+  postgres-0                 postgres     <none>                 default   <none>
+  web-997dd9cf4-7nt7c        web          <none>                 default   <none>
+  web-997dd9cf4-v6shq        web          <none>                 default   <none>
+
+## prod: what git (phase 1) would change — Argo CD diff summary
+  ConfigMap/catalog-config
+  ConfigMap/orders-config
+  ConfigMap/postgres-init
+  ConfigMap/web-config
+  Deployment/catalog
+  Deployment/orders
+  Deployment/shop-gateway
+  Deployment/web
+  DestinationRule/catalog
+  DestinationRule/orders
+  DestinationRule/postgres
+  DestinationRule/web
+  Gateway/shop-gateway
+  Ingress/shop
+  NetworkPolicy/allow-apps-to-postgres
+  NetworkPolicy/allow-from-gateway
+  NetworkPolicy/allow-from-ingress-controller
+  NetworkPolicy/allow-telemetry-scrape
+  NetworkPolicy/allow-to-catalog
+  NetworkPolicy/default-deny-ingress
+  PeerAuthentication/default
+  PodDisruptionBudget/catalog
+  PodDisruptionBudget/orders
+  PodDisruptionBudget/shop-gateway
+  PodDisruptionBudget/web
+  Service/catalog
+  Service/orders
+  Service/postgres
+  Service/shop-gateway
+  Service/web
+  ServiceAccount/catalog
+  ServiceAccount/orders
+  ServiceAccount/postgres
+  ServiceAccount/shop-gateway
+  ServiceAccount/web
+  StatefulSet/postgres
+  Telemetry/gateway-access-log
+  VirtualService/shop-edge

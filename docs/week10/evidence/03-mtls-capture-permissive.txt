@@ -1,0 +1,81 @@
+# 2026-11-11T17:36:24Z  namespace shop-staging  PeerAuthentication default: PERMISSIVE
+# capture: pod catalog-69898dc745-fx2v2 (10.244.2.64) on shoplite-worker, netns of PID 1183979, tcp port 8080, 12s
+
+## a) edge request through the gateway (Traefik → shop-gateway → catalog)
+  GET /api/catalog/products × 30 → 200
+
+## b) east-west: POST /api/orders (orders → catalog)
+POST /api/orders → 201
+
+## c) plaintext from an orders pod, bypassing its sidecar (UID 1337)
+  plaintext GET http://10.244.2.64:8080/api/catalog/products from orders-6ddfb79b6f-hmdkf → 200
+
+## capture: one line per TCP segment with payload, classified by its first bytes
+  17:36:34.125776     10.244.2.61.47328 > 10.244.2.64.8080      1248 B  TLS application data (encrypted)
+  17:36:34.126386     10.244.2.61.33298 > 10.244.2.64.8080       309 B  TLS handshake (ClientHello, SNI outbound_.80_._.catalog.shop-staging.svc.cluster.local, ALPN istio-http/1.1,istio,http/1.1)
+  17:36:34.126431     10.244.2.61.33310 > 10.244.2.64.8080       309 B  TLS handshake (ClientHello, SNI outbound_.80_._.catalog.shop-staging.svc.cluster.local, ALPN istio-http/1.1,istio,http/1.1)
+  17:36:34.128475     10.244.2.61.33316 > 10.244.2.64.8080       309 B  TLS handshake (ClientHello, SNI outbound_.80_._.catalog.shop-staging.svc.cluster.local, ALPN istio-http/1.1,istio,http/1.1)
+  17:36:34.128549     10.244.2.61.33332 > 10.244.2.64.8080       309 B  TLS handshake (ClientHello, SNI outbound_.80_._.catalog.shop-staging.svc.cluster.local, ALPN istio-http/1.1,istio,http/1.1)
+  17:36:34.128591     10.244.2.61.33334 > 10.244.2.64.8080       309 B  TLS handshake (ClientHello, SNI outbound_.80_._.catalog.shop-staging.svc.cluster.local, ALPN istio-http/1.1,istio,http/1.1)
+  17:36:34.132805      10.244.2.64.8080 > 10.244.2.61.33298     2170 B  TLS handshake
+  17:36:34.133636      10.244.2.64.8080 > 10.244.2.61.33310     2170 B  TLS handshake
+  17:36:34.134540     10.244.2.61.33348 > 10.244.2.64.8080       309 B  TLS handshake (ClientHello, SNI outbound_.80_._.catalog.shop-staging.svc.cluster.local, ALPN istio-http/1.1,istio,http/1.1)
+  17:36:34.134600      10.244.2.64.8080 > 10.244.2.61.33316     2170 B  TLS handshake
+  17:36:34.134656     10.244.2.61.33350 > 10.244.2.64.8080       309 B  TLS handshake (ClientHello, SNI outbound_.80_._.catalog.shop-staging.svc.cluster.local, ALPN istio-http/1.1,istio,http/1.1)
+  17:36:34.134754     10.244.2.61.33356 > 10.244.2.64.8080       309 B  TLS handshake (ClientHello, SNI outbound_.80_._.catalog.shop-staging.svc.cluster.local, ALPN istio-http/1.1,istio,http/1.1)
+  17:36:34.134846     10.244.2.61.33360 > 10.244.2.64.8080       309 B  TLS handshake (ClientHello, SNI outbound_.80_._.catalog.shop-staging.svc.cluster.local, ALPN istio-http/1.1,istio,http/1.1)
+  17:36:34.136779      10.244.2.64.8080 > 10.244.2.61.33332     2170 B  TLS handshake
+  17:36:34.138339      10.244.2.64.8080 > 10.244.2.61.33334     2170 B  TLS handshake
+  17:36:34.139659      10.244.2.64.8080 > 10.244.2.61.33348     2170 B  TLS handshake
+  17:36:34.139728     10.244.2.61.33298 > 10.244.2.64.8080      1961 B  TLS ChangeCipherSpec
+  17:36:34.140173     10.244.2.61.33298 > 10.244.2.64.8080      1248 B  TLS application data (encrypted)
+  17:36:34.140564      10.244.2.64.8080 > 10.244.2.61.33350     2170 B  TLS handshake
+  17:36:34.141043     10.244.2.61.33310 > 10.244.2.64.8080      1961 B  TLS ChangeCipherSpec
+  17:36:34.141086     10.244.2.61.33310 > 10.244.2.64.8080      1248 B  TLS application data (encrypted)
+  17:36:34.142654     10.244.2.61.33316 > 10.244.2.64.8080      1961 B  TLS ChangeCipherSpec
+  17:36:34.142866     10.244.2.61.33316 > 10.244.2.64.8080      1248 B  TLS application data (encrypted)
+  17:36:34.144435     10.244.2.61.33362 > 10.244.2.64.8080       309 B  TLS handshake (ClientHello, SNI outbound_.80_._.catalog.shop-staging.svc.cluster.local, ALPN istio-http/1.1,istio,http/1.1)
+  17:36:34.144506      10.244.2.64.8080 > 10.244.2.61.33356     2170 B  TLS handshake
+  17:36:34.145612     10.244.2.61.33332 > 10.244.2.64.8080      1961 B  TLS ChangeCipherSpec
+  17:36:34.145705     10.244.2.61.33332 > 10.244.2.64.8080      1248 B  TLS application data (encrypted)
+  17:36:34.146417      10.244.2.64.8080 > 10.244.2.61.33360     2170 B  TLS handshake
+  17:36:34.147104     10.244.2.61.33334 > 10.244.2.64.8080      1961 B  TLS ChangeCipherSpec
+  17:36:34.147154     10.244.2.61.33334 > 10.244.2.64.8080      1248 B  TLS application data (encrypted)
+  17:36:34.148012     10.244.2.61.33348 > 10.244.2.64.8080      1961 B  TLS ChangeCipherSpec
+  17:36:34.148052     10.244.2.61.33348 > 10.244.2.64.8080      1248 B  TLS application data (encrypted)
+  17:36:34.148878     10.244.2.61.33350 > 10.244.2.64.8080      1961 B  TLS ChangeCipherSpec
+  17:36:34.148907     10.244.2.61.33350 > 10.244.2.64.8080      1248 B  TLS application data (encrypted)
+  17:36:34.149375      10.244.2.64.8080 > 10.244.2.61.33362     2170 B  TLS handshake
+  17:36:34.152375     10.244.2.61.33356 > 10.244.2.64.8080      1961 B  TLS ChangeCipherSpec
+  17:36:34.152433     10.244.2.61.33356 > 10.244.2.64.8080      1248 B  TLS application data (encrypted)
+  17:36:34.155236     10.244.2.61.33360 > 10.244.2.64.8080      1961 B  TLS ChangeCipherSpec
+  17:36:34.155468     10.244.2.61.33360 > 10.244.2.64.8080      1248 B  TLS application data (encrypted)
+  17:36:34.157069     10.244.2.61.33362 > 10.244.2.64.8080      1961 B  TLS ChangeCipherSpec
+  17:36:34.157291     10.244.2.61.33362 > 10.244.2.64.8080      1248 B  TLS application data (encrypted)
+  17:36:34.162584      10.244.2.64.8080 > 10.244.2.61.47328     1217 B  TLS application data (encrypted)
+  17:36:34.167230      10.244.2.64.8080 > 10.244.2.61.33316     4963 B  TLS application data (encrypted)
+  17:36:34.170269     10.244.2.61.33374 > 10.244.2.64.8080      2196 B  TLS handshake (ClientHello, SNI outbound_.80_._.catalog.shop-staging.svc.cluster.local, ALPN istio-http/1.1,istio,http/1.1)
+  17:36:34.176524      10.244.2.64.8080 > 10.244.2.61.33374     2170 B  TLS handshake
+  17:36:34.180561      10.244.2.64.8080 > 10.244.2.61.33334     4963 B  TLS application data (encrypted)
+  17:36:34.184311      10.244.2.64.8080 > 10.244.2.61.33350     4963 B  TLS application data (encrypted)
+  17:36:34.192351     10.244.2.61.33374 > 10.244.2.64.8080      1961 B  TLS ChangeCipherSpec
+  17:36:34.192773     10.244.2.61.33316 > 10.244.2.64.8080      1248 B  TLS application data (encrypted)
+  17:36:34.196811      10.244.2.64.8080 > 10.244.2.61.33356     4963 B  TLS application data (encrypted)
+  17:36:34.202790     10.244.2.61.47328 > 10.244.2.64.8080      1248 B  TLS application data (encrypted)
+  17:36:34.223156      10.244.2.64.8080 > 10.244.2.61.33360     4963 B  TLS application data (encrypted)
+  17:36:34.251938      10.244.2.64.8080 > 10.244.2.61.33362     4963 B  TLS application data (encrypted)
+  17:36:34.252769      10.244.2.64.8080 > 10.244.2.61.33316     1217 B  TLS application data (encrypted)
+  17:36:34.265066      10.244.2.64.8080 > 10.244.2.61.47328     1217 B  TLS application data (encrypted)
+  17:36:34.284743      10.244.2.64.8080 > 10.244.2.61.33332     4964 B  TLS application data (encrypted)
+  17:36:34.285010      10.244.2.64.8080 > 10.244.2.61.33298     4964 B  TLS application data (encrypted)
+  17:36:34.285449      10.244.2.64.8080 > 10.244.2.61.33348     4964 B  TLS application data (encrypted)
+  17:36:34.286192      10.244.2.64.8080 > 10.244.2.61.33310     4964 B  TLS application data (encrypted)
+  17:36:34.328517     10.244.2.60.49954 > 10.244.2.64.8080      2180 B  TLS handshake (ClientHello, SNI outbound_.80_._.catalog.shop-staging.svc.cluster.local, ALPN istio-http/1.1,istio,http/1.1)
+  17:36:34.329579      10.244.2.64.8080 > 10.244.2.60.49954     2170 B  TLS handshake
+  17:36:34.331698     10.244.2.60.49954 > 10.244.2.64.8080      1956 B  TLS ChangeCipherSpec
+  17:36:34.331928     10.244.2.60.49954 > 10.244.2.64.8080      1066 B  TLS application data (encrypted)
+  17:36:34.337415      10.244.2.64.8080 > 10.244.2.60.49954     4684 B  TLS application data (encrypted)
+  17:36:34.805694     10.244.1.58.56206 > 10.244.2.64.8080       100 B  PLAINTEXT HTTP: GET /api/catalog/products HTTP/1.1
+  17:36:34.810298      10.244.2.64.8080 > 10.244.1.58.56206      667 B  PLAINTEXT HTTP: HTTP/1.1 200 OK
+
+  totals: {'TLS application data': 28, 'TLS handshake': 24, 'TLS ChangeCipherSpec': 12, 'PLAINTEXT HTTP': 2}

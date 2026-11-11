@@ -1,0 +1,125 @@
+# 2026-11-11T17:50:54Z  namespace shop-staging  PeerAuthentication STRICT
+
+$ istioctl version
+client version: 1.31.4
+control plane version: 1.31.4
+data plane version: 1.31.4 (16 proxies)
+
+$ istioctl proxy-status
+NAME                                          CLUSTER        ISTIOD                      VERSION     SUBSCRIBED TYPES
+catalog-69898dc745-fx2v2.shop-staging         Kubernetes     istiod-865fc88cfb-vmk9t     1.31.4      4 (CDS,LDS,EDS,RDS)
+catalog-69898dc745-g8rzf.shop-staging         Kubernetes     istiod-865fc88cfb-vmk9t     1.31.4      4 (CDS,LDS,EDS,RDS)
+catalog-69ccbd5869-dc889.shop-dev             Kubernetes     istiod-865fc88cfb-vmk9t     1.31.4      4 (CDS,LDS,EDS,RDS)
+catalog-69ccbd5869-w84rb.shop-dev             Kubernetes     istiod-865fc88cfb-vmk9t     1.31.4      4 (CDS,LDS,EDS,RDS)
+catalog-v2-cd949f67d-kxvvg.shop-staging       Kubernetes     istiod-865fc88cfb-vmk9t     1.31.4      4 (CDS,LDS,EDS,RDS)
+orders-5b7d6dd6f7-nx4lh.shop-dev              Kubernetes     istiod-865fc88cfb-vmk9t     1.31.4      4 (CDS,LDS,EDS,RDS)
+orders-6ddfb79b6f-hmdkf.shop-staging          Kubernetes     istiod-865fc88cfb-vmk9t     1.31.4      4 (CDS,LDS,EDS,RDS)
+orders-6ddfb79b6f-xdnx7.shop-staging          Kubernetes     istiod-865fc88cfb-vmk9t     1.31.4      4 (CDS,LDS,EDS,RDS)
+postgres-0.shop-dev                           Kubernetes     istiod-865fc88cfb-vmk9t     1.31.4      4 (CDS,LDS,EDS,RDS)
+postgres-0.shop-staging                       Kubernetes     istiod-865fc88cfb-vmk9t     1.31.4      4 (CDS,LDS,EDS,RDS)
+shop-gateway-5ff495f7b-p8cgh.shop-staging     Kubernetes     istiod-865fc88cfb-vmk9t     1.31.4      4 (CDS,LDS,EDS,RDS)
+shop-gateway-694bb44d74-t2wtr.shop-dev        Kubernetes     istiod-865fc88cfb-vmk9t     1.31.4      4 (CDS,LDS,EDS,RDS)
+web-976c9b4d6-d6m4c.shop-staging              Kubernetes     istiod-865fc88cfb-vmk9t     1.31.4      4 (CDS,LDS,EDS,RDS)
+web-976c9b4d6-fhgcw.shop-staging              Kubernetes     istiod-865fc88cfb-vmk9t     1.31.4      4 (CDS,LDS,EDS,RDS)
+web-cd844dc56-58h66.shop-dev                  Kubernetes     istiod-865fc88cfb-vmk9t     1.31.4      4 (CDS,LDS,EDS,RDS)
+web-cd844dc56-gfr7n.shop-dev                  Kubernetes     istiod-865fc88cfb-vmk9t     1.31.4      4 (CDS,LDS,EDS,RDS)
+
+$ istioctl analyze -n shop-staging
+Info [IST0102] (Namespace shop-staging) The namespace is not enabled for Istio injection. Run 'kubectl label namespace shop-staging istio-injection=enabled' to enable it, or 'kubectl label namespace shop-staging istio-injection=disabled' to explicitly mark it as not needing injection.
+
+$ istioctl x check-inject deployment/catalog -n shop-staging
+WEBHOOK                 REVISION  INJECTED      REASON
+istio-sidecar-injector  default   [32m✔[0m             Pod label sidecar.istio.io/inject=true matches
+
+$ istioctl x check-inject deployment/orders -n shop-staging
+WEBHOOK                 REVISION  INJECTED      REASON
+istio-sidecar-injector  default   [32m✔[0m             Pod label sidecar.istio.io/inject=true matches
+
+$ istioctl x check-inject deployment/web -n shop-staging
+WEBHOOK                 REVISION  INJECTED      REASON
+istio-sidecar-injector  default   [32m✔[0m             Pod label sidecar.istio.io/inject=true matches
+
+$ istioctl x check-inject deployment/shop-gateway -n shop-staging
+WEBHOOK                 REVISION  INJECTED      REASON
+istio-sidecar-injector  default   [32m✔[0m             Pod label sidecar.istio.io/inject=true matches
+
+$ istioctl x describe pod catalog-v2-cd949f67d-kxvvg.shop-staging
+Pod: catalog-v2-cd949f67d-kxvvg.shop-staging
+   Pod Revision: default
+   Pod Ports: 8080 (catalog)
+--------------------
+Service: catalog.shop-staging
+   Port: http 80/HTTP targets pod port 8080
+DestinationRule: catalog.shop-staging for "catalog.shop-staging.svc.cluster.local"
+   Matching subsets: v2
+      (Non-matching subsets v1)
+   Traffic Policy TLS Mode: ISTIO_MUTUAL
+   Policies: connection pool/outlier detection
+VirtualService: catalog.shop-staging
+   Route to host "catalog.shop-staging.svc.cluster.local" subset "v2" with weight 10%
+--------------------
+Effective PeerAuthentication:
+   Workload mTLS mode: STRICT
+Applied PeerAuthentication:
+   default.istio-system, default.shop-staging
+Skipping Gateway information (no ingress gateway pods)
+
+$ istioctl proxy-config cluster orders-6ddfb79b6f-hmdkf.shop-staging --fqdn catalog.shop-staging.svc.cluster.local
+SERVICE FQDN                               PORT     SUBSET     DIRECTION     TYPE     DESTINATION RULE
+catalog.shop-staging.svc.cluster.local     80       -          outbound      EDS      catalog.shop-staging
+catalog.shop-staging.svc.cluster.local     80       v1         outbound      EDS      catalog.shop-staging
+catalog.shop-staging.svc.cluster.local     80       v2         outbound      EDS      catalog.shop-staging
+
+# orders → catalog: client-side TLS that istiod programmed (UpstreamTlsContext per subset)
+  outbound|80||catalog.shop-staging.svc.cluster.local
+    SNI outbound_.80_._.catalog.shop-staging.svc.cluster.local | ALPN ['istio-peer-exchange', 'istio'] | peer must be ['spiffe://cluster.local/ns/shop-staging/sa/catalog'] | own cert: SDS ['default'] | TLS TLSv1_2-TLSv1_3
+    connectTimeout 1s | outlierDetection {"consecutive5xx": 5, "interval": "10s", "baseEjectionTime": "30s", "maxEjectionPercent": 50, "enforcingConsecutive5xx": 100, "enforcingSuccessRate": 0}
+  outbound|80|v1|catalog.shop-staging.svc.cluster.local
+    SNI outbound_.80_.v1_.catalog.shop-staging.svc.cluster.local | ALPN ['istio-peer-exchange', 'istio'] | peer must be ['spiffe://cluster.local/ns/shop-staging/sa/catalog'] | own cert: SDS ['default'] | TLS TLSv1_2-TLSv1_3
+    connectTimeout 1s | outlierDetection {"consecutive5xx": 5, "interval": "10s", "baseEjectionTime": "30s", "maxEjectionPercent": 50, "enforcingConsecutive5xx": 100, "enforcingSuccessRate": 0}
+  outbound|80|v2|catalog.shop-staging.svc.cluster.local
+    SNI outbound_.80_.v2_.catalog.shop-staging.svc.cluster.local | ALPN ['istio-peer-exchange', 'istio'] | peer must be ['spiffe://cluster.local/ns/shop-staging/sa/catalog'] | own cert: SDS ['default'] | TLS TLSv1_2-TLSv1_3
+    connectTimeout 1s | outlierDetection {"consecutive5xx": 5, "interval": "10s", "baseEjectionTime": "30s", "maxEjectionPercent": 50, "enforcingConsecutive5xx": 100, "enforcingSuccessRate": 0}
+
+$ istioctl proxy-config endpoint orders-6ddfb79b6f-hmdkf.shop-staging --cluster outbound|80|v1|catalog.shop-staging.svc.cluster.local
+ENDPOINT             STATUS      OUTLIER CHECK     CLUSTER
+10.244.1.59:8080     HEALTHY     OK                outbound|80|v1|catalog.shop-staging.svc.cluster.local
+10.244.2.64:8080     HEALTHY     OK                outbound|80|v1|catalog.shop-staging.svc.cluster.local
+
+$ istioctl proxy-config endpoint orders-6ddfb79b6f-hmdkf.shop-staging --cluster outbound|80|v2|catalog.shop-staging.svc.cluster.local
+ENDPOINT             STATUS      OUTLIER CHECK     CLUSTER
+10.244.1.61:8080     HEALTHY     OK                outbound|80|v2|catalog.shop-staging.svc.cluster.local
+
+$ istioctl proxy-config secret catalog-69898dc745-fx2v2.shop-staging
+RESOURCE NAME     TYPE           STATUS     VALID CERT     SERIAL NUMBER                        NOT AFTER                NOT BEFORE
+default           Cert Chain     ACTIVE     true           cda32c94a906363ed2ec5f95a2f6e9b7     2026-11-12T10:55:29Z     2026-11-11T10:53:29Z
+ROOTCA            CA             ACTIVE     true           cf44bc4d6abe18e5b9713225117a10b5     2036-11-08T10:52:54Z     2026-11-11T10:52:54Z
+
+# workload certificate of catalog-69898dc745-fx2v2 (signed by istiod's CA, rotated before it expires; SPIFFE ID in the SAN)
+  Signature Algorithm: sha256WithRSAEncryption
+  Issuer: O=cluster.local
+  Not Before: Nov 11 10:53:29 2026 GMT
+  Not After : Nov 12 10:55:29 2026 GMT
+  Public Key Algorithm: rsaEncryption
+  URI:spiffe://cluster.local/ns/shop-staging/sa/catalog
+
+# inbound listener of catalog-69898dc745-fx2v2 (virtualInbound :15006): filter chains for destination port 8080
+  transport tls    ALPN None                                     requireClientCertificate True
+  (STRICT: only TLS chains exist for :8080 — a plaintext connection matches no chain and is reset)
+
+$ istioctl proxy-config route shop-gateway-5ff495f7b-p8cgh.shop-staging --name http.8080
+NAME          VHOST NAME                DOMAINS                MATCH             VIRTUAL SERVICE
+http.8080     staging.shop.local:80     staging.shop.local     /api/orders*      shop-edge.shop-staging
+http.8080     staging.shop.local:80     staging.shop.local     /api/catalog*     shop-edge.shop-staging
+http.8080     staging.shop.local:80     staging.shop.local     /*                shop-edge.shop-staging
+
+$ istioctl x authz check catalog-69898dc745-fx2v2.shop-staging
+ACTION   AuthorizationPolicy             RULES
+ALLOW    allow-to-catalog.shop-staging   1
+ALLOW    default-deny.shop-staging       1
+
+# what the catalog sidecar reports per request (its own /stats/prometheus): peer identity + mTLS
+  spiffe://cluster.local/ns/shop-staging/sa/default       code 403  mutual_tls  1 requests
+  spiffe://cluster.local/ns/shop-staging/sa/orders        code 200  mutual_tls  304 requests
+  spiffe://cluster.local/ns/shop-staging/sa/shop-gateway  code 200  mutual_tls  1884 requests
+  unknown                                                 code 200  none        4 requests

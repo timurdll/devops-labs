@@ -2,7 +2,7 @@
 # Only what differs from the chart defaults is listed.
 global:
   # Envoy sidecar sizing: ~25 meshed pods on a 3-node kind cluster with 7.6 GiB in total.
-  # Measured: 35–60 MiB per idle sidecar (docs/week10/evidence).
+  # Measured: 34–52 MiB working set per sidecar (docs/week10/evidence/11-sidecar-overhead.txt).
   proxy:
     resources:
       requests: { cpu: 10m, memory: 40Mi }

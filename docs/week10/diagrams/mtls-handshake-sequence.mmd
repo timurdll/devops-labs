@@ -1,0 +1,55 @@
+%% Week 10 · mutual TLS between two meshed services (orders → catalog, shop-staging), from identity
+%% bootstrap to an authorized request. SNI, ALPN, SANs, validity and the RST/403 outcomes are taken from
+%% docs/week10/evidence/04 (packet capture), 05 (authz probe) and 07 (istioctl proxy-config).
+sequenceDiagram
+    autonumber
+    participant OA as orders app<br/>(UID 65532)
+    participant OE as orders istio-proxy<br/>sa/orders
+    participant D as istiod<br/>(CA + xDS)
+    participant K as kube-apiserver
+    participant CE as catalog istio-proxy<br/>sa/catalog
+    participant CA as catalog app<br/>:8080
+
+    rect rgb(238, 244, 251)
+    Note over OE,CE: ① Identity bootstrap — once per pod, then rotation before expiry
+    OE->>D: CSR + projected ServiceAccount token (audience istio-ca) over gRPC :15012
+    D->>K: TokenReview — is this token valid, which ns/sa?
+    K-->>D: authenticated: system:serviceaccount:shop-staging:orders
+    D-->>OE: SDS "default": cert SAN spiffe://cluster.local/ns/shop-staging/sa/orders (24 h)<br/>SDS "ROOTCA": issuer O=cluster.local
+    D-->>CE: same flow → SAN spiffe://cluster.local/ns/shop-staging/sa/catalog
+    end
+
+    rect rgb(255, 246, 224)
+    Note over OE,CE: ② Policy pushed as Envoy config (xDS), no restart
+    D-->>CE: LDS virtualInbound :15006 — for :8080 only a TLS filter chain, requireClientCertificate true<br/>(PeerAuthentication STRICT) + RBAC filter allow-to-catalog: principals sa/shop-gateway, sa/orders
+    D-->>OE: CDS outbound|80|v1|catalog… — ISTIO_MUTUAL: SNI, ALPN istio-peer-exchange,istio,<br/>peer SAN must be sa/catalog · RDS: VirtualService catalog v1 90 / v2 10 · EDS: ready endpoints
+    end
+
+    rect rgb(231, 246, 236)
+    Note over OA,CA: ③ One request: GET /api/catalog/products/1 while creating an order
+    OA->>OE: plaintext HTTP to catalog:80 (iptables from istio-cni → :15001)
+    Note over OE: route catalog → weighted pick subset v1 → endpoint 10.244.2.64:8080
+    OE->>CE: TCP SYN → 10.244.2.64:8080 (redirected to :15006 inside the catalog pod)
+    OE->>CE: ClientHello · SNI outbound_.80_.v1_.catalog.shop-staging.svc.cluster.local<br/>ALPN istio-peer-exchange, istio · TLS 1.2–1.3
+    CE-->>OE: ServerHello · Certificate (spiffe://…/sa/catalog) · CertificateRequest
+    Note over OE: verify chain → ROOTCA and SAN == sa/catalog<br/>(a pod with another identity would fail here)
+    OE->>CE: Certificate (spiffe://…/sa/orders) · Finished
+    Note over CE: verify chain → ROOTCA · source.principal = cluster.local/ns/shop-staging/sa/orders
+    OE->>CE: TLS application data: GET /api/catalog/products/1 (+ traceparent)
+    Note over CE: RBAC: default-deny + allow-to-catalog → principal sa/orders matches → ALLOW
+    CE->>CA: plaintext HTTP over the pod's loopback
+    CA-->>CE: 200 {item}
+    CE-->>OE: TLS application data: 200
+    OE-->>OA: 200 · istio_requests_total{connection_security_policy="mutual_tls"}
+    end
+
+    rect rgb(253, 236, 236)
+    Note over OA,CA: ④ What STRICT + AuthorizationPolicy reject
+    alt plaintext to :8080, bypassing the client sidecar (evidence 04)
+        OA->>CE: GET /api/catalog/products (no TLS)
+        CE-->>OA: TCP RST — no filter chain for plaintext · curl (56) connection reset
+    else valid mTLS, but identity sa/default with label orders (evidence 05)
+        OE->>CE: handshake succeeds · principal cluster.local/ns/shop-staging/sa/default
+        CE-->>OE: 403 RBAC: access denied (catalog app never sees the request)
+    end
+    end

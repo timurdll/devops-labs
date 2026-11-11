@@ -1,0 +1,1772 @@
+{
+ "data": [
+  {
+   "traceID": "c4502efa4bdd4196a7ee8d23cc1bab33",
+   "spans": [
+    {
+     "traceID": "c4502efa4bdd4196a7ee8d23cc1bab33",
+     "spanID": "0c9fb659b563e92e",
+     "operationName": "ReverseProxy",
+     "references": [
+      {
+       "refType": "CHILD_OF",
+       "traceID": "c4502efa4bdd4196a7ee8d23cc1bab33",
+       "spanID": "52d1ae8c14e25fde"
+      }
+     ],
+     "startTime": 1794419458515789,
+     "duration": 99837,
+     "tags": [
+      {
+       "key": "otel.scope.name",
+       "type": "string",
+       "value": "github.com/traefik/traefik"
+      },
+      {
+       "key": "http.request.method",
+       "type": "string",
+       "value": "POST"
+      },
+      {
+       "key": "http.response.status_code",
+       "type": "int64",
+       "value": 201
+      },
+      {
+       "key": "network.peer.address",
+       "type": "string",
+       "value": "10.244.1.63"
+      },
+      {
+       "key": "network.peer.port",
+       "type": "int64",
+       "value": 8080
+      },
+      {
+       "key": "network.protocol.version",
+       "type": "string",
+       "value": "1.1"
+      },
+      {
+       "key": "server.address",
+       "type": "string",
+       "value": "10.244.1.63"
+      },
+      {
+       "key": "server.port",
+       "type": "int64",
+       "value": 8080
+      },
+      {
+       "key": "url.full",
+       "type": "string",
+       "value": "http://10.244.1.63:8080/api/orders"
+      },
+      {
+       "key": "url.scheme",
+       "type": "string",
+       "value": "http"
+      },
+      {
+       "key": "user_agent.original",
+       "type": "string",
+       "value": "curl/8.7.1"
+      },
+      {
+       "key": "span.kind",
+       "type": "string",
+       "value": "client"
+      }
+     ],
+     "logs": [],
+     "processID": "p1",
+     "warnings": null
+    },
+    {
+     "traceID": "c4502efa4bdd4196a7ee8d23cc1bab33",
+     "spanID": "52d1ae8c14e25fde",
+     "operationName": "POST",
+     "references": [],
+     "startTime": 1794419458515151,
+     "duration": 101380,
+     "tags": [
+      {
+       "key": "otel.scope.name",
+       "type": "string",
+       "value": "github.com/traefik/traefik"
+      },
+      {
+       "key": "client.address",
+       "type": "string",
+       "value": "172.27.0.4"
+      },
+      {
+       "key": "client.port",
+       "type": "int64",
+       "value": 1803
+      },
+      {
+       "key": "entry_point",
+       "type": "string",
+       "value": "web"
+      },
+      {
+       "key": "http.request.body.size",
+       "type": "int64",
+       "value": 28
+      },
+      {
+       "key": "http.request.method",
+       "type": "string",
+       "value": "POST"
+      },
+      {
+       "key": "http.response.status_code",
+       "type": "int64",
+       "value": 201
+      },
+      {
+       "key": "network.peer.address",
+       "type": "string",
+       "value": "172.27.0.4"
+      },
+      {
+       "key": "network.peer.port",
+       "type": "int64",
+       "value": 1803
+      },
+      {
+       "key": "network.protocol.version",
+       "type": "string",
+       "value": "1.1"
+      },
+      {
+       "key": "server.address",
+       "type": "string",
+       "value": "staging.shop.local"
+      },
+      {
+       "key": "url.path",
+       "type": "string",
+       "value": "/api/orders"
+      },
+      {
+       "key": "url.query",
+       "type": "string",
+       "value": ""
+      },
+      {
+       "key": "url.scheme",
+       "type": "string",
+       "value": "http"
+      },
+      {
+       "key": "user_agent.original",
+       "type": "string",
+       "value": "curl/8.7.1"
+      },
+      {
+       "key": "span.kind",
+       "type": "string",
+       "value": "server"
+      }
+     ],
+     "logs": [],
+     "processID": "p1",
+     "warnings": null
+    },
+    {
+     "traceID": "c4502efa4bdd4196a7ee8d23cc1bab33",
+     "spanID": "e84d7fe48aba7624",
+     "operationName": "router outbound|80||orders.shop-staging.svc.cluster.local; egress",
+     "references": [
+      {
+       "refType": "CHILD_OF",
+       "traceID": "c4502efa4bdd4196a7ee8d23cc1bab33",
+       "spanID": "72f72fa2706516e5"
+      }
+     ],
+     "startTime": 1794419458533007,
+     "duration": 78288,
+     "tags": [
+      {
+       "key": "otel.scope.name",
+       "type": "string",
+       "value": "envoy"
+      },
+      {
+       "key": "otel.scope.version",
+       "type": "string",
+       "value": "defdcd65d0c035b54b324dc6ed4ef258e22bf94d/1.39.7-dev/Clean/RELEASE/BoringSSL"
+      },
+      {
+       "key": "component",
+       "type": "string",
+       "value": "proxy"
+      },
+      {
+       "key": "http.protocol",
+       "type": "string",
+       "value": "HTTP/1.1"
+      },
+      {
+       "key": "http.status_code",
+       "type": "string",
+       "value": "201"
+      },
+      {
+       "key": "istio.canonical_revision",
+       "type": "string",
+       "value": "latest"
+      },
+      {
+       "key": "istio.canonical_service",
+       "type": "string",
+       "value": "shop-gateway"
+      },
+      {
+       "key": "istio.cluster_id",
+       "type": "string",
+       "value": "Kubernetes"
+      },
+      {
+       "key": "istio.mesh_id",
+       "type": "string",
+       "value": "cluster.local"
+      },
+      {
+       "key": "istio.namespace",
+       "type": "string",
+       "value": "shop-staging"
+      },
+      {
+       "key": "peer.address",
+       "type": "string",
+       "value": "10.244.2.60:8080"
+      },
+      {
+       "key": "response_flags",
+       "type": "string",
+       "value": "-"
+      },
+      {
+       "key": "upstream_address",
+       "type": "string",
+       "value": "10.244.2.60:8080"
+      },
+      {
+       "key": "upstream_cluster",
+       "type": "string",
+       "value": "outbound|80||orders.shop-staging.svc.cluster.local"
+      },
+      {
+       "key": "upstream_cluster.name",
+       "type": "string",
+       "value": "outbound|80||orders.shop-staging.svc.cluster.local;"
+      },
+      {
+       "key": "span.kind",
+       "type": "string",
+       "value": "client"
+      }
+     ],
+     "logs": [],
+     "processID": "p2",
+     "warnings": null
+    },
+    {
+     "traceID": "c4502efa4bdd4196a7ee8d23cc1bab33",
+     "spanID": "72f72fa2706516e5",
+     "operationName": "orders.shop-staging.svc.cluster.local:80/api/orders*",
+     "references": [
+      {
+       "refType": "CHILD_OF",
+       "traceID": "c4502efa4bdd4196a7ee8d23cc1bab33",
+       "spanID": "0c9fb659b563e92e"
+      }
+     ],
+     "startTime": 1794419458530301,
+     "duration": 81160,
+     "tags": [
+      {
+       "key": "otel.scope.name",
+       "type": "string",
+       "value": "envoy"
+      },
+      {
+       "key": "otel.scope.version",
+       "type": "string",
+       "value": "defdcd65d0c035b54b324dc6ed4ef258e22bf94d/1.39.7-dev/Clean/RELEASE/BoringSSL"
+      },
+      {
+       "key": "component",
+       "type": "string",
+       "value": "proxy"
+      },
+      {
+       "key": "downstream_cluster",
+       "type": "string",
+       "value": "-"
+      },
+      {
+       "key": "guid:x-request-id",
+       "type": "string",
+       "value": "b31ae7be-2f22-98d0-bb15-1a269d623bdf"
+      },
+      {
+       "key": "http.method",
+       "type": "string",
+       "value": "POST"
+      },
+      {
+       "key": "http.protocol",
+       "type": "string",
+       "value": "HTTP/1.1"
+      },
+      {
+       "key": "http.status_code",
+       "type": "string",
+       "value": "201"
+      },
+      {
+       "key": "http.url",
+       "type": "string",
+       "value": "http://staging.shop.local/api/orders"
+      },
+      {
+       "key": "istio.canonical_revision",
+       "type": "string",
+       "value": "latest"
+      },
+      {
+       "key": "istio.canonical_service",
+       "type": "string",
+       "value": "shop-gateway"
+      },
+      {
+       "key": "istio.cluster_id",
+       "type": "string",
+       "value": "Kubernetes"
+      },
+      {
+       "key": "istio.mesh_id",
+       "type": "string",
+       "value": "cluster.local"
+      },
+      {
+       "key": "istio.namespace",
+       "type": "string",
+       "value": "shop-staging"
+      },
+      {
+       "key": "node_id",
+       "type": "string",
+       "value": "router~10.244.1.63~shop-gateway-5ff495f7b-p8cgh.shop-staging~shop-staging.svc.cluster.local"
+      },
+      {
+       "key": "peer.address",
+       "type": "string",
+       "value": "10.244.2.36"
+      },
+      {
+       "key": "request_size",
+       "type": "string",
+       "value": "28"
+      },
+      {
+       "key": "response_flags",
+       "type": "string",
+       "value": "-"
+      },
+      {
+       "key": "response_size",
+       "type": "string",
+       "value": "187"
+      },
+      {
+       "key": "upstream_cluster",
+       "type": "string",
+       "value": "outbound|80||orders.shop-staging.svc.cluster.local"
+      },
+      {
+       "key": "upstream_cluster.name",
+       "type": "string",
+       "value": "outbound|80||orders.shop-staging.svc.cluster.local;"
+      },
+      {
+       "key": "user_agent",
+       "type": "string",
+       "value": "curl/8.7.1"
+      },
+      {
+       "key": "zone",
+       "type": "string",
+       "value": ""
+      },
+      {
+       "key": "span.kind",
+       "type": "string",
+       "value": "server"
+      }
+     ],
+     "logs": [],
+     "processID": "p2",
+     "warnings": null
+    },
+    {
+     "traceID": "c4502efa4bdd4196a7ee8d23cc1bab33",
+     "spanID": "56d8e462a63d65a9",
+     "operationName": "catalog:80/*",
+     "references": [
+      {
+       "refType": "CHILD_OF",
+       "traceID": "c4502efa4bdd4196a7ee8d23cc1bab33",
+       "spanID": "bb5f7e99b0d36f17"
+      }
+     ],
+     "startTime": 1794419458568735,
+     "duration": 31056,
+     "tags": [
+      {
+       "key": "otel.scope.name",
+       "type": "string",
+       "value": "envoy"
+      },
+      {
+       "key": "otel.scope.version",
+       "type": "string",
+       "value": "defdcd65d0c035b54b324dc6ed4ef258e22bf94d/1.39.7-dev/Clean/RELEASE/BoringSSL"
+      },
+      {
+       "key": "component",
+       "type": "string",
+       "value": "proxy"
+      },
+      {
+       "key": "downstream_cluster",
+       "type": "string",
+       "value": "-"
+      },
+      {
+       "key": "guid:x-request-id",
+       "type": "string",
+       "value": "dd3df412-2cdc-9ffd-a039-7686d1a99e99"
+      },
+      {
+       "key": "http.method",
+       "type": "string",
+       "value": "GET"
+      },
+      {
+       "key": "http.protocol",
+       "type": "string",
+       "value": "HTTP/1.1"
+      },
+      {
+       "key": "http.status_code",
+       "type": "string",
+       "value": "200"
+      },
+      {
+       "key": "http.url",
+       "type": "string",
+       "value": "http://catalog.shop-staging.svc.cluster.local/api/catalog/products/1"
+      },
+      {
+       "key": "istio.canonical_revision",
+       "type": "string",
+       "value": "v1"
+      },
+      {
+       "key": "istio.canonical_service",
+       "type": "string",
+       "value": "orders"
+      },
+      {
+       "key": "istio.cluster_id",
+       "type": "string",
+       "value": "Kubernetes"
+      },
+      {
+       "key": "istio.mesh_id",
+       "type": "string",
+       "value": "cluster.local"
+      },
+      {
+       "key": "istio.namespace",
+       "type": "string",
+       "value": "shop-staging"
+      },
+      {
+       "key": "node_id",
+       "type": "string",
+       "value": "sidecar~10.244.2.60~orders-6ddfb79b6f-xdnx7.shop-staging~shop-staging.svc.cluster.local"
+      },
+      {
+       "key": "peer.address",
+       "type": "string",
+       "value": "10.244.2.60"
+      },
+      {
+       "key": "request_size",
+       "type": "string",
+       "value": "0"
+      },
+      {
+       "key": "response_flags",
+       "type": "string",
+       "value": "-"
+      },
+      {
+       "key": "response_size",
+       "type": "string",
+       "value": "129"
+      },
+      {
+       "key": "upstream_cluster",
+       "type": "string",
+       "value": "outbound|80|v1|catalog.shop-staging.svc.cluster.local"
+      },
+      {
+       "key": "upstream_cluster.name",
+       "type": "string",
+       "value": "outbound|80|v1|catalog.shop-staging.svc.cluster.local;"
+      },
+      {
+       "key": "user_agent",
+       "type": "string",
+       "value": "node"
+      },
+      {
+       "key": "zone",
+       "type": "string",
+       "value": ""
+      },
+      {
+       "key": "span.kind",
+       "type": "string",
+       "value": "client"
+      }
+     ],
+     "logs": [],
+     "processID": "p3",
+     "warnings": null
+    },
+    {
+     "traceID": "c4502efa4bdd4196a7ee8d23cc1bab33",
+     "spanID": "f56b4a3307d44005",
+     "operationName": "orders.shop-staging.svc.cluster.local:80/api/orders*",
+     "references": [
+      {
+       "refType": "CHILD_OF",
+       "traceID": "c4502efa4bdd4196a7ee8d23cc1bab33",
+       "spanID": "e84d7fe48aba7624"
+      }
+     ],
+     "startTime": 1794419458545481,
+     "duration": 64035,
+     "tags": [
+      {
+       "key": "otel.scope.name",
+       "type": "string",
+       "value": "envoy"
+      },
+      {
+       "key": "otel.scope.version",
+       "type": "string",
+       "value": "defdcd65d0c035b54b324dc6ed4ef258e22bf94d/1.39.7-dev/Clean/RELEASE/BoringSSL"
+      },
+      {
+       "key": "component",
+       "type": "string",
+       "value": "proxy"
+      },
+      {
+       "key": "downstream_cluster",
+       "type": "string",
+       "value": "-"
+      },
+      {
+       "key": "guid:x-request-id",
+       "type": "string",
+       "value": "b31ae7be-2f22-98d0-bb15-1a269d623bdf"
+      },
+      {
+       "key": "http.method",
+       "type": "string",
+       "value": "POST"
+      },
+      {
+       "key": "http.protocol",
+       "type": "string",
+       "value": "HTTP/1.1"
+      },
+      {
+       "key": "http.status_code",
+       "type": "string",
+       "value": "201"
+      },
+      {
+       "key": "http.url",
+       "type": "string",
+       "value": "http://staging.shop.local/api/orders"
+      },
+      {
+       "key": "istio.canonical_revision",
+       "type": "string",
+       "value": "v1"
+      },
+      {
+       "key": "istio.canonical_service",
+       "type": "string",
+       "value": "orders"
+      },
+      {
+       "key": "istio.cluster_id",
+       "type": "string",
+       "value": "Kubernetes"
+      },
+      {
+       "key": "istio.mesh_id",
+       "type": "string",
+       "value": "cluster.local"
+      },
+      {
+       "key": "istio.namespace",
+       "type": "string",
+       "value": "shop-staging"
+      },
+      {
+       "key": "node_id",
+       "type": "string",
+       "value": "sidecar~10.244.2.60~orders-6ddfb79b6f-xdnx7.shop-staging~shop-staging.svc.cluster.local"
+      },
+      {
+       "key": "peer.address",
+       "type": "string",
+       "value": "10.244.1.63"
+      },
+      {
+       "key": "request_size",
+       "type": "string",
+       "value": "28"
+      },
+      {
+       "key": "response_flags",
+       "type": "string",
+       "value": "-"
+      },
+      {
+       "key": "response_size",
+       "type": "string",
+       "value": "187"
+      },
+      {
+       "key": "upstream_cluster",
+       "type": "string",
+       "value": "inbound|8080||"
+      },
+      {
+       "key": "upstream_cluster.name",
+       "type": "string",
+       "value": "inbound|8080||;"
+      },
+      {
+       "key": "user_agent",
+       "type": "string",
+       "value": "curl/8.7.1"
+      },
+      {
+       "key": "zone",
+       "type": "string",
+       "value": ""
+      },
+      {
+       "key": "span.kind",
+       "type": "string",
+       "value": "server"
+      }
+     ],
+     "logs": [],
+     "processID": "p3",
+     "warnings": null
+    },
+    {
+     "traceID": "c4502efa4bdd4196a7ee8d23cc1bab33",
+     "spanID": "fecd456e3fc79fbe",
+     "operationName": "catalog:80/*",
+     "references": [
+      {
+       "refType": "CHILD_OF",
+       "traceID": "c4502efa4bdd4196a7ee8d23cc1bab33",
+       "spanID": "56d8e462a63d65a9"
+      }
+     ],
+     "startTime": 1794419458570532,
+     "duration": 28238,
+     "tags": [
+      {
+       "key": "otel.scope.name",
+       "type": "string",
+       "value": "envoy"
+      },
+      {
+       "key": "otel.scope.version",
+       "type": "string",
+       "value": "defdcd65d0c035b54b324dc6ed4ef258e22bf94d/1.39.7-dev/Clean/RELEASE/BoringSSL"
+      },
+      {
+       "key": "component",
+       "type": "string",
+       "value": "proxy"
+      },
+      {
+       "key": "downstream_cluster",
+       "type": "string",
+       "value": "-"
+      },
+      {
+       "key": "guid:x-request-id",
+       "type": "string",
+       "value": "dd3df412-2cdc-9ffd-a039-7686d1a99e99"
+      },
+      {
+       "key": "http.method",
+       "type": "string",
+       "value": "GET"
+      },
+      {
+       "key": "http.protocol",
+       "type": "string",
+       "value": "HTTP/1.1"
+      },
+      {
+       "key": "http.status_code",
+       "type": "string",
+       "value": "200"
+      },
+      {
+       "key": "http.url",
+       "type": "string",
+       "value": "http://catalog.shop-staging.svc.cluster.local/api/catalog/products/1"
+      },
+      {
+       "key": "istio.canonical_revision",
+       "type": "string",
+       "value": "v1"
+      },
+      {
+       "key": "istio.canonical_service",
+       "type": "string",
+       "value": "catalog"
+      },
+      {
+       "key": "istio.cluster_id",
+       "type": "string",
+       "value": "Kubernetes"
+      },
+      {
+       "key": "istio.mesh_id",
+       "type": "string",
+       "value": "cluster.local"
+      },
+      {
+       "key": "istio.namespace",
+       "type": "string",
+       "value": "shop-staging"
+      },
+      {
+       "key": "node_id",
+       "type": "string",
+       "value": "sidecar~10.244.2.64~catalog-69898dc745-fx2v2.shop-staging~shop-staging.svc.cluster.local"
+      },
+      {
+       "key": "peer.address",
+       "type": "string",
+       "value": "10.244.2.60"
+      },
+      {
+       "key": "request_size",
+       "type": "string",
+       "value": "0"
+      },
+      {
+       "key": "response_flags",
+       "type": "string",
+       "value": "-"
+      },
+      {
+       "key": "response_size",
+       "type": "string",
+       "value": "129"
+      },
+      {
+       "key": "upstream_cluster",
+       "type": "string",
+       "value": "inbound|8080||"
+      },
+      {
+       "key": "upstream_cluster.name",
+       "type": "string",
+       "value": "inbound|8080||;"
+      },
+      {
+       "key": "user_agent",
+       "type": "string",
+       "value": "node"
+      },
+      {
+       "key": "zone",
+       "type": "string",
+       "value": ""
+      },
+      {
+       "key": "span.kind",
+       "type": "string",
+       "value": "server"
+      }
+     ],
+     "logs": [],
+     "processID": "p4",
+     "warnings": null
+    },
+    {
+     "traceID": "c4502efa4bdd4196a7ee8d23cc1bab33",
+     "spanID": "3ef2a5af35d698ca",
+     "operationName": "pg-pool.connect",
+     "references": [
+      {
+       "refType": "CHILD_OF",
+       "traceID": "c4502efa4bdd4196a7ee8d23cc1bab33",
+       "spanID": "87687ba96e13bfb2"
+      }
+     ],
+     "startTime": 1794419458591000,
+     "duration": 1040,
+     "tags": [
+      {
+       "key": "otel.scope.name",
+       "type": "string",
+       "value": "@opentelemetry/instrumentation-pg"
+      },
+      {
+       "key": "otel.scope.version",
+       "type": "string",
+       "value": "0.77.0"
+      },
+      {
+       "key": "db.postgresql.idle.timeout.millis",
+       "type": "int64",
+       "value": 10000
+      },
+      {
+       "key": "db.system.name",
+       "type": "string",
+       "value": "postgresql"
+      },
+      {
+       "key": "span.kind",
+       "type": "string",
+       "value": "client"
+      }
+     ],
+     "logs": [],
+     "processID": "p5",
+     "warnings": null
+    },
+    {
+     "traceID": "c4502efa4bdd4196a7ee8d23cc1bab33",
+     "spanID": "651baadcb5d84dca",
+     "operationName": "pg.query:SELECT catalog",
+     "references": [
+      {
+       "refType": "CHILD_OF",
+       "traceID": "c4502efa4bdd4196a7ee8d23cc1bab33",
+       "spanID": "87687ba96e13bfb2"
+      }
+     ],
+     "startTime": 1794419458592000,
+     "duration": 4040,
+     "tags": [
+      {
+       "key": "otel.scope.name",
+       "type": "string",
+       "value": "@opentelemetry/instrumentation-pg"
+      },
+      {
+       "key": "otel.scope.version",
+       "type": "string",
+       "value": "0.77.0"
+      },
+      {
+       "key": "db.namespace",
+       "type": "string",
+       "value": "catalog"
+      },
+      {
+       "key": "db.query.text",
+       "type": "string",
+       "value": "SELECT id, sku, name, price_cents AS \"priceCents\", stock FROM products WHERE id = $1"
+      },
+      {
+       "key": "db.system.name",
+       "type": "string",
+       "value": "postgresql"
+      },
+      {
+       "key": "server.address",
+       "type": "string",
+       "value": "postgres.shop-staging.svc.cluster.local"
+      },
+      {
+       "key": "server.port",
+       "type": "int64",
+       "value": 5432
+      },
+      {
+       "key": "span.kind",
+       "type": "string",
+       "value": "client"
+      }
+     ],
+     "logs": [],
+     "processID": "p5",
+     "warnings": null
+    },
+    {
+     "traceID": "c4502efa4bdd4196a7ee8d23cc1bab33",
+     "spanID": "87687ba96e13bfb2",
+     "operationName": "GET /api/catalog/products/:id",
+     "references": [
+      {
+       "refType": "CHILD_OF",
+       "traceID": "c4502efa4bdd4196a7ee8d23cc1bab33",
+       "spanID": "fecd456e3fc79fbe"
+      }
+     ],
+     "startTime": 1794419458579000,
+     "duration": 19539,
+     "tags": [
+      {
+       "key": "otel.scope.name",
+       "type": "string",
+       "value": "@opentelemetry/instrumentation-http"
+      },
+      {
+       "key": "otel.scope.version",
+       "type": "string",
+       "value": "0.300.0"
+      },
+      {
+       "key": "client.address",
+       "type": "string",
+       "value": "::ffff:127.0.0.6"
+      },
+      {
+       "key": "http.request.method",
+       "type": "string",
+       "value": "GET"
+      },
+      {
+       "key": "http.response.status_code",
+       "type": "int64",
+       "value": 200
+      },
+      {
+       "key": "http.route",
+       "type": "string",
+       "value": "/api/catalog/products/:id"
+      },
+      {
+       "key": "network.peer.address",
+       "type": "string",
+       "value": "::ffff:127.0.0.6"
+      },
+      {
+       "key": "network.peer.port",
+       "type": "int64",
+       "value": 34973
+      },
+      {
+       "key": "network.protocol.version",
+       "type": "string",
+       "value": "1.1"
+      },
+      {
+       "key": "server.address",
+       "type": "string",
+       "value": "catalog.shop-staging.svc.cluster.local"
+      },
+      {
+       "key": "server.port",
+       "type": "int64",
+       "value": 80
+      },
+      {
+       "key": "url.path",
+       "type": "string",
+       "value": "/api/catalog/products/1"
+      },
+      {
+       "key": "url.scheme",
+       "type": "string",
+       "value": "http"
+      },
+      {
+       "key": "user_agent.original",
+       "type": "string",
+       "value": "node"
+      },
+      {
+       "key": "span.kind",
+       "type": "string",
+       "value": "server"
+      }
+     ],
+     "logs": [],
+     "processID": "p5",
+     "warnings": null
+    },
+    {
+     "traceID": "c4502efa4bdd4196a7ee8d23cc1bab33",
+     "spanID": "bb5f7e99b0d36f17",
+     "operationName": "GET",
+     "references": [
+      {
+       "refType": "CHILD_OF",
+       "traceID": "c4502efa4bdd4196a7ee8d23cc1bab33",
+       "spanID": "77b8284a80297057"
+      }
+     ],
+     "startTime": 1794419458555000,
+     "duration": 45833,
+     "tags": [
+      {
+       "key": "otel.scope.name",
+       "type": "string",
+       "value": "@opentelemetry/instrumentation-undici"
+      },
+      {
+       "key": "otel.scope.version",
+       "type": "string",
+       "value": "0.34.0"
+      },
+      {
+       "key": "http.request.method",
+       "type": "string",
+       "value": "GET"
+      },
+      {
+       "key": "http.request.method_original",
+       "type": "string",
+       "value": "GET"
+      },
+      {
+       "key": "http.response.status_code",
+       "type": "int64",
+       "value": 200
+      },
+      {
+       "key": "network.peer.address",
+       "type": "string",
+       "value": "10.96.178.120"
+      },
+      {
+       "key": "network.peer.port",
+       "type": "int64",
+       "value": 80
+      },
+      {
+       "key": "network.protocol.version",
+       "type": "string",
+       "value": "1.1"
+      },
+      {
+       "key": "server.address",
+       "type": "string",
+       "value": "catalog.shop-staging.svc.cluster.local"
+      },
+      {
+       "key": "server.port",
+       "type": "int64",
+       "value": 80
+      },
+      {
+       "key": "url.full",
+       "type": "string",
+       "value": "http://catalog.shop-staging.svc.cluster.local/api/catalog/products/1"
+      },
+      {
+       "key": "url.path",
+       "type": "string",
+       "value": "/api/catalog/products/1"
+      },
+      {
+       "key": "url.query",
+       "type": "string",
+       "value": ""
+      },
+      {
+       "key": "url.scheme",
+       "type": "string",
+       "value": "http"
+      },
+      {
+       "key": "user_agent.original",
+       "type": "string",
+       "value": "node"
+      },
+      {
+       "key": "span.kind",
+       "type": "string",
+       "value": "client"
+      }
+     ],
+     "logs": [],
+     "processID": "p6",
+     "warnings": null
+    },
+    {
+     "traceID": "c4502efa4bdd4196a7ee8d23cc1bab33",
+     "spanID": "c5a6819ca5136da0",
+     "operationName": "pg-pool.connect",
+     "references": [
+      {
+       "refType": "CHILD_OF",
+       "traceID": "c4502efa4bdd4196a7ee8d23cc1bab33",
+       "spanID": "77b8284a80297057"
+      }
+     ],
+     "startTime": 1794419458603000,
+     "duration": 91,
+     "tags": [
+      {
+       "key": "otel.scope.name",
+       "type": "string",
+       "value": "@opentelemetry/instrumentation-pg"
+      },
+      {
+       "key": "otel.scope.version",
+       "type": "string",
+       "value": "0.77.0"
+      },
+      {
+       "key": "db.postgresql.idle.timeout.millis",
+       "type": "int64",
+       "value": 10000
+      },
+      {
+       "key": "db.system.name",
+       "type": "string",
+       "value": "postgresql"
+      },
+      {
+       "key": "span.kind",
+       "type": "string",
+       "value": "client"
+      }
+     ],
+     "logs": [],
+     "processID": "p6",
+     "warnings": null
+    },
+    {
+     "traceID": "c4502efa4bdd4196a7ee8d23cc1bab33",
+     "spanID": "57028e6fe8755434",
+     "operationName": "pg.query:INSERT orders",
+     "references": [
+      {
+       "refType": "CHILD_OF",
+       "traceID": "c4502efa4bdd4196a7ee8d23cc1bab33",
+       "spanID": "77b8284a80297057"
+      }
+     ],
+     "startTime": 1794419458603000,
+     "duration": 5228,
+     "tags": [
+      {
+       "key": "otel.scope.name",
+       "type": "string",
+       "value": "@opentelemetry/instrumentation-pg"
+      },
+      {
+       "key": "otel.scope.version",
+       "type": "string",
+       "value": "0.77.0"
+      },
+      {
+       "key": "db.namespace",
+       "type": "string",
+       "value": "orders"
+      },
+      {
+       "key": "db.query.text",
+       "type": "string",
+       "value": "INSERT INTO orders (product_id, quantity, total_cents) VALUES ($1, $2, $3)\n         RETURNING id, product_id AS \"productId\", quantity, total_cents AS \"totalCents\",\n                   created_at AS \"createdAt\""
+      },
+      {
+       "key": "db.system.name",
+       "type": "string",
+       "value": "postgresql"
+      },
+      {
+       "key": "server.address",
+       "type": "string",
+       "value": "postgres.shop-staging.svc.cluster.local"
+      },
+      {
+       "key": "server.port",
+       "type": "int64",
+       "value": 5432
+      },
+      {
+       "key": "span.kind",
+       "type": "string",
+       "value": "client"
+      }
+     ],
+     "logs": [],
+     "processID": "p6",
+     "warnings": null
+    },
+    {
+     "traceID": "c4502efa4bdd4196a7ee8d23cc1bab33",
+     "spanID": "77b8284a80297057",
+     "operationName": "POST /api/orders",
+     "references": [
+      {
+       "refType": "CHILD_OF",
+       "traceID": "c4502efa4bdd4196a7ee8d23cc1bab33",
+       "spanID": "f56b4a3307d44005"
+      }
+     ],
+     "startTime": 1794419458552000,
+     "duration": 57034,
+     "tags": [
+      {
+       "key": "otel.scope.name",
+       "type": "string",
+       "value": "@opentelemetry/instrumentation-http"
+      },
+      {
+       "key": "otel.scope.version",
+       "type": "string",
+       "value": "0.300.0"
+      },
+      {
+       "key": "client.address",
+       "type": "string",
+       "value": "172.27.0.4"
+      },
+      {
+       "key": "http.request.method",
+       "type": "string",
+       "value": "POST"
+      },
+      {
+       "key": "http.response.status_code",
+       "type": "int64",
+       "value": 201
+      },
+      {
+       "key": "http.route",
+       "type": "string",
+       "value": "/api/orders"
+      },
+      {
+       "key": "network.peer.address",
+       "type": "string",
+       "value": "::ffff:127.0.0.6"
+      },
+      {
+       "key": "network.peer.port",
+       "type": "int64",
+       "value": 37309
+      },
+      {
+       "key": "network.protocol.version",
+       "type": "string",
+       "value": "1.1"
+      },
+      {
+       "key": "server.address",
+       "type": "string",
+       "value": "staging.shop.local"
+      },
+      {
+       "key": "server.port",
+       "type": "int64",
+       "value": 80
+      },
+      {
+       "key": "url.path",
+       "type": "string",
+       "value": "/api/orders"
+      },
+      {
+       "key": "url.scheme",
+       "type": "string",
+       "value": "http"
+      },
+      {
+       "key": "user_agent.original",
+       "type": "string",
+       "value": "curl/8.7.1"
+      },
+      {
+       "key": "span.kind",
+       "type": "string",
+       "value": "server"
+      }
+     ],
+     "logs": [],
+     "processID": "p6",
+     "warnings": null
+    }
+   ],
+   "processes": {
+    "p1": {
+     "serviceName": "traefik",
+     "tags": [
+      {
+       "key": "host.name",
+       "type": "string",
+       "value": "traefik-6849c8785d-8n6md"
+      },
+      {
+       "key": "k8s.deployment.name",
+       "type": "string",
+       "value": "traefik"
+      },
+      {
+       "key": "k8s.namespace.name",
+       "type": "string",
+       "value": "ingress-traefik"
+      },
+      {
+       "key": "k8s.node.name",
+       "type": "string",
+       "value": "shoplite-worker"
+      },
+      {
+       "key": "k8s.pod.name",
+       "type": "string",
+       "value": "traefik-6849c8785d-8n6md"
+      },
+      {
+       "key": "os.description",
+       "type": "string",
+       "value": "Alpine Linux 3.24.2 (Linux traefik-6849c8785d-8n6md 6.11.11-linuxkit #1 SMP Wed Oct 22 09:37:46 UTC 2025 aarch64)"
+      },
+      {
+       "key": "os.type",
+       "type": "string",
+       "value": "linux"
+      },
+      {
+       "key": "process.command_args",
+       "type": "string",
+       "value": "[\"traefik\",\"traefik\",\"--entryPoints.web.address=:8000\",\"--entryPoints.web.transport.lifeCycle.requestAcceptGraceTimeout=5s\",\"--entryPoints.web.transport.lifeCycle.graceTimeOut=10s\",\"--entryPoints.traefik.address=:9000\",\"--ping=true\",\"--ping.entryPoint=traefik\",\"--providers.kubernetesingress=true\",\"--providers.kubernetesingress.ingressclass=traefik\",\"--providers.kubernetesingress.namespaces=shop,shop-dev,shop-staging,shop-prod\",\"--providers.kubernetesingress.ingressendpoint.ip=127.0.0.1\",\"--tracing.serviceName=traefik\",\"--tracing.sampleRate=1.0\",\"--tracing.otlp.http.endpoint=http://otel-collector.observability.svc.cluster.local:4318/v1/traces\",\"--metrics.prometheus=true\",\"--metrics.prometheus.entryPoint=traefik\",\"--metrics.prometheus.addRoutersLabels=true\",\"--metrics.prometheus.addServicesLabels=true\",\"--metrics.prometheus.buckets=0.005,0.01,0.025,0.05,0.1,0.25,0.5,1,2.5,5\",\"--accesslog=true\",\"--log.level=INFO\",\"--global.checknewversion=false\",\"--global.sendanonymoususage=false\"]"
+      },
+      {
+       "key": "process.executable.name",
+       "type": "string",
+       "value": "traefik"
+      },
+      {
+       "key": "process.executable.path",
+       "type": "string",
+       "value": "/usr/local/bin/traefik"
+      },
+      {
+       "key": "process.owner",
+       "type": "string",
+       "value": "traefik"
+      },
+      {
+       "key": "process.pid",
+       "type": "int64",
+       "value": 1
+      },
+      {
+       "key": "process.runtime.description",
+       "type": "string",
+       "value": "go version go1.26.8 linux/arm64"
+      },
+      {
+       "key": "process.runtime.name",
+       "type": "string",
+       "value": "go"
+      },
+      {
+       "key": "process.runtime.version",
+       "type": "string",
+       "value": "go1.26.8"
+      },
+      {
+       "key": "service.version",
+       "type": "string",
+       "value": "3.7.14"
+      },
+      {
+       "key": "telemetry.sdk.language",
+       "type": "string",
+       "value": "go"
+      },
+      {
+       "key": "telemetry.sdk.name",
+       "type": "string",
+       "value": "opentelemetry"
+      },
+      {
+       "key": "telemetry.sdk.version",
+       "type": "string",
+       "value": "1.46.0"
+      }
+     ]
+    },
+    "p2": {
+     "serviceName": "shop-gateway.shop-staging",
+     "tags": [
+      {
+       "key": "k8s.deployment.name",
+       "type": "string",
+       "value": "shop-gateway"
+      },
+      {
+       "key": "k8s.namespace.name",
+       "type": "string",
+       "value": "shop-staging"
+      },
+      {
+       "key": "k8s.node.name",
+       "type": "string",
+       "value": "shoplite-worker2"
+      },
+      {
+       "key": "k8s.pod.name",
+       "type": "string",
+       "value": "shop-gateway-5ff495f7b-p8cgh"
+      },
+      {
+       "key": "telemetry.sdk.language",
+       "type": "string",
+       "value": "cpp"
+      },
+      {
+       "key": "telemetry.sdk.name",
+       "type": "string",
+       "value": "envoy"
+      },
+      {
+       "key": "telemetry.sdk.version",
+       "type": "string",
+       "value": "defdcd65d0c035b54b324dc6ed4ef258e22bf94d/1.39.7-dev/Clean/RELEASE/BoringSSL"
+      }
+     ]
+    },
+    "p3": {
+     "serviceName": "orders.shop-staging",
+     "tags": [
+      {
+       "key": "k8s.deployment.name",
+       "type": "string",
+       "value": "orders"
+      },
+      {
+       "key": "k8s.namespace.name",
+       "type": "string",
+       "value": "shop-staging"
+      },
+      {
+       "key": "k8s.node.name",
+       "type": "string",
+       "value": "shoplite-worker"
+      },
+      {
+       "key": "k8s.pod.name",
+       "type": "string",
+       "value": "orders-6ddfb79b6f-xdnx7"
+      },
+      {
+       "key": "telemetry.sdk.language",
+       "type": "string",
+       "value": "cpp"
+      },
+      {
+       "key": "telemetry.sdk.name",
+       "type": "string",
+       "value": "envoy"
+      },
+      {
+       "key": "telemetry.sdk.version",
+       "type": "string",
+       "value": "defdcd65d0c035b54b324dc6ed4ef258e22bf94d/1.39.7-dev/Clean/RELEASE/BoringSSL"
+      }
+     ]
+    },
+    "p4": {
+     "serviceName": "catalog.shop-staging",
+     "tags": [
+      {
+       "key": "k8s.deployment.name",
+       "type": "string",
+       "value": "catalog"
+      },
+      {
+       "key": "k8s.namespace.name",
+       "type": "string",
+       "value": "shop-staging"
+      },
+      {
+       "key": "k8s.node.name",
+       "type": "string",
+       "value": "shoplite-worker"
+      },
+      {
+       "key": "k8s.pod.name",
+       "type": "string",
+       "value": "catalog-69898dc745-fx2v2"
+      },
+      {
+       "key": "telemetry.sdk.language",
+       "type": "string",
+       "value": "cpp"
+      },
+      {
+       "key": "telemetry.sdk.name",
+       "type": "string",
+       "value": "envoy"
+      },
+      {
+       "key": "telemetry.sdk.version",
+       "type": "string",
+       "value": "defdcd65d0c035b54b324dc6ed4ef258e22bf94d/1.39.7-dev/Clean/RELEASE/BoringSSL"
+      }
+     ]
+    },
+    "p5": {
+     "serviceName": "catalog",
+     "tags": [
+      {
+       "key": "deployment.environment.name",
+       "type": "string",
+       "value": "staging"
+      },
+      {
+       "key": "host.arch",
+       "type": "string",
+       "value": "arm64"
+      },
+      {
+       "key": "host.name",
+       "type": "string",
+       "value": "catalog-69898dc745-fx2v2"
+      },
+      {
+       "key": "k8s.deployment.name",
+       "type": "string",
+       "value": "catalog"
+      },
+      {
+       "key": "k8s.namespace.name",
+       "type": "string",
+       "value": "shop-staging"
+      },
+      {
+       "key": "k8s.node.name",
+       "type": "string",
+       "value": "shoplite-worker"
+      },
+      {
+       "key": "k8s.pod.name",
+       "type": "string",
+       "value": "catalog-69898dc745-fx2v2"
+      },
+      {
+       "key": "process.command",
+       "type": "string",
+       "value": "/app/src/server.js"
+      },
+      {
+       "key": "process.command_args",
+       "type": "string",
+       "value": "[\"/nodejs/bin/node\",\"/app/src/server.js\"]"
+      },
+      {
+       "key": "process.executable.name",
+       "type": "string",
+       "value": "/nodejs/bin/node"
+      },
+      {
+       "key": "process.executable.path",
+       "type": "string",
+       "value": "/nodejs/bin/node"
+      },
+      {
+       "key": "process.owner",
+       "type": "string",
+       "value": "nonroot"
+      },
+      {
+       "key": "process.pid",
+       "type": "int64",
+       "value": 1
+      },
+      {
+       "key": "process.runtime.description",
+       "type": "string",
+       "value": "Node.js"
+      },
+      {
+       "key": "process.runtime.name",
+       "type": "string",
+       "value": "nodejs"
+      },
+      {
+       "key": "process.runtime.version",
+       "type": "string",
+       "value": "24.22.0"
+      },
+      {
+       "key": "service.namespace",
+       "type": "string",
+       "value": "shoplite"
+      },
+      {
+       "key": "service.version",
+       "type": "string",
+       "value": "1.1.0"
+      },
+      {
+       "key": "telemetry.sdk.language",
+       "type": "string",
+       "value": "nodejs"
+      },
+      {
+       "key": "telemetry.sdk.name",
+       "type": "string",
+       "value": "opentelemetry"
+      },
+      {
+       "key": "telemetry.sdk.version",
+       "type": "string",
+       "value": "3.0.0"
+      }
+     ]
+    },
+    "p6": {
+     "serviceName": "orders",
+     "tags": [
+      {
+       "key": "deployment.environment.name",
+       "type": "string",
+       "value": "staging"
+      },
+      {
+       "key": "host.arch",
+       "type": "string",
+       "value": "arm64"
+      },
+      {
+       "key": "host.name",
+       "type": "string",
+       "value": "orders-6ddfb79b6f-xdnx7"
+      },
+      {
+       "key": "k8s.deployment.name",
+       "type": "string",
+       "value": "orders"
+      },
+      {
+       "key": "k8s.namespace.name",
+       "type": "string",
+       "value": "shop-staging"
+      },
+      {
+       "key": "k8s.node.name",
+       "type": "string",
+       "value": "shoplite-worker"
+      },
+      {
+       "key": "k8s.pod.name",
+       "type": "string",
+       "value": "orders-6ddfb79b6f-xdnx7"
+      },
+      {
+       "key": "process.command",
+       "type": "string",
+       "value": "/app/src/server.js"
+      },
+      {
+       "key": "process.command_args",
+       "type": "string",
+       "value": "[\"/nodejs/bin/node\",\"/app/src/server.js\"]"
+      },
+      {
+       "key": "process.executable.name",
+       "type": "string",
+       "value": "/nodejs/bin/node"
+      },
+      {
+       "key": "process.executable.path",
+       "type": "string",
+       "value": "/nodejs/bin/node"
+      },
+      {
+       "key": "process.owner",
+       "type": "string",
+       "value": "nonroot"
+      },
+      {
+       "key": "process.pid",
+       "type": "int64",
+       "value": 1
+      },
+      {
+       "key": "process.runtime.description",
+       "type": "string",
+       "value": "Node.js"
+      },
+      {
+       "key": "process.runtime.name",
+       "type": "string",
+       "value": "nodejs"
+      },
+      {
+       "key": "process.runtime.version",
+       "type": "string",
+       "value": "24.22.0"
+      },
+      {
+       "key": "service.namespace",
+       "type": "string",
+       "value": "shoplite"
+      },
+      {
+       "key": "service.version",
+       "type": "string",
+       "value": "1.1.0"
+      },
+      {
+       "key": "telemetry.sdk.language",
+       "type": "string",
+       "value": "nodejs"
+      },
+      {
+       "key": "telemetry.sdk.name",
+       "type": "string",
+       "value": "opentelemetry"
+      },
+      {
+       "key": "telemetry.sdk.version",
+       "type": "string",
+       "value": "3.0.0"
+      }
+     ]
+    }
+   },
+   "warnings": null
+  }
+ ]
+}

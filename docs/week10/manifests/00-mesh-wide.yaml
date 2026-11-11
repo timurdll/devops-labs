@@ -1,0 +1,20 @@
+# Rendered from k8s/mesh (Argo CD Application mesh-config, namespace istio-system). Do not edit.
+apiVersion: security.istio.io/v1
+kind: PeerAuthentication
+metadata:
+  name: default
+  namespace: istio-system
+spec:
+  mtls:
+    mode: STRICT
+---
+apiVersion: telemetry.istio.io/v1
+kind: Telemetry
+metadata:
+  name: mesh-default
+  namespace: istio-system
+spec:
+  tracing:
+  - providers:
+    - name: otel-collector
+    randomSamplingPercentage: 100

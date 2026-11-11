@@ -1,0 +1,53 @@
+# 2026-11-11T17:39:28Z  namespace shop-staging  PeerAuthentication default: STRICT
+# capture: pod catalog-69898dc745-fx2v2 (10.244.2.64) on shoplite-worker, netns of PID 1183979, tcp port 8080, 12s
+
+## a) edge request through the gateway (Traefik → shop-gateway → catalog)
+  GET /api/catalog/products × 30 → 200
+
+## b) east-west: POST /api/orders (orders → catalog)
+POST /api/orders → 201
+
+## c) plaintext from an orders pod, bypassing its sidecar (UID 1337)
+  curl: (56) Recv failure: Connection reset by peer
+  plaintext GET http://10.244.2.64:8080/api/catalog/products from orders-6ddfb79b6f-hmdkf → 000
+
+## capture: one line per TCP segment with payload, classified by its first bytes
+  17:39:33.960360     10.244.2.61.54034 > 10.244.2.64.8080      1248 B  TLS application data (encrypted)
+  17:39:33.967488     10.244.2.61.54054 > 10.244.2.64.8080      1248 B  TLS application data (encrypted)
+  17:39:33.967529     10.244.2.61.54052 > 10.244.2.64.8080      1248 B  TLS application data (encrypted)
+  17:39:33.988673     10.244.2.61.54044 > 10.244.2.64.8080      1248 B  TLS application data (encrypted)
+  17:39:33.989637     10.244.2.61.43432 > 10.244.2.64.8080       309 B  TLS handshake (ClientHello, SNI outbound_.80_._.catalog.shop-staging.svc.cluster.local, ALPN istio-http/1.1,istio,http/1.1)
+  17:39:33.998246      10.244.2.64.8080 > 10.244.2.61.43432     2170 B  TLS handshake
+  17:39:34.002266     10.244.2.61.43390 > 10.244.2.64.8080       309 B  TLS handshake (ClientHello, SNI outbound_.80_._.catalog.shop-staging.svc.cluster.local, ALPN istio-http/1.1,istio,http/1.1)
+  17:39:34.008629     10.244.2.61.43406 > 10.244.2.64.8080       309 B  TLS handshake (ClientHello, SNI outbound_.80_._.catalog.shop-staging.svc.cluster.local, ALPN istio-http/1.1,istio,http/1.1)
+  17:39:34.008672     10.244.2.61.43418 > 10.244.2.64.8080       309 B  TLS handshake (ClientHello, SNI outbound_.80_._.catalog.shop-staging.svc.cluster.local, ALPN istio-http/1.1,istio,http/1.1)
+  17:39:34.009067     10.244.2.61.43442 > 10.244.2.64.8080       309 B  TLS handshake (ClientHello, SNI outbound_.80_._.catalog.shop-staging.svc.cluster.local, ALPN istio-http/1.1,istio,http/1.1)
+  17:39:34.016162      10.244.2.64.8080 > 10.244.2.61.43390     2170 B  TLS handshake
+  17:39:34.020826      10.244.2.64.8080 > 10.244.2.61.54034     1217 B  TLS application data (encrypted)
+  17:39:34.023584      10.244.2.64.8080 > 10.244.2.61.43406     2170 B  TLS handshake
+  17:39:34.028574     10.244.2.61.43432 > 10.244.2.64.8080      1961 B  TLS ChangeCipherSpec
+  17:39:34.028639     10.244.2.61.43432 > 10.244.2.64.8080      1248 B  TLS application data (encrypted)
+  17:39:34.028842      10.244.2.64.8080 > 10.244.2.61.43418     2170 B  TLS handshake
+  17:39:34.029712      10.244.2.64.8080 > 10.244.2.61.43442     2170 B  TLS handshake
+  17:39:34.062521     10.244.2.61.43390 > 10.244.2.64.8080      1961 B  TLS ChangeCipherSpec
+  17:39:34.062879     10.244.2.61.43390 > 10.244.2.64.8080      1248 B  TLS application data (encrypted)
+  17:39:34.065528      10.244.2.64.8080 > 10.244.2.61.43432     4963 B  TLS application data (encrypted)
+  17:39:34.066719     10.244.2.61.43406 > 10.244.2.64.8080      1961 B  TLS ChangeCipherSpec
+  17:39:34.066941     10.244.2.61.43406 > 10.244.2.64.8080      1248 B  TLS application data (encrypted)
+  17:39:34.069024     10.244.2.61.43418 > 10.244.2.64.8080      1961 B  TLS ChangeCipherSpec
+  17:39:34.069253     10.244.2.61.43418 > 10.244.2.64.8080      1248 B  TLS application data (encrypted)
+  17:39:34.084623     10.244.2.61.43442 > 10.244.2.64.8080      1961 B  TLS ChangeCipherSpec
+  17:39:34.107041      10.244.2.64.8080 > 10.244.2.61.43390     4963 B  TLS application data (encrypted)
+  17:39:34.109966     10.244.2.61.54034 > 10.244.2.64.8080      1248 B  TLS application data (encrypted)
+  17:39:34.112716      10.244.2.64.8080 > 10.244.2.61.43418     4963 B  TLS application data (encrypted)
+  17:39:34.142287     10.244.2.61.43442 > 10.244.2.64.8080      1248 B  TLS application data (encrypted)
+  17:39:34.144042      10.244.2.64.8080 > 10.244.2.61.54034     1217 B  TLS application data (encrypted)
+  17:39:34.158400      10.244.2.64.8080 > 10.244.2.61.43442     4963 B  TLS application data (encrypted)
+  17:39:34.184092      10.244.2.64.8080 > 10.244.2.61.54054     1218 B  TLS application data (encrypted)
+  17:39:34.187287      10.244.2.64.8080 > 10.244.2.61.54052     1218 B  TLS application data (encrypted)
+  17:39:34.187325      10.244.2.64.8080 > 10.244.2.61.54044     1218 B  TLS application data (encrypted)
+  17:39:34.196569      10.244.2.64.8080 > 10.244.2.61.43406     4964 B  TLS application data (encrypted)
+  17:39:35.086261     10.244.1.58.59146 > 10.244.2.64.8080       100 B  PLAINTEXT HTTP: GET /api/catalog/products HTTP/1.1
+  17:39:35.087211      10.244.2.64.8080 > 10.244.1.58.59146          RST from the catalog sidecar: connection rejected
+
+  totals: {'TLS application data': 20, 'TLS handshake': 10, 'TLS ChangeCipherSpec': 5, 'PLAINTEXT HTTP': 1, 'RST by catalog': 1}

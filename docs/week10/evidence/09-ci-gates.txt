@@ -1,0 +1,24 @@
+# 2026-11-11T18:02:24Z  CI gates touched by Week 10, run locally with the images pinned in .github/workflows/ci.yml
+
+## G2 kubeconform — chart renders contain Istio CRs once mesh.enabled
+--- plain kubeconform (ci.yml before this change)
+/work/staging.yaml - Gateway shop-gateway failed validation: could not find schema for Gateway
+/work/staging.yaml - VirtualService catalog failed validation: could not find schema for VirtualService
+/work/staging.yaml - VirtualService shop-edge failed validation: could not find schema for VirtualService
+Summary: 123 resources found in 3 files - Valid: 86, Invalid: 0, Errors: 37, Skipped: 0
+--- with datree
+Summary: 123 resources found in 3 files - Valid: 123, Invalid: 0, Errors: 0, Skipped: 0
+--- k8s/mesh
+Summary: 2 resources found in 1 file - Valid: 2, Invalid: 0, Errors: 0, Skipped: 0
+--- gitops
+Summary: 11 resources found in 6 files - Valid: 11, Invalid: 0, Errors: 0, Skipped: 0
+  → the chart step now adds the datree CRD catalog (networking.istio.io, security.istio.io, telemetry.istio.io);
+    a new step validates k8s/mesh. actionlint: clean.
+
+## G7 trivy config 0.75.0 (HIGH,CRITICAL ⇒ fail), .trivyignore.yaml unchanged
+  === repo
+  rc=0
+  === dev rc=0
+  === staging rc=0
+  === prod rc=0
+  (shop-gateway: image 'auto' is replaced by the injector; runAsNonRoot, UID 1337, drop ALL, read-only root FS → no findings)

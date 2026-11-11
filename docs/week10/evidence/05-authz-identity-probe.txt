@@ -1,0 +1,41 @@
+# 2026-11-11T17:41:54Z  namespace shop-staging  target http://catalog.shop-staging.svc.cluster.local/api/catalog/products
+
+## AuthorizationPolicies
+NAME                    ACTION   AGE
+allow-to-catalog        ALLOW    4m
+allow-to-orders         ALLOW    4m
+allow-to-postgres       ALLOW    4m
+allow-to-shop-gateway   ALLOW    4m
+allow-to-web            ALLOW    4m
+default-deny                     4m
+
+## 1. impostor: label app.kubernetes.io/name=orders, ServiceAccount default, with sidecar
+  containers: istio-validation istio-proxy probe
+  orders EndpointSlice entry: ready=false (Envoy and kube-proxy route to ready endpoints only)
+  identity (certificate SAN): spiffe://cluster.local/ns/shop-staging/sa/default
+  body: RBAC: access denied
+  → HTTP 403
+
+## 2. real orders identity (ephemeral container in an orders pod, through its sidecar)
+  orders-6ddfb79b6f-hmdkf (sa/orders) → HTTP 200
+
+## 3. the decision inside catalog's sidecar (istioctl x authz check)
+  ACTION   AuthorizationPolicy             RULES
+  ALLOW    allow-to-catalog.shop-staging   1
+  ALLOW    default-deny.shop-staging       1
+
+## 4. RBAC filter counters in the catalog sidecar
+  http.InboundPassthroughCluster;.rbac.allowed: 0
+  http.InboundPassthroughCluster;.rbac.denied: 0
+  http.InboundPassthroughCluster;.rbac.istio_dry_run_allow_.shadow_allowed: 0
+  http.InboundPassthroughCluster;.rbac.istio_dry_run_allow_.shadow_denied: 0
+  http.inbound_0.0.0.0_8080;.rbac.allowed: 15
+  http.inbound_0.0.0.0_8080;.rbac.denied: 1
+  http.inbound_0.0.0.0_8080;.rbac.istio_dry_run_allow_.shadow_allowed: 0
+  http.inbound_0.0.0.0_8080;.rbac.istio_dry_run_allow_.shadow_denied: 0
+  tcp.rbac.allowed: 0
+  tcp.rbac.denied: 0
+  tcp.rbac.istio_dry_run_allow_.shadow_allowed: 0
+  tcp.rbac.istio_dry_run_allow_.shadow_denied: 0
+
+# impostor pod deleted

@@ -1,0 +1,61 @@
+%% Week 10 · Service mesh topology: control plane (istiod) vs data plane (Envoy), shown for shop-staging.
+%% Thick = request path (mTLS between Envoys) · dotted = config pushed by the control plane into the data plane.
+%% Names, ports, weights and identities are the ones deployed (docs/week10/evidence/02, 06, 07).
+flowchart TB
+    GIT(["git · branch week10-service-mesh<br/>charts/shoplite (mesh.*) · environments/staging/values.yaml · k8s/mesh"])
+    ARGO["<b>Argo CD</b> app-of-apps<br/>istio-base → istio-cni → istiod → mesh-config → shoplite-&lt;env&gt;"]
+    API[("<b>kube-apiserver</b><br/>Services · EndpointSlices · Pods · ServiceAccounts<br/>Istio CRs: Gateway · VirtualService · DestinationRule<br/>PeerAuthentication · AuthorizationPolicy · Telemetry")]
+
+    subgraph CP["CONTROL PLANE — namespace istio-system (Istio 1.31.4, PSA privileged)"]
+        direction LR
+        PILOT["<b>istiod</b> · Pilot<br/>watches the API server, translates<br/>CRs + endpoints into Envoy config<br/>xDS gRPC :15012"]
+        CA["<b>istiod</b> · CA<br/>signs workload certificates<br/>SAN spiffe://cluster.local/ns/&lt;ns&gt;/sa/&lt;sa&gt;<br/>24 h validity · root CA 10 y"]
+        INJ["<b>istiod</b> · injector webhook<br/>pod label sidecar.istio.io/inject=true<br/>→ native sidecar istio-proxy"]
+        CNI["<b>istio-cni</b> DaemonSet<br/>writes the iptables redirect<br/>(no NET_ADMIN in app pods → PSA restricted)"]
+    end
+
+    GIT --> ARGO --> API
+    API -- "watch" --> PILOT
+    API -- "pod CREATE" --> INJ
+
+    U(["client · Host: staging.shop.local → 127.0.0.1:8080"])
+    TR["<b>Traefik</b> (ingress-traefik)<br/>Ingress shop: / → Service shop-gateway:80"]
+
+    subgraph DP["DATA PLANE — namespace shop-staging · PeerAuthentication STRICT · AuthorizationPolicy default-deny + per-edge ALLOW"]
+        direction TB
+        GW["<b>shop-gateway</b> · Envoy (gateway mode)<br/>Gateway port 80 → container :8080 · sa/shop-gateway<br/>VirtualService <b>shop-edge</b>: /api/catalog → v1 90 · v2 10<br/>/api/orders → orders · / → web"]
+        subgraph W["web pod · sa/web"]
+            WE["istio-proxy"] --- WA["nginx :8080"]
+        end
+        subgraph O["orders pods ×2 · sa/orders"]
+            OE["istio-proxy<br/>VirtualService <b>catalog</b> (mesh)<br/>v1 90 · v2 10"] --- OA["orders 1.1.0 :8080"]
+        end
+        subgraph C1["catalog v1 pods ×2 · sa/catalog · version=v1"]
+            C1E["istio-proxy"] --- C1A["catalog 1.1.0 :8080"]
+        end
+        subgraph C2["catalog-v2 pod ×1 · sa/catalog · version=v2 (canary)"]
+            C2E["istio-proxy"] --- C2A["catalog 1.2.0 :8080<br/>adds ?q= search"]
+        end
+        subgraph PG["postgres-0 · sa/postgres"]
+            PE["istio-proxy"] --- PA["postgres :5432"]
+        end
+    end
+
+    OTEL["<b>OpenTelemetry Collector</b> (observability)<br/>scrapes istio-agent :15020 (Envoy + merged app metrics)<br/>receives Envoy spans OTLP :4317 → Jaeger"]
+
+    U --> TR == "plaintext HTTP (NetworkPolicy: only to shop-gateway)" ==> GW
+    GW == "mTLS · /" ==> WE
+    GW == "mTLS · /api/orders" ==> OE
+    GW == "mTLS · 90 % · subset v1" ==> C1E
+    GW == "mTLS · 10 % · subset v2" ==> C2E
+    OE == "mTLS · 90 %" ==> C1E
+    OE == "mTLS · 10 %" ==> C2E
+    OE == "mTLS · TCP" ==> PE
+    C1E == "mTLS · TCP" ==> PE
+    C2E == "mTLS · TCP" ==> PE
+
+    PILOT -. "xDS to every Envoy (gateway + 9 sidecars): LDS · RDS · CDS · EDS<br/>routes with weights, subsets, ISTIO_MUTUAL, RBAC filters" .-> DP
+    CA -. "SDS to every Envoy: workload cert + ROOTCA<br/>(CSR signed after TokenReview of the pod's projected ServiceAccount token)" .-> DP
+    INJ -. "mutates pod spec" .-> DP
+    CNI -. "per-pod iptables: :15001 out · :15006 in" .-> DP
+    DP -- "metrics :15020 · spans" --> OTEL
