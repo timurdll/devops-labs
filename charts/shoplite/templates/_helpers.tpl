@@ -114,6 +114,10 @@ connectionPool:
     # Week 9 finding: a fetch to a missing catalog hung in TCP connect for 10 s. Envoy fails the
     # connect after this timeout instead and answers 503 (no healthy upstream).
     connectTimeout: {{ .connectTimeout }}
+  {{- with .http }}
+  http:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
 outlierDetection:
   # Passive health checking: eject an endpoint that keeps failing, so one bad pod (e.g. a broken
   # canary replica) stops receiving traffic until it recovers.
@@ -121,4 +125,12 @@ outlierDetection:
   interval: {{ .outlierDetection.interval }}
   baseEjectionTime: {{ .outlierDetection.baseEjectionTime }}
   maxEjectionPercent: {{ .outlierDetection.maxEjectionPercent }}
+{{- end }}
+{{- /* Week 11: deadline + transport retries of one VirtualService route. */ -}}
+{{- define "shoplite.meshRouteResilience" -}}
+timeout: {{ .timeout }}
+retries:
+  attempts: {{ .retries.attempts }}
+  perTryTimeout: {{ .retries.perTryTimeout }}
+  retryOn: {{ .retries.retryOn }}
 {{- end }}

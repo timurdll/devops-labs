@@ -1,0 +1,18 @@
+# Week 11 · E3 — kill one catalog pod (docs/week11/README.md §6.3):
+#   "Losing one of the catalog replicas is invisible to users: 0 failed orders, the breaker stays
+#    closed (transport retries on connect-failure + outlier detection absorb it)."
+apiVersion: chaos-mesh.org/v1alpha1
+kind: PodChaos
+metadata:
+  name: e3-catalog-pod-kill
+  namespace: shop-staging
+  labels:
+    shoplite.io/experiment: e3
+spec:
+  action: pod-kill
+  mode: one
+  selector:
+    namespaces: [shop-staging]
+    labelSelectors:
+      app.kubernetes.io/name: catalog
+  gracePeriod: 0

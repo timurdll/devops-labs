@@ -60,6 +60,9 @@ spec:
     - { group: security.istio.io, kind: PeerAuthentication }
     - { group: security.istio.io, kind: AuthorizationPolicy }
     - { group: telemetry.istio.io, kind: Telemetry }
+    # Week 11: gateway local rate limit (templates/resilience.yaml). Namespaced; an EnvoyFilter
+    # in shop-* can only patch proxies of that namespace.
+    - { group: networking.istio.io, kind: EnvoyFilter }
 ---
 # Week 10: the Istio control plane. Separate from "platform" because it needs more cluster-scoped
 # power (CRDs, admission webhooks) — only this project can create them, and only from the pinned
@@ -79,6 +82,30 @@ spec:
   destinations:
     - server: https://kubernetes.default.svc
       namespace: istio-system
+  clusterResourceWhitelist:
+    - { group: "", kind: Namespace }
+    - { group: apiextensions.k8s.io, kind: CustomResourceDefinition }
+    - { group: admissionregistration.k8s.io, kind: MutatingWebhookConfiguration }
+    - { group: admissionregistration.k8s.io, kind: ValidatingWebhookConfiguration }
+    - { group: rbac.authorization.k8s.io, kind: ClusterRole }
+    - { group: rbac.authorization.k8s.io, kind: ClusterRoleBinding }
+---
+# Week 11: Chaos Mesh. Cluster-scoped power (CRDs, webhooks, cluster RBAC to read/patch pods in
+# any namespace) — isolated in its own project; sources limited to the pinned chart repository.
+apiVersion: argoproj.io/v1alpha1
+kind: AppProject
+metadata:
+  name: chaos
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "-2"
+spec:
+  description: Chaos Mesh fault-injection platform (experiments run on demand, not synced)
+  sourceRepos:
+    - https://charts.chaos-mesh.org
+  destinations:
+    - server: https://kubernetes.default.svc
+      namespace: chaos-mesh
   clusterResourceWhitelist:
     - { group: "", kind: Namespace }
     - { group: apiextensions.k8s.io, kind: CustomResourceDefinition }

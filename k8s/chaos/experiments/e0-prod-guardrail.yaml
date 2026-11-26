@@ -1,0 +1,17 @@
+# Week 11 · E0 — negative test of the blast-radius guardrail: the same fault as E1 aimed at
+# shop-prod must not be injected (shop-prod lacks the chaos-mesh.org/inject annotation).
+apiVersion: chaos-mesh.org/v1alpha1
+kind: NetworkChaos
+metadata:
+  name: e0-prod-guardrail
+  namespace: shop-staging
+spec:
+  action: delay
+  mode: all
+  selector:
+    namespaces: [shop-prod]
+    labelSelectors:
+      app.kubernetes.io/name: catalog
+  delay:
+    latency: 3000ms
+  duration: 30s

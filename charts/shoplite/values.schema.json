@@ -440,7 +440,8 @@
         "mtlsMode",
         "authorization",
         "gateway",
-        "trafficPolicy"
+        "trafficPolicy",
+        "routes"
       ],
       "description": "Week 10: Istio service mesh",
       "properties": {
@@ -502,6 +503,29 @@
                   }
                 }
               }
+            },
+            "rateLimit": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "enabled",
+                "requestsPerSecond",
+                "burst"
+              ],
+              "description": "Week 11: Envoy local rate limit at the gateway (429 above the budget)",
+              "properties": {
+                "enabled": {
+                  "type": "boolean"
+                },
+                "requestsPerSecond": {
+                  "type": "integer",
+                  "minimum": 1
+                },
+                "burst": {
+                  "type": "integer",
+                  "minimum": 1
+                }
+              }
             }
           }
         },
@@ -540,6 +564,62 @@
                   "type": "integer",
                   "minimum": 0,
                   "maximum": 100
+                }
+              }
+            },
+            "http": {
+              "type": "object",
+              "additionalProperties": false,
+              "description": "Week 11: bulkhead (DestinationRule connectionPool.http)",
+              "properties": {
+                "http1MaxPendingRequests": {
+                  "type": "integer",
+                  "minimum": 1
+                },
+                "http2MaxRequests": {
+                  "type": "integer",
+                  "minimum": 1
+                },
+                "maxRetries": {
+                  "type": "integer",
+                  "minimum": 0
+                }
+              }
+            }
+          }
+        },
+        "routes": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "timeout",
+            "retries"
+          ],
+          "description": "Week 11: per-route deadline and transport retries (VirtualService)",
+          "properties": {
+            "timeout": {
+              "$ref": "#/$defs/duration"
+            },
+            "retries": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "attempts",
+                "perTryTimeout",
+                "retryOn"
+              ],
+              "properties": {
+                "attempts": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 5
+                },
+                "perTryTimeout": {
+                  "$ref": "#/$defs/duration"
+                },
+                "retryOn": {
+                  "type": "string",
+                  "pattern": "^(connect-failure|refused-stream|reset|5xx|gateway-error|retriable-4xx|unavailable|cancelled)(,(connect-failure|refused-stream|reset|5xx|gateway-error|retriable-4xx|unavailable|cancelled))*$"
                 }
               }
             }

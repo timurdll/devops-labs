@@ -10,6 +10,8 @@ metadata:
     shoplite.io/environment: dev
     pod-security.kubernetes.io/enforce: restricted
     pod-security.kubernetes.io/enforce-version: latest
+  annotations:
+    chaos-mesh.org/inject: enabled # Week 11: Chaos Mesh may target this namespace (not prod)
 ---
 apiVersion: v1
 kind: Namespace
@@ -19,6 +21,8 @@ metadata:
     shoplite.io/environment: staging
     pod-security.kubernetes.io/enforce: restricted
     pod-security.kubernetes.io/enforce-version: latest
+  annotations:
+    chaos-mesh.org/inject: enabled # Week 11: Chaos Mesh may target this namespace (not prod)
 ---
 apiVersion: v1
 kind: Namespace

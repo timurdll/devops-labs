@@ -67,3 +67,18 @@ groups:
           severity: page
         annotations:
           summary: "{{ $labels.namespace }}/{{ $labels.pod }}: workload certificate EXPIRED, new mTLS connections fail (restart the pod)"
+  # Week 11: resilience patterns. An open breaker is not an outage for the user (orders are served
+  # from the cache, flagged degraded) — but it is a dependency in trouble, so it opens a ticket.
+  - name: shoplite-resilience
+    interval: 15s
+    rules:
+      - record: shoplite:dependency_fallback:rate1m
+        expr: sum by (environment, service, dependency, reason, result) (rate(dependency_fallback_total[1m]))
+      - alert: CircuitBreakerOpen
+        expr: >-
+          sum by (environment, service, name) (
+            increase(circuit_breaker_transitions_total{to="open"}[5m])) > 0
+        labels:
+          severity: ticket
+        annotations:
+          summary: "{{ $labels.service }} in {{ $labels.environment }}: circuit {{ $labels.name }} opened in the last 5 min — dependency failing, degraded responses served"

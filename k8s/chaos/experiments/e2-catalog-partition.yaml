@@ -1,0 +1,27 @@
+# Week 11 · E2 — network partition orders ⇹ catalog (docs/week11/README.md §6.2):
+#   "With catalog unreachable from orders, orders answers in < 1.5 s: 201 degraded for products in
+#    its cache, 503 + Retry-After (never a hang, never a 502) for products it never saw; catalog's
+#    own API through the gateway stays 100 % available."
+# Blast radius: shop-staging, traffic between catalog and orders pods in both directions.
+apiVersion: chaos-mesh.org/v1alpha1
+kind: NetworkChaos
+metadata:
+  name: e2-catalog-partition
+  namespace: shop-staging
+  labels:
+    shoplite.io/experiment: e2
+spec:
+  action: partition
+  mode: all
+  selector:
+    namespaces: [shop-staging]
+    labelSelectors:
+      app.kubernetes.io/name: catalog
+  direction: both
+  target:
+    mode: all
+    selector:
+      namespaces: [shop-staging]
+      labelSelectors:
+        app.kubernetes.io/name: orders
+  duration: 90s

@@ -1,0 +1,33 @@
+# Week 11 · E1 — chaos hypothesis (docs/week11/README.md §6.1):
+#   "Injecting 3000 ms latency into catalog's answers to orders makes orders' circuit breaker
+#    open within 10 s; POST /api/orders keeps answering 201 from the last-known-good cache
+#    (flagged degraded) with p95 < 1.5 s and 0 % 5xx; the breaker closes ≤ 30 s after the fault."
+# Steady state: 10 orders/s, 0 % 5xx, p95 < 100 ms, circuit_breaker_state{name="catalog"} = 0.
+# Blast radius: shop-staging only; only packets from catalog pods to orders pods (the gateway →
+# catalog path and catalog → postgres are untouched). Abort: delete the object (tc rules removed).
+apiVersion: chaos-mesh.org/v1alpha1
+kind: NetworkChaos
+metadata:
+  name: e1-catalog-latency
+  namespace: shop-staging
+  labels:
+    shoplite.io/experiment: e1
+spec:
+  action: delay
+  mode: all
+  selector:
+    namespaces: [shop-staging]
+    labelSelectors:
+      app.kubernetes.io/name: catalog
+  direction: to
+  target:
+    mode: all
+    selector:
+      namespaces: [shop-staging]
+      labelSelectors:
+        app.kubernetes.io/name: orders
+  delay:
+    latency: 3000ms
+    jitter: 0ms
+    correlation: "100"
+  duration: 120s

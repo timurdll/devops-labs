@@ -2,6 +2,7 @@
 
 const client = require('prom-client');
 const { trace, isSpanContextValid } = require('@opentelemetry/api');
+const { STATE_VALUE } = require('../circuit-breaker');
 
 // RED metrics, named after the OpenTelemetry HTTP semantic conventions
 // (http.server.request.duration → http_server_request_duration_seconds). One histogram gives all
@@ -46,6 +47,53 @@ function createMetrics({ service, collectDefaults = true } = {}) {
     registers: [registry],
   });
 
+  // Week 11: resilience patterns made visible (alert CircuitBreakerOpen, Grafana panel).
+  const breakerState = new client.Gauge({
+    name: 'circuit_breaker_state',
+    help: 'Circuit breaker state: 0 closed, 1 open, 2 half-open.',
+    labelNames: ['name'],
+    registers: [registry],
+  });
+  const breakerTransitions = new client.Counter({
+    name: 'circuit_breaker_transitions_total',
+    help: 'Circuit breaker state transitions.',
+    labelNames: ['name', 'from', 'to'],
+    registers: [registry],
+  });
+  const breakerCalls = new client.Counter({
+    name: 'circuit_breaker_calls_total',
+    help: 'Calls through a circuit breaker by outcome (success, failure, rejected).',
+    labelNames: ['name', 'outcome'],
+    registers: [registry],
+  });
+  const fallbacks = new client.Counter({
+    name: 'dependency_fallback_total',
+    help: 'Dependency calls answered by a fallback, by cause and result (cache_hit, cache_miss).',
+    labelNames: ['dependency', 'reason', 'result'],
+    registers: [registry],
+  });
+  const retries = new client.Counter({
+    name: 'dependency_retries_total',
+    help: 'Retried dependency calls.',
+    labelNames: ['dependency'],
+    registers: [registry],
+  });
+  breakerState.set({ name: 'catalog' }, 0);
+
+  function observeBreakerState({ name, from, to }) {
+    breakerState.set({ name }, STATE_VALUE[to]);
+    breakerTransitions.inc({ name, from, to });
+  }
+  function observeBreakerCall({ name, outcome }) {
+    breakerCalls.inc({ name, outcome });
+  }
+  function observeFallback(dependency, reason, result) {
+    fallbacks.inc({ dependency, reason, result });
+  }
+  function observeRetry(dependency) {
+    retries.inc({ dependency });
+  }
+
   function observeClient(serverAddress, statusCode, seconds) {
     clientDuration.observe(
       { server_address: serverAddress, http_response_status_code: String(statusCode) },
@@ -77,7 +125,16 @@ function createMetrics({ service, collectDefaults = true } = {}) {
     };
   }
 
-  return { registry, startRequest, observeClient, contentType: registry.contentType };
+  return {
+    registry,
+    startRequest,
+    observeClient,
+    observeBreakerState,
+    observeBreakerCall,
+    observeFallback,
+    observeRetry,
+    contentType: registry.contentType,
+  };
 }
 
 module.exports = { createMetrics, DURATION_BUCKETS };

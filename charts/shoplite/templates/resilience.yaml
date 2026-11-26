@@ -1,0 +1,52 @@
+{{- if and .Values.mesh.enabled .Values.mesh.gateway.rateLimit.enabled }}
+{{- $rl := .Values.mesh.gateway.rateLimit }}
+# Week 11 — rate limiter at the edge of the environment. Envoy's local rate limit filter keeps one
+# token bucket per gateway pod: {{ $rl.burst }} tokens, refilled with {{ $rl.requestsPerSecond }} per second. A request without a
+# token is answered by the gateway itself with 429 + x-local-rate-limit, so a burst (a retry storm,
+# a scraper, a load test gone wrong) never reaches orders/catalog queues.
+# Istio has no first-class API for local rate limiting yet, hence an EnvoyFilter — the most
+# powerful object of the mesh, so the AppProject allows it only in shop-* namespaces and
+# CODEOWNERS reviews charts/ (ADR-W11-04).
+apiVersion: networking.istio.io/v1alpha3
+kind: EnvoyFilter
+metadata:
+  name: shop-gateway-ratelimit
+  labels:
+    {{- include "shoplite.labels" . | nindent 4 }}
+spec:
+  workloadSelector:
+    labels:
+      istio: shop-gateway
+  configPatches:
+    - applyTo: HTTP_FILTER
+      match:
+        context: GATEWAY
+        listener:
+          filterChain:
+            filter:
+              name: envoy.filters.network.http_connection_manager
+              subFilter:
+                name: envoy.filters.http.router
+      patch:
+        operation: INSERT_BEFORE
+        value:
+          name: envoy.filters.http.local_ratelimit
+          typed_config:
+            "@type": type.googleapis.com/envoy.extensions.filters.http.local_ratelimit.v3.LocalRateLimit
+            stat_prefix: http_local_rate_limiter
+            token_bucket:
+              max_tokens: {{ $rl.burst }}
+              tokens_per_fill: {{ $rl.requestsPerSecond }}
+              fill_interval: 1s
+            filter_enabled:
+              runtime_key: local_rate_limit_enabled
+              default_value: { numerator: 100, denominator: HUNDRED }
+            filter_enforced:
+              runtime_key: local_rate_limit_enforced
+              default_value: { numerator: 100, denominator: HUNDRED }
+            response_headers_to_add:
+              - append_action: OVERWRITE_IF_EXISTS_OR_ADD
+                header: { key: x-local-rate-limit, value: "true" }
+              - append_action: OVERWRITE_IF_EXISTS_OR_ADD
+                header: { key: retry-after, value: "1" }
+{{- end }}

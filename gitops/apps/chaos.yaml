@@ -1,0 +1,67 @@
+# Week 11: Chaos Mesh — fault injection for the resilience experiments (docs/week11 §6).
+# Installed from the official chart, pinned; experiments themselves (k8s/chaos/experiments) are NOT
+# reconciled by Argo CD: an experiment is an action with a start and an end, run on purpose by
+# scripts/chaos-experiment.sh, never re-created by a sync.
+#
+# Blast-radius guardrails:
+#   - enableFilterNamespace: the controller only injects into namespaces annotated
+#     chaos-mesh.org/inject=enabled — shop-dev and shop-staging (k8s/platform/environments.yaml).
+#     shop-prod is not annotated: an experiment that selects it is rejected by the webhook.
+#   - the chaos-daemon needs privileged + the containerd socket (it enters pod network
+#     namespaces to run tc/iptables); only the chaos-mesh namespace is PSA "privileged".
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: chaos-mesh
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "0"
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: chaos
+  source:
+    repoURL: https://charts.chaos-mesh.org
+    chart: chaos-mesh
+    targetRevision: 2.8.8
+    helm:
+      releaseName: chaos-mesh
+      valuesObject:
+        controllerManager:
+          replicaCount: 1 # lab: one replica (3 by default)
+          enableFilterNamespace: true
+        chaosDaemon:
+          runtime: containerd # kind nodes run containerd, not Docker
+          socketPath: /run/containerd/containerd.sock
+        dashboard:
+          create: false # experiments are YAML in git, run by a script
+        dnsServer:
+          create: false
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: chaos-mesh
+  # The chart generates a self-signed webhook certificate on every render; without this Argo CD
+  # would see a diff on every refresh and rotate the certificate in a loop.
+  ignoreDifferences:
+    - group: ""
+      kind: Secret
+      name: chaos-mesh-webhook-certs
+      jsonPointers:
+        - /data
+    - group: admissionregistration.k8s.io
+      kind: MutatingWebhookConfiguration
+      jqPathExpressions:
+        - .webhooks[]?.clientConfig.caBundle
+    - group: admissionregistration.k8s.io
+      kind: ValidatingWebhookConfiguration
+      jqPathExpressions:
+        - .webhooks[]?.clientConfig.caBundle
+  syncPolicy:
+    automated: { prune: true, selfHeal: true }
+    managedNamespaceMetadata:
+      labels:
+        pod-security.kubernetes.io/enforce: privileged
+    syncOptions:
+      - CreateNamespace=true
+      - ServerSideApply=true
+      - RespectIgnoreDifferences=true

@@ -5,16 +5,43 @@ const { shutdownTracing } = require('./telemetry/tracing');
 const http = require('node:http');
 const { createHandler } = require('./app');
 const { createRepo } = require('./repo');
-const { createCatalogClient } = require('./catalog-client');
+const { createCatalogClient, UpstreamStatusError } = require('./catalog-client');
+const { createCircuitBreaker } = require('./circuit-breaker');
 const { createMetrics } = require('./telemetry/metrics');
 
 const PORT = Number(process.env.PORT || 8080);
 const repo = createRepo();
 const metrics = createMetrics({ service: 'orders' });
+const env = (k, d) => Number(process.env[k] || d);
+// Week 11: thresholds come from the chart (charts/shoplite/values.yaml → orders.resilience).
+const breaker = createCircuitBreaker({
+  name: 'catalog',
+  windowSize: env('CB_WINDOW_SIZE', 20),
+  minimumCalls: env('CB_MINIMUM_CALLS', 10),
+  failureRateThreshold: env('CB_FAILURE_RATE', 0.5),
+  consecutiveFailureThreshold: env('CB_CONSECUTIVE_FAILURES', 5),
+  openMs: env('CB_OPEN_MS', 15000),
+  halfOpenCalls: env('CB_HALF_OPEN_CALLS', 3),
+  isFailure: (err) => !(err instanceof UpstreamStatusError && err.status < 500),
+  onStateChange: (t) => {
+    metrics.observeBreakerState(t);
+    console.warn(`orders: circuit ${t.name} ${t.from} → ${t.to} (${t.reason})`);
+  },
+  onCall: metrics.observeBreakerCall,
+});
 const catalog = createCatalogClient({
   baseUrl: process.env.CATALOG_URL || 'http://catalog',
-  timeoutMs: Number(process.env.CATALOG_TIMEOUT_MS || 2000),
+  timeoutMs: env('CATALOG_TIMEOUT_MS', 1000),
   observe: metrics.observeClient,
+  breaker,
+  retryOptions: {
+    attempts: env('RETRY_ATTEMPTS', 3),
+    baseMs: env('RETRY_BASE_MS', 50),
+    maxMs: env('RETRY_MAX_MS', 500),
+    onRetry: () => metrics.observeRetry('catalog'),
+  },
+  cacheTtlMs: env('CATALOG_CACHE_TTL_MS', 600000),
+  onFallback: (reason, result) => metrics.observeFallback('catalog', reason, result),
 });
 const server = http.createServer(createHandler({ repo, catalog, metrics }));
 

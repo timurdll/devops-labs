@@ -1,0 +1,63 @@
+# 2026-11-26T13:24:28Z  RECOVERY after commit cb89d1b (SECRET_TTL 168h) + rollout restart of dev/staging
+
+## istiod mesh config (proxyMetadata pushed to every new sidecar)
+    proxyMetadata:
+      SECRET_TTL: 168h
+
+## shop-dev pods
+NAME                            READY   STATUS    RESTARTS   AGE
+catalog-54c78bff96-fqjpl        2/2     Running   0          2m59s
+catalog-54c78bff96-wml2c        2/2     Running   0          2m23s
+orders-5c6fb84794-bdv5j         2/2     Running   0          2m59s
+postgres-0                      2/2     Running   0          2m52s
+shop-gateway-598dcfd54c-qbnvm   1/1     Running   0          2m59s
+web-fcccf745d-nc6cj             2/2     Running   0          2m36s
+web-fcccf745d-rt8pf             2/2     Running   0          2m59s
+
+## shop-dev workload certificates (new TTL)
+  catalog-54c78bff96-fqjpl           2026-11-26T13:19:44Z → 2026-12-03T13:21:44Z  days_until_expiration 6
+  catalog-54c78bff96-wml2c           2026-11-26T13:20:12Z → 2026-12-03T13:22:12Z  days_until_expiration 6
+  orders-5c6fb84794-bdv5j            2026-11-26T13:19:44Z → 2026-12-03T13:21:44Z  days_until_expiration 6
+  postgres-0                         2026-11-26T13:19:51Z → 2026-12-03T13:21:51Z  days_until_expiration 6
+  shop-gateway-598dcfd54c-qbnvm      2026-11-26T13:19:37Z → 2026-12-03T13:21:37Z  days_until_expiration 6
+  web-fcccf745d-nc6cj                2026-11-26T13:20:00Z → 2026-12-03T13:22:00Z  days_until_expiration 6
+  web-fcccf745d-rt8pf                2026-11-26T13:19:42Z → 2026-12-03T13:21:42Z  days_until_expiration 6
+
+## shop-staging pods
+NAME                            READY   STATUS    RESTARTS   AGE
+catalog-84946c995b-l7gck        2/2     Running   0          2m59s
+catalog-84946c995b-qjvwg        2/2     Running   0          2m9s
+catalog-v2-85bb8d4755-2rf69     2/2     Running   0          2m59s
+orders-b484fc486-d2d6c          2/2     Running   0          2m22s
+orders-b484fc486-vcz5w          2/2     Running   0          2m59s
+postgres-0                      2/2     Running   0          2m53s
+shop-gateway-6649478f49-bxg4x   1/1     Running   0          2m59s
+web-5746797c48-4tx5m            2/2     Running   0          2m58s
+web-5746797c48-4wnrs            2/2     Running   0          2m39s
+
+## shop-staging workload certificates (new TTL)
+  catalog-84946c995b-l7gck           2026-11-26T13:19:42Z → 2026-12-03T13:21:42Z  days_until_expiration 6
+  catalog-84946c995b-qjvwg           2026-11-26T13:20:23Z → 2026-12-03T13:22:23Z  days_until_expiration 6
+  catalog-v2-85bb8d4755-2rf69        2026-11-26T13:19:42Z → 2026-12-03T13:21:42Z  days_until_expiration 6
+  orders-b484fc486-d2d6c             2026-11-26T13:20:12Z → 2026-12-03T13:22:12Z  days_until_expiration 6
+  orders-b484fc486-vcz5w             2026-11-26T13:19:43Z → 2026-12-03T13:21:43Z  days_until_expiration 6
+  postgres-0                         2026-11-26T13:19:51Z → 2026-12-03T13:21:51Z  days_until_expiration 6
+  shop-gateway-6649478f49-bxg4x      2026-11-26T13:19:37Z → 2026-12-03T13:21:37Z  days_until_expiration 6
+  web-5746797c48-4tx5m               2026-11-26T13:19:40Z → 2026-12-03T13:21:40Z  days_until_expiration 6
+  web-5746797c48-4wnrs               2026-11-26T13:20:02Z → 2026-12-03T13:22:02Z  days_until_expiration 6
+
+## edge requests (Traefik → gateway) per environment
+  dev      GET /api/catalog/products    → 200
+  dev      GET /                        → 200
+  staging  GET /api/catalog/products    → 200
+  staging  GET /                        → 200
+  prod     GET /api/catalog/products    → 200
+  prod     GET /                        → 200
+
+## Prometheus: min istio_agent_cert_expiry_seconds by namespace (hours)
+  shop-dev         168.0 h
+  shop-staging     168.0 h
+
+## Prometheus: loaded alert rules of group mesh-certificates
+  IstioWorkloadCertExpiring    state=inactive health=ok  min by (namespace, pod) (istio_agent_cert_expiry_seconds) < 0.25 * 168 * 3600
+  IstioWorkloadCertExpired     state=inactive health=ok  min by (namespace, pod) (istio_agent_cert_expiry_seconds) <= 0

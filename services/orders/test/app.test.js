@@ -4,6 +4,7 @@ const { test, before, after } = require('node:test');
 const assert = require('node:assert/strict');
 const http = require('node:http');
 const { createHandler, validateOrder } = require('../src/app');
+const { CatalogUnavailableError } = require('../src/catalog-client');
 
 const catalogProducts = {
   1: { id: 1, priceCents: 8900, stock: 3 },
@@ -11,6 +12,7 @@ const catalogProducts = {
 
 let ready = true;
 let catalogDown = false;
+let catalogMode = 'ok'; // ok | cache | unavailable
 const saved = [];
 const repo = {
   ping: async () => ready,
@@ -24,7 +26,11 @@ const repo = {
 const catalog = {
   getProduct: async (id) => {
     if (catalogDown) throw new Error('ECONNREFUSED');
-    return { product: catalogProducts[id] || null, servedBy: 'catalog-pod-a' };
+    if (catalogMode === 'unavailable') throw new CatalogUnavailableError(new Error('circuit catalog is open'), 12300);
+    if (catalogMode === 'cache') {
+      return { product: catalogProducts[id], servedBy: 'cache', degraded: true, degradedReason: 'circuit_open' };
+    }
+    return { product: catalogProducts[id] || null, servedBy: 'catalog-pod-a', degraded: false };
   },
 };
 
@@ -83,6 +89,22 @@ test('catalog outage returns 502 and unknown routes return 404', async () => {
   assert.equal((await post({ productId: 1, quantity: 1 })).status, 502);
   catalogDown = false;
   assert.equal((await fetch(`${base}/api/unknown`)).status, 404);
+});
+
+test('degraded order from the cache is accepted and flagged; no cache → 503 + Retry-After', async () => {
+  catalogMode = 'cache';
+  let res = await post({ productId: 1, quantity: 1 });
+  const body = await res.json();
+  assert.equal(res.status, 201);
+  assert.equal(res.headers.get('x-degraded'), 'circuit_open');
+  assert.deepEqual([body.degraded, body.degradedReason, body.catalogServedBy], [true, 'circuit_open', 'cache']);
+
+  catalogMode = 'unavailable';
+  res = await post({ productId: 1, quantity: 1 });
+  assert.equal(res.status, 503);
+  assert.equal(res.headers.get('retry-after'), '13');
+  catalogMode = 'ok';
+  assert.equal((await post({ productId: 1, quantity: 1 })).headers.get('x-degraded'), null);
 });
 
 test('GET /metrics exposes RED series labelled by route template', async () => {

@@ -1,0 +1,33 @@
+# promtool test rules — replays chaos experiment E1 offline: catalog gets 3000 ms latency at
+# minute 5, orders' breaker opens (and re-opens after each failed half-open trial) until minute 10.
+rule_files:
+  - ../shoplite-red.rules.yml
+evaluation_interval: 15s
+tests:
+  - interval: 15s
+    input_series:
+      - series: 'circuit_breaker_transitions_total{environment="staging",service="orders",name="catalog",from="closed",to="open"}'
+        values: '0x20 1x60'
+      - series: 'circuit_breaker_transitions_total{environment="staging",service="orders",name="catalog",from="half_open",to="open"}'
+        values: '0x20 0 0 0 0 1 1 1 1 2x51'
+      - series: 'dependency_fallback_total{environment="staging",service="orders",dependency="catalog",reason="circuit_open",result="cache_hit"}'
+        values: '0x20 0+30x40 1200x20'
+    alert_rule_test:
+      - eval_time: 4m
+        alertname: CircuitBreakerOpen
+        exp_alerts: []
+      - eval_time: 6m
+        alertname: CircuitBreakerOpen
+        exp_alerts:
+          - exp_labels: { severity: ticket, environment: staging, service: orders, name: catalog }
+            exp_annotations:
+              summary: "orders in staging: circuit catalog opened in the last 5 min — dependency failing, degraded responses served"
+      - eval_time: 20m
+        alertname: CircuitBreakerOpen
+        exp_alerts: []
+    promql_expr_test:
+      - expr: shoplite:dependency_fallback:rate1m
+        eval_time: 8m
+        exp_samples:
+          - labels: 'shoplite:dependency_fallback:rate1m{environment="staging",service="orders",dependency="catalog",reason="circuit_open",result="cache_hit"}'
+            value: 1.9999999999999998 # 30 fallbacks per 15 s = 2 per second (float rounding of rate())

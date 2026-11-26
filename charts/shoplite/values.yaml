@@ -78,9 +78,32 @@ mesh:
     resources:
       requests: { cpu: 20m, memory: 64Mi }
       limits: { cpu: "1", memory: 256Mi }
+    # Week 11: local rate limit (token bucket per gateway pod, Envoy filter) → 429 instead of
+    # letting a burst queue up behind the services. Rendered as an EnvoyFilter (templates/resilience.yaml).
+    rateLimit:
+      enabled: false
+      requestsPerSecond: 100
+      burst: 200
+  # Week 11: deadline + transport-level retries on every route (edge VirtualService and one
+  # east-west VirtualService per service). Only failures where the request never reached the app
+  # are retried, so this is safe for POST /api/orders; application retries stay in the app (orders
+  # → catalog: retry + circuit breaker), which keeps the worst case at 3 × 2 attempts, not 3 × 3.
+  routes:
+    timeout: 10s
+    retries:
+      attempts: 1
+      perTryTimeout: 5s
+      retryOn: connect-failure,refused-stream
   # Client-side policy applied by every caller's sidecar (DestinationRule per service).
   trafficPolicy:
     connectTimeout: 1s
+    # Week 11 bulkhead: per caller sidecar and destination. When catalog is slow, orders' sidecar
+    # holds at most this many requests for it; the rest fail fast with 503 (UO = upstream overflow)
+    # instead of tying up every orders worker.
+    http:
+      http1MaxPendingRequests: 32
+      http2MaxRequests: 64
+      maxRetries: 3
     outlierDetection:
       consecutive5xxErrors: 5
       interval: 10s

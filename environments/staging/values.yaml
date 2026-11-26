@@ -18,6 +18,12 @@ mesh:
   enabled: true
   mtlsMode: STRICT
   authorization: true
+  # Week 11: edge rate limit (429 above 100 req/s sustained, bursts up to 200 per gateway pod).
+  gateway:
+    rateLimit:
+      enabled: true
+      requestsPerSecond: 100
+      burst: 200
 
 services:
   # Week 10 · phase 3 — canary release of catalog 1.2.0 (product search). 10 % of all requests to
@@ -31,6 +37,10 @@ services:
         tag: "1.2.0"
       replicas: 1
       weight: 10
+  # Week 11: orders 1.2.0 — circuit breaker + retry + cache fallback for the catalog call.
+  orders:
+    image:
+      tag: "1.2.0"
   web:
     uiConfig:
       shopName: ShopLite STAGING

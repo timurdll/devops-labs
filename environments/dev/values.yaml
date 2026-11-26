@@ -15,6 +15,12 @@ mesh:
   enabled: true
   mtlsMode: STRICT
   authorization: true
+  # Week 11: edge rate limit (429 above 100 req/s sustained, bursts up to 200 per gateway pod).
+  gateway:
+    rateLimit:
+      enabled: true
+      requestsPerSecond: 100
+      burst: 200
 
 services:
   catalog:
@@ -23,6 +29,8 @@ services:
       requests: { cpu: 25m, memory: 48Mi }
   orders:
     replicas: 1
+    image:
+      tag: "1.2.0" # Week 11: circuit breaker + retry + cache fallback
     resources:
       requests: { cpu: 25m, memory: 48Mi }
     env:

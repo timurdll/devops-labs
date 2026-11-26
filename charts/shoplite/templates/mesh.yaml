@@ -171,14 +171,15 @@ spec:
       match:
         - uri:
             prefix: {{ $path }}
+      {{- include "shoplite.meshRouteResilience" $m.routes | nindent 6 }}
       route:
         {{- include "shoplite.meshRoute" (dict "name" $name "svc" $svc "ns" $ns) | nindent 8 }}
     {{- end }}
 {{- range $name, $svc := .Values.services }}
-{{- if and $svc.enabled $svc.canary $svc.canary.enabled }}
+{{- if $svc.enabled }}
 ---
-# East-west canary: every sidecar that calls {{ $name }} (e.g. orders → catalog) applies the same
-# split, so the canary sees the same share of internal and external traffic.
+# East-west routing of {{ $name }}: every calling sidecar (e.g. orders → catalog) applies the same
+# deadline, transport retries (Week 11) and — during a canary — the same weighted split (Week 10).
 apiVersion: networking.istio.io/v1
 kind: VirtualService
 metadata:
@@ -191,7 +192,8 @@ spec:
   gateways:
     - mesh
   http:
-    - name: {{ $name }}-canary
+    - name: {{ $name }}
+      {{- include "shoplite.meshRouteResilience" $m.routes | nindent 6 }}
       route:
         {{- include "shoplite.meshRoute" (dict "name" $name "svc" $svc "ns" $ns) | nindent 8 }}
 {{- end }}

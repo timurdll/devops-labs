@@ -53,3 +53,17 @@ test('observeClient records outbound calls per dependency', async () => {
   assert.match(text, /http_client_request_duration_seconds_count\{service="orders",server_address="catalog.shop-dev.svc.cluster.local",http_response_status_code="200"\} 1/);
   assert.match(text, /_count\{service="orders",server_address="[^"]+",http_response_status_code="timeout"\} 1/);
 });
+
+test('resilience metrics: breaker state, transitions, calls, fallbacks, retries', async () => {
+  const m = createMetrics({ service: 'svc', collectDefaults: false });
+  m.observeBreakerState({ name: 'catalog', from: 'closed', to: 'open' });
+  m.observeBreakerCall({ name: 'catalog', outcome: 'rejected' });
+  m.observeFallback('catalog', 'circuit_open', 'cache_hit');
+  m.observeRetry('catalog');
+  const text = await m.registry.metrics();
+  assert.match(text, /circuit_breaker_state\{name="catalog",service="svc"\} 1/);
+  assert.match(text, /circuit_breaker_transitions_total\{name="catalog",from="closed",to="open",service="svc"\} 1/);
+  assert.match(text, /circuit_breaker_calls_total\{name="catalog",outcome="rejected",service="svc"\} 1/);
+  assert.match(text, /dependency_fallback_total\{dependency="catalog",reason="circuit_open",result="cache_hit",service="svc"\} 1/);
+  assert.match(text, /dependency_retries_total\{dependency="catalog",service="svc"\} 1/);
+});

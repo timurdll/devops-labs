@@ -3,16 +3,18 @@
 const os = require('node:os');
 const { trace, SpanStatusCode } = require('@opentelemetry/api');
 const { createMetrics } = require('./telemetry/metrics');
+const { CatalogUnavailableError } = require('./catalog-client');
 
 const POD_NAME = process.env.POD_NAME || os.hostname();
 const MAX_BODY_BYTES = 10 * 1024;
 
-function send(res, status, body) {
+function send(res, status, body, headers = {}) {
   const payload = JSON.stringify(body);
   res.writeHead(status, {
     'Content-Type': 'application/json; charset=utf-8',
     'Content-Length': Buffer.byteLength(payload),
     'X-Served-By': POD_NAME,
+    ...headers,
   });
   res.end(payload);
 }
@@ -115,16 +117,31 @@ function createHandler({ repo, catalog, logger = console, metrics = createMetric
           quantity,
           totalCents: lookup.product.priceCents * quantity,
         });
-        return send(res, 201, {
-          servedBy: POD_NAME,
-          catalogServedBy: lookup.servedBy,
-          order,
-        });
+        // Week 11: an order priced from the last-known-good cache is accepted but flagged, so it
+        // can be re-checked once catalog is back (graceful degradation instead of a 502).
+        if (lookup.degraded) span?.setAttribute('shoplite.degraded', lookup.degradedReason);
+        return send(
+          res,
+          201,
+          {
+            servedBy: POD_NAME,
+            catalogServedBy: lookup.servedBy,
+            ...(lookup.degraded && { degraded: true, degradedReason: lookup.degradedReason }),
+            order,
+          },
+          lookup.degraded ? { 'X-Degraded': lookup.degradedReason } : {},
+        );
       }
 
       return send(res, 404, { error: 'not found' });
     } catch (err) {
       if (err instanceof HttpError) return send(res, err.status, { error: err.message });
+      if (err instanceof CatalogUnavailableError) {
+        // Fail fast with a retryable status instead of a generic 502 after a long wait.
+        span?.setAttribute('shoplite.degraded', 'catalog_unavailable');
+        const retryAfter = Math.max(1, Math.ceil((err.retryAfterMs ?? 5000) / 1000));
+        return send(res, 503, { error: 'catalog unavailable, retry later' }, { 'Retry-After': String(retryAfter) });
+      }
       span?.recordException(err);
       span?.setStatus({ code: SpanStatusCode.ERROR, message: err.message });
       const traceId = span?.spanContext().traceId ?? '-';
