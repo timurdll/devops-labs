@@ -1,0 +1,60 @@
+# 2026-11-26T13:41:34Z  chaos experiment e2: k8s/chaos/experiments/e2-catalog-partition.yaml
+# load: 10 POST /api/orders per second via staging.shop.local; ids [1, 2, 3] + chaos-only 4
+# phases: baseline 0–60s · chaos 60–150s · recovery 150–210s
+
+## per phase
+  baseline  orders   600  codes {201: 600}  degraded     0  p50     11 ms  p95     25 ms  max    200 ms
+  chaos     orders   900  codes {201: 673, 503: 227}  degraded   666  p50      7 ms  p95    239 ms  max   2135 ms
+  recovery  orders   600  codes {201: 600}  degraded    74  p50     11 ms  p95     25 ms  max     58 ms
+
+## breaker transitions (orders logs)
+  t=   62.8s  orders-6d7bd957b8-d9q2b         closed → open      5 consecutive failures
+  t=   63.2s  orders-6d7bd957b8-hscpx         closed → open      5 consecutive failures
+  t=   77.9s  orders-6d7bd957b8-d9q2b           open → half_open 15000 ms elapsed
+  t=   78.3s  orders-6d7bd957b8-hscpx           open → half_open 15000 ms elapsed
+  t=   79.2s  orders-6d7bd957b8-d9q2b      half_open → open      trial call failed
+  t=   79.4s  orders-6d7bd957b8-hscpx      half_open → open      trial call failed
+  t=   94.4s  orders-6d7bd957b8-d9q2b           open → half_open 15000 ms elapsed
+  t=   94.6s  orders-6d7bd957b8-hscpx           open → half_open 15000 ms elapsed
+  t=   95.5s  orders-6d7bd957b8-d9q2b      half_open → open      trial call failed
+  t=   95.7s  orders-6d7bd957b8-hscpx      half_open → open      trial call failed
+  t=  110.7s  orders-6d7bd957b8-hscpx           open → half_open 15000 ms elapsed
+  t=  110.9s  orders-6d7bd957b8-d9q2b           open → half_open 15000 ms elapsed
+  t=  111.8s  orders-6d7bd957b8-hscpx      half_open → open      trial call failed
+  t=  112.1s  orders-6d7bd957b8-d9q2b      half_open → open      trial call failed
+  t=  127.2s  orders-6d7bd957b8-d9q2b           open → half_open 15000 ms elapsed
+  t=  129.2s  orders-6d7bd957b8-d9q2b      half_open → open      trial call failed
+  t=  144.2s  orders-6d7bd957b8-d9q2b           open → half_open 15000 ms elapsed
+  t=  145.4s  orders-6d7bd957b8-d9q2b      half_open → open      trial call failed
+  t=  154.3s  orders-6d7bd957b8-hscpx           open → half_open 15000 ms elapsed
+  t=  154.8s  orders-6d7bd957b8-hscpx      half_open → closed    3 trial calls succeeded
+  t=  160.6s  orders-6d7bd957b8-d9q2b           open → half_open 15000 ms elapsed
+  t=  160.9s  orders-6d7bd957b8-d9q2b      half_open → closed    3 trial calls succeeded
+
+## Prometheus counters over the run
+  sum by (reason, result) (increase(dependency_fallback_total{namespace="shop-staging"}[229s]))
+      {"reason": "timeout", "result": "cache_hit"}                       10
+      {"reason": "circuit_open", "result": "cache_hit"}                 791
+      {"reason": "error", "result": "cache_hit"}                          1
+      {"reason": "circuit_open", "result": "cache_miss"}                231
+      {"reason": "timeout", "result": "cache_miss"}                       0
+  sum by (from, to) (increase(circuit_breaker_transitions_total{namespace="shop-staging"}[229s]))
+      {"from": "closed", "to": "open"}                                    2
+      {"from": "half_open", "to": "open"}                                 9
+      {"from": "open", "to": "half_open"}                                11
+      {"from": "half_open", "to": "closed"}                               2
+  sum by (outcome) (increase(circuit_breaker_calls_total{namespace="shop-staging"}[229s]))
+      {"outcome": "success"}                                           1070
+      {"outcome": "rejected"}                                          1035
+      {"outcome": "failure"}                                             56
+  sum (increase(dependency_retries_total{namespace="shop-staging"}[229s]))
+      {}                                                                 43
+
+## hypothesis
+  PASS  chaos: 5xx/errors for cached products 0.00% of 673 = 0
+  PASS  chaos: uncached product → 503 + Retry-After, never 502 ([503])
+  PASS  chaos (after the first 10 s): p95 25 ms < 1500 ms
+  PASS  breaker opened 2.8 s after injection (≤ 10 s)
+  PASS  every breaker closed again after the fault was removed: 10.9 s, 4.8 s (≤ 30 s)
+
+RESULT: hypothesis confirmed

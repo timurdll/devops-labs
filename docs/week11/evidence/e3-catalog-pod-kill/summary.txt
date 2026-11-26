@@ -1,0 +1,38 @@
+# 2026-11-26T13:45:11Z  chaos experiment e3: k8s/chaos/experiments/e3-catalog-pod-kill.yaml
+# load: 10 POST /api/orders per second via staging.shop.local; ids [1, 2, 3]
+# phases: baseline 0–60s · chaos 60–120s · recovery 120–150s
+
+## per phase
+  baseline  orders   600  codes {201: 600}  degraded     0  p50     11 ms  p95     22 ms  max    104 ms
+  chaos     orders   600  codes {201: 600}  degraded     0  p50     12 ms  p95     91 ms  max   1721 ms
+  recovery  orders   300  codes {201: 300}  degraded     0  p50     11 ms  p95     30 ms  max     97 ms
+
+## breaker transitions (orders logs)
+  none
+
+## Prometheus counters over the run
+  sum by (reason, result) (increase(dependency_fallback_total{namespace="shop-staging"}[169s]))
+      {"reason": "timeout", "result": "cache_hit"}                        0
+      {"reason": "circuit_open", "result": "cache_hit"}                   0
+      {"reason": "error", "result": "cache_hit"}                          0
+      {"reason": "circuit_open", "result": "cache_miss"}                  0
+      {"reason": "timeout", "result": "cache_miss"}                       0
+  sum by (from, to) (increase(circuit_breaker_transitions_total{namespace="shop-staging"}[169s]))
+      {"from": "closed", "to": "open"}                                    0
+      {"from": "half_open", "to": "open"}                                 0
+      {"from": "open", "to": "half_open"}                                 0
+      {"from": "half_open", "to": "closed"}                               0
+  sum by (outcome) (increase(circuit_breaker_calls_total{namespace="shop-staging"}[169s]))
+      {"outcome": "success"}                                           1500
+      {"outcome": "rejected"}                                             0
+      {"outcome": "failure"}                                              0
+  sum (increase(dependency_retries_total{namespace="shop-staging"}[169s]))
+      {}                                                                  0
+
+## hypothesis
+  PASS  baseline: 5xx/errors 0.00% of 600 orders ≤ 0%
+  PASS  chaos: 5xx/errors 0.00% of 600 orders ≤ 0%
+  PASS  recovery: 5xx/errors 0.00% of 300 orders ≤ 0%
+  PASS  breaker stayed closed (0 open transitions)
+
+RESULT: hypothesis confirmed

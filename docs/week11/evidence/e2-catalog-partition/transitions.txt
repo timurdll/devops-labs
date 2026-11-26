@@ -1,0 +1,23 @@
+# circuit breaker transitions of orders in shop-staging (t = seconds since load start; fault injected at t=60, removed at t=150)
+  t=   62.8s  orders-6d7bd957b8-d9q2b         closed → open      5 consecutive failures
+  t=   63.2s  orders-6d7bd957b8-hscpx         closed → open      5 consecutive failures
+  t=   77.9s  orders-6d7bd957b8-d9q2b           open → half_open 15000 ms elapsed
+  t=   78.3s  orders-6d7bd957b8-hscpx           open → half_open 15000 ms elapsed
+  t=   79.2s  orders-6d7bd957b8-d9q2b      half_open → open      trial call failed
+  t=   79.4s  orders-6d7bd957b8-hscpx      half_open → open      trial call failed
+  t=   94.4s  orders-6d7bd957b8-d9q2b           open → half_open 15000 ms elapsed
+  t=   94.6s  orders-6d7bd957b8-hscpx           open → half_open 15000 ms elapsed
+  t=   95.5s  orders-6d7bd957b8-d9q2b      half_open → open      trial call failed
+  t=   95.7s  orders-6d7bd957b8-hscpx      half_open → open      trial call failed
+  t=  110.7s  orders-6d7bd957b8-hscpx           open → half_open 15000 ms elapsed
+  t=  110.9s  orders-6d7bd957b8-d9q2b           open → half_open 15000 ms elapsed
+  t=  111.8s  orders-6d7bd957b8-hscpx      half_open → open      trial call failed
+  t=  112.1s  orders-6d7bd957b8-d9q2b      half_open → open      trial call failed
+  t=  127.2s  orders-6d7bd957b8-d9q2b           open → half_open 15000 ms elapsed
+  t=  129.2s  orders-6d7bd957b8-d9q2b      half_open → open      trial call failed
+  t=  144.2s  orders-6d7bd957b8-d9q2b           open → half_open 15000 ms elapsed
+  t=  145.4s  orders-6d7bd957b8-d9q2b      half_open → open      trial call failed
+  t=  154.3s  orders-6d7bd957b8-hscpx           open → half_open 15000 ms elapsed
+  t=  154.8s  orders-6d7bd957b8-hscpx      half_open → closed    3 trial calls succeeded
+  t=  160.6s  orders-6d7bd957b8-d9q2b           open → half_open 15000 ms elapsed
+  t=  160.9s  orders-6d7bd957b8-d9q2b      half_open → closed    3 trial calls succeeded

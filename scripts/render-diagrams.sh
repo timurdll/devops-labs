@@ -6,7 +6,8 @@ cd "$(dirname "$0")/.."
 MERMAID_IMAGE=mirror.gcr.io/minlag/mermaid-cli:latest
 PYTHON_IMAGE=mirror.gcr.io/library/python:3.12-slim
 
-for src in docs/week6/diagrams/*.mmd docs/week7/diagrams/*.mmd docs/week8/diagrams/*.mmd docs/week9/diagrams/*.mmd docs/week10/diagrams/*.mmd; do
+for src in docs/week6/diagrams/*.mmd docs/week7/diagrams/*.mmd docs/week8/diagrams/*.mmd docs/week9/diagrams/*.mmd docs/week10/diagrams/*.mmd docs/week11/diagrams/*.mmd docs/week12/diagrams/*.mmd docs/week13/diagrams/*.mmd; do
+  [ -f "$src" ] || continue
   base="${src%.mmd}"
   echo "mermaid  $src"
   docker run --rm -u "$(id -u):$(id -g)" -v "$PWD:/data" "$MERMAID_IMAGE" \
@@ -28,4 +29,4 @@ docker run --rm -v "$PWD:/w" -w /w "$PYTHON_IMAGE" sh -c '
   python docs/week9/diagrams/trace_waterfall.py docs/week9/exports/traces/order-ok.json docs/week9/diagrams/trace-waterfall-ok.png "POST /api/orders · prod · 201 Created" &&
   python docs/week9/diagrams/trace_waterfall.py docs/week9/exports/traces/order-catalog-down.json docs/week9/diagrams/trace-waterfall-error.png "POST /api/orders · prod · catalog scaled to 0 → 502" &&
   python docs/week9/diagrams/trace_waterfall.py docs/week10/exports/traces/order-through-mesh.json docs/week10/diagrams/trace-waterfall-mesh.png "POST /api/orders · staging · through the mesh (gateway + sidecars)"'
-ls -1 docs/week6/diagrams docs/week7/diagrams docs/week8/diagrams docs/week9/diagrams docs/week10/diagrams
+ls -1 docs/week*/diagrams

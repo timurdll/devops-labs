@@ -1,0 +1,27 @@
+%% Week 11 · Circuit breaker of orders → catalog (services/orders/src/circuit-breaker.js).
+%% Thresholds are the deployed values (charts/shoplite/values.yaml → services.orders.env, CB_*).
+%% Measured in E1 (docs/week11/evidence/e1-catalog-latency): CLOSED→OPEN 2.1 s after the fault,
+%% OPEN→HALF_OPEN every 15 s, HALF_OPEN→CLOSED 15 s after the fault was removed.
+stateDiagram-v2
+    direction LR
+    [*] --> CLOSED
+
+    CLOSED: CLOSED — calls pass through
+    CLOSED: sliding window = last 20 calls
+    CLOSED: failure = timeout (1000 ms) · connection error · 5xx
+    CLOSED: 404 / 4xx = an answer, not a failure
+
+    OPEN: OPEN — fail fast
+    OPEN: no socket, no wait, no load on catalog
+    OPEN: → fallback last-known-good product (cache, 10 min)
+    OPEN: → 201 degraded or 503 + Retry-After (cache miss)
+
+    HALF_OPEN: HALF_OPEN — probing
+    HALF_OPEN: max 3 trial calls in flight
+    HALF_OPEN: other calls are rejected (fallback)
+
+    CLOSED --> OPEN: failure rate ≥ 50 % over ≥ 10 calls<br/>OR 5 consecutive failures (trip)
+    OPEN --> HALF_OPEN: 15 s elapsed (reset timeout)
+    HALF_OPEN --> CLOSED: 3 trial calls succeed
+    HALF_OPEN --> OPEN: any trial call fails<br/>(timer restarts)
+    CLOSED --> CLOSED: success · or failure below threshold

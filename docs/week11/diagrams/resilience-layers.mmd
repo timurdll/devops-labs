@@ -1,0 +1,25 @@
+%% Week 11 · Where each resilience pattern lives on the order path (staging). Outer layers protect
+%% the inner ones; the application owns semantics (fallback, idempotency), the mesh owns transport.
+flowchart LR
+    U(["client"]) --> TR["Traefik<br/>edge"]
+    TR --> GW
+    subgraph GW["shop-gateway · Envoy"]
+        RL["local rate limit<br/>token bucket 200 / +100 per s<br/>→ 429 + Retry-After"]
+        VT["route timeout 10 s<br/>retry 1× connect-failure,<br/>refused-stream only"]
+        RL --> VT
+    end
+    GW -- mTLS --> OS
+    subgraph OP["orders pod (1.2.0)"]
+        OS["istio-proxy"] --> APP
+        subgraph APP["orders app — catalog client"]
+            direction TB
+            FB["① fallback: last-known-good<br/>product (10 min) → 201 degraded<br/>miss → 503 + Retry-After"]
+            RT["② retry ×3 · backoff 50·2ⁿ ms ≤ 500<br/>full jitter · GET only · not on timeout"]
+            CB["③ circuit breaker<br/>50 %/20 calls or 5 in a row<br/>open 15 s · 3 trials"]
+            TO["④ timeout 1000 ms per attempt"]
+            FB --> RT --> CB --> TO
+        end
+        APP --> OE["istio-proxy (client side)<br/>bulkhead: ≤ 32 pending / 64 active<br/>connect timeout 1 s<br/>outlier detection 5×5xx → eject 30 s"]
+    end
+    OE -- mTLS --> CS["catalog pods<br/>v1 ×2 · v2 ×1"]
+    OP -. "circuit_breaker_state<br/>dependency_fallback_total" .-> P[("Prometheus<br/>alert CircuitBreakerOpen")]

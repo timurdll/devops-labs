@@ -1,0 +1,1 @@
+# circuit breaker transitions of orders in shop-staging (t = seconds since load start; fault injected at t=60, removed at t=120)

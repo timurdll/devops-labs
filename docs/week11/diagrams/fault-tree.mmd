@@ -1,0 +1,46 @@
+%% Week 11 · Fault Tree Analysis. TOP event: a customer cannot place an order (POST /api/orders ≠ 201
+%% within 2 s). Gates: OR = any child causes the parent; AND = all children needed.
+%% Green = basic event mitigated in Week 11 (pattern in brackets) · red = the real incident PM-W11-01
+%% · grey = accepted / out of scope. Probabilities are rough per-month estimates for the lab cluster.
+flowchart TB
+    TOP{{"TOP · order cannot be placed<br/>POST /api/orders ≠ 201 within 2 s"}}
+    G1(("OR"))
+    TOP --- G1
+
+    EDGE["E1 · edge path down<br/>Traefik / gateway / overload"]
+    ORD["E2 · orders cannot answer"]
+    CAT["E3 · price lookup fails<br/>AND no fallback"]
+    DB["E4 · orders DB write fails"]
+    G1 --- EDGE & ORD & CAT & DB
+
+    G2(("OR")); EDGE --- G2
+    B1["traffic burst / retry storm<br/>[rate limit 429 · ADR-W11-04]"]:::ok
+    B2["gateway pod lost<br/>[replicas · PDB]"]:::acc
+    G2 --- B1 & B2
+
+    G3(("OR")); ORD --- G3
+    B3["all orders pods down<br/>[2 replicas · topology spread]"]:::acc
+    B4["workload cert expired → mTLS reset<br/>PM-W11-01 · p ≈ 1/month on a laptop<br/>[TTL 168 h · IstioWorkloadCertExpired alert]"]:::inc
+    B5["threads/sockets exhausted by slow catalog<br/>[timeouts · bulkhead connectionPool]"]:::ok
+    G3 --- B3 & B4 & B5
+
+    G4(("AND")); CAT --- G4
+    C1(("OR")); G4 --- C1
+    NOFB(("OR")); G4 --- NOFB
+    B6["catalog slow (latency ≫ 1 s)<br/>E1 chaos: 3000 ms"]:::ok
+    B7["catalog unreachable / partition<br/>E2 chaos"]:::ok
+    B8["catalog pod killed<br/>E3 chaos [retry + outlier detection]"]:::ok
+    B9["catalog DB / its cert down"]:::acc
+    C1 --- B6 & B7 & B8 & B9
+    F1["product not in orders' cache<br/>(cold pod, new product) → 503 + Retry-After"]:::acc
+    F2["cache older than 10 min"]:::acc
+    NOFB --- F1 & F2
+
+    G5(("OR")); DB --- G5
+    B10["postgres pod down<br/>(single replica StatefulSet)"]:::acc
+    B11["postgres cert expired<br/>PM-W11-01"]:::inc
+    G5 --- B10 & B11
+
+    classDef ok fill:#e3f4ea,stroke:#2a9d8f,color:#1b4332
+    classDef inc fill:#fde2e4,stroke:#e63946,color:#6a040f
+    classDef acc fill:#eef0f3,stroke:#8d99ae,color:#2b2d42
