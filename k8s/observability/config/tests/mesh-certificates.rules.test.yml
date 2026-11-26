@@ -1,0 +1,34 @@
+# promtool test rules — replays incident PM-W11-01 offline: a workload certificate (TTL 168 h)
+# whose rotation never happens because the istio-agent timer is stalled. A healthy sidecar next
+# to it rotates on time and must stay silent.
+rule_files:
+  - ../shoplite-red.rules.yml
+evaluation_interval: 30s
+tests:
+  - interval: 5m
+    input_series:
+      # stalled: 200 000 s left at t=0, losing 300 s per 5-minute step, never renewed
+      - series: 'istio_agent_cert_expiry_seconds{namespace="shop-staging",pod="catalog-a",job="kubernetes-pods"}'
+        values: '200000-300x700'
+      # healthy: renewed every 84 h (50 % of 168 h), never below 302 400 s
+      - series: 'istio_agent_cert_expiry_seconds{namespace="shop-staging",pod="orders-a",job="kubernetes-pods"}'
+        values: '604800-300x1000'
+    alert_rule_test:
+      - eval_time: 800m      # 152 000 s left (> 25 %): quiet
+        alertname: IstioWorkloadCertExpiring
+        exp_alerts: []
+      - eval_time: 830m      # below 151 200 s since 815m, for 5m → firing
+        alertname: IstioWorkloadCertExpiring
+        exp_alerts:
+          - exp_labels: { severity: ticket, namespace: shop-staging, pod: catalog-a }
+            exp_annotations:
+              summary: "shop-staging/catalog-a: workload certificate expires in 1d 17h 43m 20s, rotation is overdue"
+      - eval_time: 3330m     # 500 s left: not expired yet
+        alertname: IstioWorkloadCertExpired
+        exp_alerts: []
+      - eval_time: 3345m     # expired since 3335m
+        alertname: IstioWorkloadCertExpired
+        exp_alerts:
+          - exp_labels: { severity: page, namespace: shop-staging, pod: catalog-a }
+            exp_annotations:
+              summary: "shop-staging/catalog-a: workload certificate EXPIRED, new mTLS connections fail (restart the pod)"

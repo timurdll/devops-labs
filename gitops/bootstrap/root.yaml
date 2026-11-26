@@ -11,7 +11,7 @@ spec:
   project: default
   source:
     repoURL: https://github.com/timurdll/devops-labs.git
-    targetRevision: week10-service-mesh
+    targetRevision: week11-resilience
     path: gitops/apps
   destination:
     server: https://kubernetes.default.svc

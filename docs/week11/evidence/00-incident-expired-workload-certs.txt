@@ -1,0 +1,109 @@
+# 2026-11-26T13:16:26Z  INCIDENT found on return after ~10 days: shop-dev / shop-staging partially down
+# Captured before any remediation, read-only.
+
+## Argo CD
+NAME               SYNC STATUS   HEALTH STATUS
+shoplite-dev       Synced        Progressing
+shoplite-staging   Synced        Progressing
+shoplite-prod      OutOfSync     Healthy
+
+## shop-dev pods
+NAME                            READY   STATUS    RESTARTS      AGE
+catalog-69ccbd5869-dc889        2/2     Running   8 (10d ago)   15d
+catalog-69ccbd5869-w84rb        1/2     Running   6 (10d ago)   15d
+orders-5b7d6dd6f7-nx4lh         1/2     Running   7 (10d ago)   15d
+postgres-0                      2/2     Running   4 (10d ago)   15d
+shop-gateway-694bb44d74-t2wtr   1/1     Running   2 (10d ago)   14d
+web-cd844dc56-58h66             2/2     Running   5 (10d ago)   15d
+web-cd844dc56-gfr7n             2/2     Running   6 (10d ago)   15d
+
+## shop-staging pods
+NAME                           READY   STATUS    RESTARTS      AGE
+catalog-69898dc745-fx2v2       1/2     Running   6 (10d ago)   15d
+catalog-69898dc745-g8rzf       1/2     Running   7 (10d ago)   15d
+catalog-v2-cd949f67d-kxvvg     1/2     Running   5 (10d ago)   14d
+orders-6ddfb79b6f-hmdkf        2/2     Running   7 (10d ago)   15d
+orders-6ddfb79b6f-xdnx7        1/2     Running   9 (21h ago)   15d
+postgres-0                     2/2     Running   4 (10d ago)   15d
+shop-gateway-5ff495f7b-p8cgh   1/1     Running   2 (10d ago)   14d
+web-976c9b4d6-d6m4c            2/2     Running   5 (10d ago)   15d
+web-976c9b4d6-fhgcw            2/2     Running   5 (10d ago)   15d
+
+## shop-prod pods
+NAME                       READY   STATUS    RESTARTS      AGE
+catalog-75ddd69b88-k828g   1/1     Running   3 (10d ago)   16d
+catalog-75ddd69b88-lrlpk   1/1     Running   3 (10d ago)   16d
+catalog-75ddd69b88-nvmdr   1/1     Running   3 (10d ago)   16d
+orders-55965c7d6c-h4gxf    1/1     Running   3 (10d ago)   16d
+orders-55965c7d6c-t2hhd    1/1     Running   3 (10d ago)   16d
+orders-55965c7d6c-xd2gq    1/1     Running   3 (10d ago)   16d
+postgres-0                 1/1     Running   2 (10d ago)   22d
+web-997dd9cf4-7nt7c        1/1     Running   3 (10d ago)   16d
+web-997dd9cf4-v6shq        1/1     Running   3 (10d ago)   16d
+
+## shop-dev workload certificates (Envoy admin /certs of each sidecar)
+  catalog-69ccbd5869-dc889         2026-11-24T11:37:16Z → 2026-11-25T11:39:16Z  days_until_expiration 0
+  catalog-69ccbd5869-w84rb         2026-11-23T20:22:10Z → 2026-11-24T20:24:10Z  days_until_expiration 0
+  orders-5b7d6dd6f7-nx4lh          2026-11-24T11:34:35Z → 2026-11-25T11:36:35Z  days_until_expiration 0
+  postgres-0                       2026-11-24T10:56:24Z → 2026-11-25T10:58:24Z  days_until_expiration 0
+  shop-gateway-694bb44d74-t2wtr    2026-11-24T02:13:36Z → 2026-11-25T02:15:36Z  days_until_expiration 0
+  web-cd844dc56-58h66              2026-11-24T11:12:41Z → 2026-11-25T11:14:41Z  days_until_expiration 0
+  web-cd844dc56-gfr7n              2026-11-24T11:04:56Z → 2026-11-25T11:06:56Z  days_until_expiration 0
+
+## shop-staging workload certificates (Envoy admin /certs of each sidecar)
+  catalog-69898dc745-fx2v2         2026-11-24T11:12:58Z → 2026-11-25T11:14:58Z  days_until_expiration 0
+  catalog-69898dc745-g8rzf         2026-11-24T11:17:24Z → 2026-11-25T11:19:24Z  days_until_expiration 0
+  catalog-v2-cd949f67d-kxvvg       2026-11-24T11:01:26Z → 2026-11-25T11:03:26Z  days_until_expiration 0
+  orders-6ddfb79b6f-hmdkf          2026-11-24T11:01:34Z → 2026-11-25T11:03:34Z  days_until_expiration 0
+  orders-6ddfb79b6f-xdnx7          2026-11-24T11:21:46Z → 2026-11-25T11:23:46Z  days_until_expiration 0
+  postgres-0                       2026-11-24T01:42:37Z → 2026-11-25T01:44:37Z  days_until_expiration 0
+  shop-gateway-5ff495f7b-p8cgh     2026-11-24T11:19:39Z → 2026-11-25T11:21:39Z  days_until_expiration 0
+  web-976c9b4d6-d6m4c              2026-11-24T07:02:35Z → 2026-11-25T07:04:35Z  days_until_expiration 0
+  web-976c9b4d6-fhgcw              2026-11-24T11:31:07Z → 2026-11-25T11:33:07Z  days_until_expiration 0
+
+
+## edge requests (Traefik → gateway) per environment
+  dev      GET /api/catalog/products    → 503
+  dev      GET /                        → 503
+  staging  GET /api/catalog/products    → 503
+  staging  GET /                        → 503
+  prod     GET /api/catalog/products    → 200
+  prod     GET /                        → 200
+
+## catalog-69898dc745-fx2v2: why /readyz is 503
+  catalog: migration attempt 1 failed (getaddrinfo ENOTFOUND postgres.shop-staging.svc.cluster.local), retry in 2000ms
+  catalog: migration attempt 2 failed (getaddrinfo ENOTFOUND postgres.shop-staging.svc.cluster.local), retry in 4000ms
+  catalog: migration attempt 3 failed (getaddrinfo ENOTFOUND postgres.shop-staging.svc.cluster.local), retry in 8000ms
+  catalog: schema ready
+  observed 13:14Z from inside this pod: a new pg connection to postgres.shop-staging fails with
+  'read ECONNRESET' after 19 ms (the sidecar's TLS handshake with an expired certificate is refused);
+  /readyz answers 503 {"status":"db-unavailable"} because readiness opens a new connection.
+
+## renewal history of catalog-69898dc745-fx2v2's sidecar ('generated new workload certificate'; expected every ~12 h)
+   2026-11-16 12:14:20Z 
+   2026-11-18 00:20:32Z   +36.1 h since previous
+   2026-11-19 21:14:31Z   +44.9 h since previous
+   2026-11-22 19:59:03Z   +70.7 h since previous
+   2026-11-24 11:14:58Z   +39.3 h since previous
+
+## istiod's hourly root-cert check (monotonic-clock timer): gaps > 1.5 h = VM suspended
+   gap   9.5 h  11-17 02:30 → 11-17 11:58
+   gap   4.2 h  11-17 14:13 → 11-17 18:24
+   gap  10.7 h  11-18 06:24 → 11-18 17:07
+   gap   5.1 h  11-18 19:07 → 11-19 00:15
+   gap  13.8 h  11-19 00:15 → 11-19 14:05
+   gap   8.2 h  11-19 14:05 → 11-19 22:17
+   gap  11.2 h  11-19 22:17 → 11-20 09:28
+   gap   9.3 h  11-20 10:28 → 11-20 19:43
+   gap   8.4 h  11-20 20:43 → 11-21 05:04
+   gap  12.4 h  11-21 05:04 → 11-21 17:28
+   gap  12.0 h  11-21 19:28 → 11-22 07:25
+   gap  10.5 h  11-22 07:25 → 11-22 17:52
+   gap   7.5 h  11-22 23:52 → 11-23 07:21
+   gap   4.2 h  11-23 08:21 → 11-23 12:33
+   gap   4.1 h  11-23 13:33 → 11-23 17:41
+   gap  15.4 h  11-23 19:41 → 11-24 11:04
+   gap   2.3 h  11-24 11:04 → 11-24 13:21
+   gap  16.8 h  11-24 13:21 → 11-25 06:10
+   gap  27.7 h  11-25 06:10 → 11-26 09:54
+   (52 checks since istiod start)

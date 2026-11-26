@@ -32,6 +32,14 @@ meshConfig:
   defaultConfig:
     # Belt and braces: native sidecars (default since 1.27) already start before the app.
     holdApplicationUntilProxyStarts: true
+    # Week 11 incident PM-W11-01: istio-agent renews the workload certificate on a monotonic-clock
+    # timer, which stops while the Docker VM sleeps (laptop lid closed); expiry is wall-clock. With
+    # the 24 h default, two nights of sleep were enough to let every certificate in dev/staging
+    # expire → new mTLS connections reset → /readyz 503. 7 days covers a sleeping laptop; istiod's
+    # MAX_WORKLOAD_CERT_TTL (90 d) allows it. The real fix in production is a host that never sleeps
+    # + the IstioWorkloadCertExpiring alert (k8s/observability/config/shoplite-red.rules.yml).
+    proxyMetadata:
+      SECRET_TTL: "168h"
   # Envoy spans → the Week 9 OpenTelemetry Collector (activated by the Telemetry resource in
   # k8s/mesh/telemetry.yaml). Envoy continues the W3C traceparent started by Traefik.
   extensionProviders:

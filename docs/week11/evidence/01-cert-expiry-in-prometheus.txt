@@ -1,0 +1,22 @@
+# 2026-11-26T13:18:07Z  what monitoring knew: istio_agent_cert_expiry_seconds (istio-agent, merged into :15020, already scraped since Week 10)
+# No alert existed on it. Prometheus history (emptyDir, since its last restart):
+
+## now: min by namespace (hours until the workload certificate expires; negative = expired)
+  shop-dev         -40.9 h
+  shop-staging     -35.6 h
+
+## shop-staging, last 3 days, every 3 h (gaps = no scrape while the VM was suspended)
+   11-23 13:18Z     6.3 h 
+   11-23 19:18Z     0.3 h 
+   11-24 01:18Z    -5.6 h  EXPIRED
+   11-24 04:18Z    -8.7 h  EXPIRED
+   11-24 13:18Z    12.4 h 
+   11-24 19:18Z     6.5 h 
+   11-24 22:18Z     3.5 h 
+   11-25 22:18Z   -20.5 h  EXPIRED
+   11-26 04:18Z   -26.5 h  EXPIRED
+   11-26 10:18Z   -32.6 h  EXPIRED
+   11-26 13:18Z   -35.6 h  EXPIRED
+
+  → two earlier expiry windows (11-24 ~01:00–~11:00) healed themselves when the renewal timer fired;
+    the third (from 11-25 01:44Z) had not healed after 35 h.

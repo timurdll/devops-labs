@@ -46,3 +46,24 @@ groups:
           severity: page
         annotations:
           summary: "{{ $labels.app }} in {{ $labels.namespace }} has no healthy scrape target (scaled to 0 or crash-looping)"
+  # Week 11, post-mortem PM-W11-01: the dev/staging outage of 2026-11-25 was visible in this metric
+  # for 35 h (istio-agent exports the remaining lifetime of its workload certificate) but nothing
+  # alerted on it. Rotation normally happens at 50 % of the lifetime, so < 25 % left means rotation
+  # is already overdue; < 0 means new mTLS connections to/from this pod are being refused.
+  - name: mesh-certificates
+    interval: 30s
+    rules:
+      - alert: IstioWorkloadCertExpiring
+        expr: min by (namespace, pod) (istio_agent_cert_expiry_seconds) < 0.25 * 168 * 3600
+        for: 5m
+        labels:
+          severity: ticket
+        annotations:
+          summary: "{{ $labels.namespace }}/{{ $labels.pod }}: workload certificate expires in {{ $value | humanizeDuration }}, rotation is overdue"
+      - alert: IstioWorkloadCertExpired
+        expr: min by (namespace, pod) (istio_agent_cert_expiry_seconds) <= 0
+        for: 1m
+        labels:
+          severity: page
+        annotations:
+          summary: "{{ $labels.namespace }}/{{ $labels.pod }}: workload certificate EXPIRED, new mTLS connections fail (restart the pod)"

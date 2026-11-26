@@ -105,7 +105,7 @@ PY
   docker run --rm -v "$cfg:/etc/prometheus:ro" --entrypoint /bin/promtool "$PROMETHEUS_IMAGE" \
     check config /etc/prometheus/prometheus.yml || rc=1
   docker run --rm -v "$cfg:/c:ro" -w /c/tests --entrypoint /bin/promtool "$PROMETHEUS_IMAGE" \
-    test rules shoplite-red.rules.test.yml || rc=1
+    test rules shoplite-red.rules.test.yml mesh-certificates.rules.test.yml || rc=1
   python3 -m json.tool k8s/observability/dashboards/shoplite-red.json > /dev/null || rc=1
   echo "• actionlint .github/workflows/ci.yml"
   docker run --rm -v "$PWD:/repo" -w /repo "$ACTIONLINT_IMAGE" -color || rc=1
