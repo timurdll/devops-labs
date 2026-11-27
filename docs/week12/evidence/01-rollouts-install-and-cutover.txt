@@ -1,0 +1,53 @@
+# 2026-11-27T12:41:30Z  Argo Rollouts install + catalog cutover Deployment → Rollout (staging)
+
+$ kubectl -n argocd get applications argo-rollouts shoplite-staging
+NAME               SYNC STATUS   HEALTH STATUS
+argo-rollouts      Synced        Healthy
+shoplite-staging   Synced        Healthy
+
+$ kubectl -n argo-rollouts get deploy,pods
+NAME                            READY   UP-TO-DATE   AVAILABLE   AGE
+deployment.apps/argo-rollouts   1/1     1            1           7m57s
+
+NAME                                 READY   STATUS    RESTARTS   AGE
+pod/argo-rollouts-7d6cd45cb4-wbm8s   1/1     Running   0          7m56s
+
+$ kubectl get crd | grep argoproj.io (rollouts)
+analysisruns.argoproj.io                   Namespaced   v1alpha1(storage)              2026-11-27T12:33:27Z
+analysistemplates.argoproj.io              Namespaced   v1alpha1(storage)              2026-11-27T12:33:27Z
+clusteranalysistemplates.argoproj.io       Cluster      v1alpha1(storage)              2026-11-27T12:33:27Z
+experiments.argoproj.io                    Namespaced   v1alpha1(storage)              2026-11-27T12:33:27Z
+rollouts.argoproj.io                       Namespaced   v1alpha1(storage)              2026-11-27T12:33:27Z
+
+$ kubectl -n shop-staging get rollout,rs,pods -l app.kubernetes.io/name=catalog -L version
+NAME                          DESIRED   CURRENT   UP-TO-DATE   AVAILABLE   AGE     VERSION
+rollout.argoproj.io/catalog   2         2         2            2           7m35s   1.2.0
+
+NAME                                DESIRED   CURRENT   READY   AGE     VERSION
+replicaset.apps/catalog-6b495dc9d   2         2         2       2m31s   1.2.0
+
+NAME                          READY   STATUS    RESTARTS   AGE     VERSION
+pod/catalog-6b495dc9d-7tc4t   2/2     Running   0          2m20s   1.2.0
+pod/catalog-6b495dc9d-tvdgs   2/2     Running   0          2m20s   1.2.0
+
+$ kubectl -n shop-staging get dr catalog -o jsonpath={.spec.subsets}   # hash injected by Argo Rollouts
+[{"labels":{"app.kubernetes.io/name":"catalog","rollouts-pod-template-hash":"6b495dc9d"},"name":"stable"},{"labels":{"app.kubernetes.io/name":"catalog","rollouts-pod-template-hash":"6b495dc9d"},"name":"canary"}]
+
+$ kubectl -n shop-staging get vs catalog shop-edge -o jsonpath=…route weights
+[{"destination":{"host":"catalog.shop-staging.svc.cluster.local","port":{"number":80},"subset":"stable"},"weight":100},{"destination":{"host":"catalog.shop-staging.svc.cluster.local","port":{"number":80},"subset":"canary"},"weight":0}]
+[{"destination":{"host":"catalog.shop-staging.svc.cluster.local","port":{"number":80},"subset":"stable"},"weight":100},{"destination":{"host":"catalog.shop-staging.svc.cluster.local","port":{"number":80},"subset":"canary"},"weight":0}]
+
+$ kubectl -n shop-staging get analysistemplate
+NAME                    AGE
+catalog-canary-health   7m13s
+
+## reading
+   First sync: the Rollout stayed InvalidSpec ("Canary DestinationRule subset 'canary' not found in
+   route"). The live VirtualServices still had the Week 10 split (subsets v1 90 / v2 10), and the new
+   ignoreDifferences on route weights + RespectIgnoreDifferences made Argo CD keep the live route
+   array instead of applying git's stable/canary route. One-time migration: the two VirtualServices
+   (catalog, shop-edge) rendered from git were applied with kubectl; Argo CD then reported Synced.
+   Cut-over without an outage: until the new pods were ready the stable subset (labels
+   app.kubernetes.io/name=catalog only) matched the old Deployment pods; Argo Rollouts then pinned
+   both subsets to rollouts-pod-template-hash 6b495dc9d and Argo CD pruned the two Deployments last.
+   A first deployment of a Rollout is not a canary (nothing to compare with): 1.2.0 went to 100 % directly.
