@@ -10,8 +10,8 @@ const { createCircuitBreaker } = require('./circuit-breaker');
 const { createMetrics } = require('./telemetry/metrics');
 
 const PORT = Number(process.env.PORT || 8080);
-const repo = createRepo();
 const metrics = createMetrics({ service: 'orders' });
+const repo = createRepo({ onConnectRetry: () => metrics.observeRetry('postgres') });
 const env = (k, d) => Number(process.env[k] || d);
 // Week 11: thresholds come from the chart (charts/shoplite/values.yaml → orders.resilience).
 const breaker = createCircuitBreaker({

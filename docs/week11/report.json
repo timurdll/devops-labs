@@ -1,0 +1,11 @@
+{
+  "week": "Week 11 · Lab 7",
+  "title": "System Resilience Patterns & Fault Tree Analysis",
+  "subtitle": "Circuit breaker, retry with backoff and jitter, rate limiting and bulkheads for ShopLite, proven with Chaos Mesh experiments and two post-mortems",
+  "student": "Timur",
+  "repository": "https://github.com/timurdll/devops-labs",
+  "branch": "week11-resilience",
+  "stack": "orders 1.2.0 (Node.js 24) · Istio 1.31.4 / Envoy · Chaos Mesh 2.8.8 · Prometheus · Argo CD · Kubernetes 1.37 (kind)",
+  "date": "27 November 2026",
+  "output": "Week11-Lab7-Report.docx"
+}

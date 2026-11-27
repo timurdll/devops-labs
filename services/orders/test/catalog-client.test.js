@@ -20,7 +20,7 @@ before(async () => {
       res.end(JSON.stringify({ item }));
     };
     if (id === '1') return setTimeout(() => answer({ id: 1, priceCents: 100, stock: 1 }), latencyMs);
-    if (id === '2') return setTimeout(() => res.end('{}'), 300);
+    if (id === '2') return setTimeout(() => res.end('{}'), 1000);
     if (id === '3') {
       if (flaky > 0) { flaky -= 1; res.writeHead(503); return res.end(); }
       return answer({ id: 3, priceCents: 300, stock: 5 });
@@ -38,7 +38,7 @@ const noSleep = { sleep: async () => {} };
 test('getProduct resolves products and records each call', async () => {
   hits = {};
   const calls = [];
-  const client = createCatalogClient({ baseUrl: base, timeoutMs: 100, observe: (...a) => calls.push(a), retryOptions: noSleep });
+  const client = createCatalogClient({ baseUrl: base, timeoutMs: 250, observe: (...a) => calls.push(a), retryOptions: noSleep });
 
   assert.deepEqual(await client.getProduct(1), {
     product: { id: 1, priceCents: 100, stock: 1 }, servedBy: 'catalog-a', degraded: false,

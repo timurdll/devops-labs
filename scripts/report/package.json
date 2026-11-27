@@ -1,0 +1,12 @@
+{
+  "name": "shoplite-report",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Builds the weekly lab report (.docx) from docs/<week>/README.md",
+  "main": "build-report.js",
+  "license": "MIT",
+  "dependencies": {
+    "docx": "9.5.1",
+    "marked": "16.4.1"
+  }
+}

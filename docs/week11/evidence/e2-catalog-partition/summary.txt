@@ -1,60 +1,65 @@
-# 2026-11-26T13:41:34Z  chaos experiment e2: k8s/chaos/experiments/e2-catalog-partition.yaml
+# 2026-11-27T11:47:36Z  chaos experiment e2: k8s/chaos/experiments/e2-catalog-partition.yaml
 # load: 10 POST /api/orders per second via staging.shop.local; ids [1, 2, 3] + chaos-only 4
 # phases: baseline 0–60s · chaos 60–150s · recovery 150–210s
 
 ## per phase
-  baseline  orders   600  codes {201: 600}  degraded     0  p50     11 ms  p95     25 ms  max    200 ms
-  chaos     orders   900  codes {201: 673, 503: 227}  degraded   666  p50      7 ms  p95    239 ms  max   2135 ms
-  recovery  orders   600  codes {201: 600}  degraded    74  p50     11 ms  p95     25 ms  max     58 ms
+  baseline  orders   600  codes {201: 598, 502: 2}  degraded   175  p50     13 ms  p95   1307 ms  max   4091 ms
+  chaos     orders   900  codes {201: 673, 503: 227}  degraded   669  p50      8 ms  p95    146 ms  max   1448 ms
+  recovery  orders   600  codes {201: 600}  degraded    57  p50     15 ms  p95     56 ms  max    300 ms
 
 ## breaker transitions (orders logs)
-  t=   62.8s  orders-6d7bd957b8-d9q2b         closed → open      5 consecutive failures
-  t=   63.2s  orders-6d7bd957b8-hscpx         closed → open      5 consecutive failures
-  t=   77.9s  orders-6d7bd957b8-d9q2b           open → half_open 15000 ms elapsed
-  t=   78.3s  orders-6d7bd957b8-hscpx           open → half_open 15000 ms elapsed
-  t=   79.2s  orders-6d7bd957b8-d9q2b      half_open → open      trial call failed
-  t=   79.4s  orders-6d7bd957b8-hscpx      half_open → open      trial call failed
-  t=   94.4s  orders-6d7bd957b8-d9q2b           open → half_open 15000 ms elapsed
-  t=   94.6s  orders-6d7bd957b8-hscpx           open → half_open 15000 ms elapsed
-  t=   95.5s  orders-6d7bd957b8-d9q2b      half_open → open      trial call failed
-  t=   95.7s  orders-6d7bd957b8-hscpx      half_open → open      trial call failed
-  t=  110.7s  orders-6d7bd957b8-hscpx           open → half_open 15000 ms elapsed
-  t=  110.9s  orders-6d7bd957b8-d9q2b           open → half_open 15000 ms elapsed
-  t=  111.8s  orders-6d7bd957b8-hscpx      half_open → open      trial call failed
-  t=  112.1s  orders-6d7bd957b8-d9q2b      half_open → open      trial call failed
-  t=  127.2s  orders-6d7bd957b8-d9q2b           open → half_open 15000 ms elapsed
-  t=  129.2s  orders-6d7bd957b8-d9q2b      half_open → open      trial call failed
-  t=  144.2s  orders-6d7bd957b8-d9q2b           open → half_open 15000 ms elapsed
-  t=  145.4s  orders-6d7bd957b8-d9q2b      half_open → open      trial call failed
-  t=  154.3s  orders-6d7bd957b8-hscpx           open → half_open 15000 ms elapsed
-  t=  154.8s  orders-6d7bd957b8-hscpx      half_open → closed    3 trial calls succeeded
-  t=  160.6s  orders-6d7bd957b8-d9q2b           open → half_open 15000 ms elapsed
-  t=  160.9s  orders-6d7bd957b8-d9q2b      half_open → closed    3 trial calls succeeded
+  t=   41.5s  orders-9958c7597-492lf          closed → open      5 consecutive failures
+  t=   42.5s  orders-9958c7597-zwwqz          closed → open      5 consecutive failures
+  t=   56.6s  orders-9958c7597-492lf            open → half_open 15000 ms elapsed
+  t=   56.8s  orders-9958c7597-492lf       half_open → closed    3 trial calls succeeded
+  t=   57.6s  orders-9958c7597-zwwqz            open → half_open 15000 ms elapsed
+  t=   58.3s  orders-9958c7597-zwwqz       half_open → closed    3 trial calls succeeded
+  t=   62.1s  orders-9958c7597-zwwqz          closed → open      5 consecutive failures
+  t=   62.2s  orders-9958c7597-492lf          closed → open      5 consecutive failures
+  t=   77.1s  orders-9958c7597-zwwqz            open → half_open 15000 ms elapsed
+  t=   78.1s  orders-9958c7597-zwwqz       half_open → open      trial call failed
+  t=   93.2s  orders-9958c7597-zwwqz            open → half_open 15000 ms elapsed
+  t=   94.2s  orders-9958c7597-zwwqz       half_open → open      trial call failed
+  t=  104.0s  orders-9958c7597-492lf            open → half_open 15000 ms elapsed
+  t=  105.0s  orders-9958c7597-492lf       half_open → open      trial call failed
+  t=  109.4s  orders-9958c7597-zwwqz            open → half_open 15000 ms elapsed
+  t=  110.4s  orders-9958c7597-zwwqz       half_open → open      trial call failed
+  t=  120.1s  orders-9958c7597-492lf            open → half_open 15000 ms elapsed
+  t=  121.1s  orders-9958c7597-492lf       half_open → open      trial call failed
+  t=  125.8s  orders-9958c7597-zwwqz            open → half_open 15000 ms elapsed
+  t=  126.8s  orders-9958c7597-zwwqz       half_open → open      trial call failed
+  t=  136.2s  orders-9958c7597-492lf            open → half_open 15000 ms elapsed
+  t=  137.2s  orders-9958c7597-492lf       half_open → open      trial call failed
+  t=  142.2s  orders-9958c7597-zwwqz            open → half_open 15000 ms elapsed
+  t=  143.2s  orders-9958c7597-zwwqz       half_open → open      trial call failed
+  t=  152.3s  orders-9958c7597-492lf            open → half_open 15000 ms elapsed
+  t=  152.8s  orders-9958c7597-492lf       half_open → closed    3 trial calls succeeded
+  t=  158.3s  orders-9958c7597-zwwqz            open → half_open 15000 ms elapsed
+  t=  158.5s  orders-9958c7597-zwwqz       half_open → closed    3 trial calls succeeded
 
 ## Prometheus counters over the run
   sum by (reason, result) (increase(dependency_fallback_total{namespace="shop-staging"}[229s]))
-      {"reason": "timeout", "result": "cache_hit"}                       10
-      {"reason": "circuit_open", "result": "cache_hit"}                 791
-      {"reason": "error", "result": "cache_hit"}                          1
-      {"reason": "circuit_open", "result": "cache_miss"}                231
-      {"reason": "timeout", "result": "cache_miss"}                       0
+      {"reason": "timeout", "result": "cache_hit"}                       59
+      {"reason": "circuit_open", "result": "cache_hit"}                 934
+      {"reason": "timeout", "result": "cache_miss"}                       4
+      {"reason": "circuit_open", "result": "cache_miss"}                213
   sum by (from, to) (increase(circuit_breaker_transitions_total{namespace="shop-staging"}[229s]))
-      {"from": "closed", "to": "open"}                                    2
+      {"from": "closed", "to": "open"}                                    4
       {"from": "half_open", "to": "open"}                                 9
-      {"from": "open", "to": "half_open"}                                11
-      {"from": "half_open", "to": "closed"}                               2
+      {"from": "open", "to": "half_open"}                                13
+      {"from": "half_open", "to": "closed"}                               4
   sum by (outcome) (increase(circuit_breaker_calls_total{namespace="shop-staging"}[229s]))
-      {"outcome": "success"}                                           1070
-      {"outcome": "rejected"}                                          1035
-      {"outcome": "failure"}                                             56
+      {"outcome": "success"}                                            818
+      {"outcome": "failure"}                                             70
+      {"outcome": "rejected"}                                          1178
   sum (increase(dependency_retries_total{namespace="shop-staging"}[229s]))
-      {}                                                                 43
+      {}                                                                  4
 
 ## hypothesis
   PASS  chaos: 5xx/errors for cached products 0.00% of 673 = 0
   PASS  chaos: uncached product → 503 + Retry-After, never 502 ([503])
-  PASS  chaos (after the first 10 s): p95 25 ms < 1500 ms
-  PASS  breaker opened 2.8 s after injection (≤ 10 s)
-  PASS  every breaker closed again after the fault was removed: 10.9 s, 4.8 s (≤ 30 s)
+  PASS  chaos (after the first 10 s): p95 41 ms < 1500 ms
+  PASS  breaker opened 2.1 s after injection (≤ 10 s)
+  PASS  every breaker closed again after the fault was removed: 2.8 s, 8.5 s (≤ 30 s)
 
 RESULT: hypothesis confirmed

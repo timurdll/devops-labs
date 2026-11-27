@@ -1,32 +1,31 @@
-# 2026-11-26T13:45:11Z  chaos experiment e3: k8s/chaos/experiments/e3-catalog-pod-kill.yaml
+# 2026-11-27T11:51:27Z  chaos experiment e3: k8s/chaos/experiments/e3-catalog-pod-kill.yaml
 # load: 10 POST /api/orders per second via staging.shop.local; ids [1, 2, 3]
 # phases: baseline 0–60s · chaos 60–120s · recovery 120–150s
 
 ## per phase
-  baseline  orders   600  codes {201: 600}  degraded     0  p50     11 ms  p95     22 ms  max    104 ms
-  chaos     orders   600  codes {201: 600}  degraded     0  p50     12 ms  p95     91 ms  max   1721 ms
-  recovery  orders   300  codes {201: 300}  degraded     0  p50     11 ms  p95     30 ms  max     97 ms
+  baseline  orders   600  codes {201: 600}  degraded     0  p50     13 ms  p95     50 ms  max    224 ms
+  chaos     orders   600  codes {201: 600}  degraded    11  p50     21 ms  p95   1687 ms  max   3477 ms
+  recovery  orders   300  codes {201: 300}  degraded     0  p50     36 ms  p95    643 ms  max   2038 ms
 
 ## breaker transitions (orders logs)
   none
 
 ## Prometheus counters over the run
-  sum by (reason, result) (increase(dependency_fallback_total{namespace="shop-staging"}[169s]))
-      {"reason": "timeout", "result": "cache_hit"}                        0
+  sum by (reason, result) (increase(dependency_fallback_total{namespace="shop-staging"}[170s]))
+      {"reason": "timeout", "result": "cache_hit"}                       13
       {"reason": "circuit_open", "result": "cache_hit"}                   0
-      {"reason": "error", "result": "cache_hit"}                          0
-      {"reason": "circuit_open", "result": "cache_miss"}                  0
       {"reason": "timeout", "result": "cache_miss"}                       0
-  sum by (from, to) (increase(circuit_breaker_transitions_total{namespace="shop-staging"}[169s]))
+      {"reason": "circuit_open", "result": "cache_miss"}                  0
+  sum by (from, to) (increase(circuit_breaker_transitions_total{namespace="shop-staging"}[170s]))
       {"from": "closed", "to": "open"}                                    0
       {"from": "half_open", "to": "open"}                                 0
       {"from": "open", "to": "half_open"}                                 0
       {"from": "half_open", "to": "closed"}                               0
-  sum by (outcome) (increase(circuit_breaker_calls_total{namespace="shop-staging"}[169s]))
-      {"outcome": "success"}                                           1500
+  sum by (outcome) (increase(circuit_breaker_calls_total{namespace="shop-staging"}[170s]))
+      {"outcome": "success"}                                           1459
+      {"outcome": "failure"}                                             13
       {"outcome": "rejected"}                                             0
-      {"outcome": "failure"}                                              0
-  sum (increase(dependency_retries_total{namespace="shop-staging"}[169s]))
+  sum (increase(dependency_retries_total{namespace="shop-staging"}[170s]))
       {}                                                                  0
 
 ## hypothesis

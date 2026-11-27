@@ -1,6 +1,6 @@
 {
   "name": "shoplite-orders",
-  "version": "1.2.0",
+  "version": "1.2.1",
   "private": true,
   "description": "ShopLite orders microservice",
   "main": "src/server.js",
@@ -10,7 +10,7 @@
   "scripts": {
     "start": "node src/server.js",
     "lint": "eslint .",
-    "test": "node --test --experimental-test-coverage --test-coverage-include='src/app.js' --test-coverage-include='src/catalog-client.js' --test-coverage-include='src/circuit-breaker.js' --test-coverage-include='src/retry.js' --test-coverage-include='src/telemetry/metrics.js' --test-coverage-lines=80 --test-coverage-branches=70 'test/**/*.test.js'"
+    "test": "node --test --experimental-test-coverage --test-coverage-include='src/app.js' --test-coverage-include='src/catalog-client.js' --test-coverage-include='src/circuit-breaker.js' --test-coverage-include='src/retry.js' --test-coverage-include='src/repo.js' --test-coverage-include='src/telemetry/metrics.js' --test-coverage-lines=80 --test-coverage-branches=70 'test/**/*.test.js'"
   },
   "license": "MIT",
   "dependencies": {

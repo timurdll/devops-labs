@@ -37,10 +37,11 @@ services:
         tag: "1.2.0"
       replicas: 1
       weight: 10
-  # Week 11: orders 1.2.0 — circuit breaker + retry + cache fallback for the catalog call.
+  # Week 11: orders 1.2.0 — circuit breaker + retry + cache fallback for the catalog call;
+  # 1.2.1 — retry of the PostgreSQL connect (post-mortem PM-W11-02).
   orders:
     image:
-      tag: "1.2.0"
+      tag: "1.2.1"
   web:
     uiConfig:
       shopName: ShopLite STAGING

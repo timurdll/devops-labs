@@ -1,0 +1,55 @@
+# 2026-11-27T11:42:14Z  resilience configuration as deployed in shop-staging (live objects, read-only)
+
+## orders — application-level settings (ConfigMap orders-config → envFrom)
+   image shoplite/orders:1.2.0
+   CATALOG_CACHE_TTL_MS = 600000
+   CATALOG_TIMEOUT_MS = 1000
+   CATALOG_URL = http://catalog.shop-staging.svc.cluster.local
+   CB_CONSECUTIVE_FAILURES = 5
+   CB_FAILURE_RATE = 0.5
+   CB_HALF_OPEN_CALLS = 3
+   CB_MINIMUM_CALLS = 10
+   CB_OPEN_MS = 15000
+   CB_WINDOW_SIZE = 20
+   RETRY_ATTEMPTS = 3
+   RETRY_BASE_MS = 50
+   RETRY_MAX_MS = 500
+
+## VirtualService catalog (east-west: timeout, transport retries, canary split)
+[{"name":"catalog","retries":{"attempts":1,"perTryTimeout":"5s","retryOn":"connect-failure,refused-stream"},"route":[{"destination":{"host":"catalog.shop-staging.svc.cluster.local","port":{"number":80},"subset":"v1"},"weight":90},{"destination":{"host":"catalog.shop-staging.svc.cluster.local","port":{"number":80},"subset":"v2"},"weight":10}],"timeout":"10s"}]
+
+## VirtualService shop-edge, route orders
+{"name": "orders", "timeout": "10s", "retries": {"attempts": 1, "perTryTimeout": "5s", "retryOn": "connect-failure,refused-stream"}}
+{"name": "catalog", "timeout": "10s", "retries": {"attempts": 1, "perTryTimeout": "5s", "retryOn": "connect-failure,refused-stream"}}
+{"name": "web", "timeout": "10s", "retries": {"attempts": 1, "perTryTimeout": "5s", "retryOn": "connect-failure,refused-stream"}}
+
+## DestinationRule catalog (bulkhead + connect timeout + outlier detection)
+{
+    "connectionPool": {
+        "http": {
+            "http1MaxPendingRequests": 32,
+            "http2MaxRequests": 64,
+            "maxRetries": 3
+        },
+        "tcp": {
+            "connectTimeout": "1s"
+        }
+    },
+    "outlierDetection": {
+        "baseEjectionTime": "30s",
+        "consecutive5xxErrors": 5,
+        "interval": "10s",
+        "maxEjectionPercent": 50
+    },
+    "tls": {
+        "mode": "ISTIO_MUTUAL"
+    }
+}
+
+## EnvoyFilter shop-gateway-ratelimit (token bucket)
+   {"fill_interval":"1s","max_tokens":200,"tokens_per_fill":100}
+
+## Prometheus alert rules of Week 11
+   IstioWorkloadCertExpiring   inactive ok
+   IstioWorkloadCertExpired    inactive ok
+   CircuitBreakerOpen          inactive ok
