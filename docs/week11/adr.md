@@ -29,7 +29,8 @@
 - No library: the breaker is ~100 lines with 100 % line coverage; opossum / cockatiel would add a dependency for the same state machine.
 
 **Consequences**
-- E1/E2 ([README §6](README.md#6-chaos-experiments)): the user sees 201 (degraded) instead of 502 while catalog is slow or unreachable; latency stays at a few ms while the breaker is open.
+- E1/E2 ([README §6](README.md#6-chaos-experiments)): the user sees 201 (degraded) instead of 502 while catalog is slow or unreachable; p50 stays at ~10–30 ms while the breaker is open.
+- The experiments showed that a breaker on one edge is not enough: orders 1.2.1 and 1.2.2 had to fix the database connect and the keep-alive race with the sidecar before E1 reached 0 % errors (post-mortem PM-W11-02).
 - Orders accepted from the cache may carry a stale price. Accepted for the lab; in production the `degraded` flag would feed a re-pricing job.
 - The cache is per pod and in memory: a fresh pod has no fallback until it has seen the product once (E2: 503 for the never-seen product).
 - Breaker state is per pod. With 2 orders replicas, each trips on its own (observed 1–2 s apart in E1).
@@ -79,7 +80,8 @@
 - Bulkhead: `DestinationRule.trafficPolicy.connectionPool.http` — at most 32 pending / 64 active requests from one caller's sidecar to one service; overflow is a fast 503 (`UO`) instead of a queue that ties up every orders worker.
 
 **Consequences**
-- Seen in E1: during the injected 3 s latency, *new* TCP connections fail at the 1 s connect timeout (the SYN-ACK is delayed too). Envoy answers 503 `UF`, which the app retries. This is why a user whose request became a half-open trial call waited ~2 s ([README §7.2](README.md#72-what-the-experiments-revealed)).
+- Seen in E1: during the injected 3 s latency, *new* TCP connections fail at the 1 s connect timeout (the SYN-ACK is delayed too). Envoy answers 503 `UF`, which the app treats as a retryable error, not as a timeout ([README §7.2](README.md#72-what-the-experiments-revealed)).
+- The bulkhead shed load for real in E1 run 2: 6 orders got 503 `UO` at the gateway while orders was CPU-starved, before its breakers opened. A fast 503 instead of a queue is the intended trade-off.
 - The schema of the chart validates `retryOn` against a list of safe values, so a later `retryOn: 5xx` on a POST route needs a schema change and a review.
 
 ## ADR-W11-04 · Rate limiting at the environment's gateway with Envoy's local rate limit

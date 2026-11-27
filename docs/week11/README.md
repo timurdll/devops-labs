@@ -138,7 +138,7 @@ Minimal cut sets, i.e. the smallest sets of basic events that cause the TOP even
 
 ### 4.3 Fallback and graceful degradation
 
-| Situation | Before (orders 1.1.0) | After (orders 1.2.0) |
+| Situation | Before (orders 1.1.0) | After (orders 1.2.x) |
 |---|---|---|
 | catalog slow | waits 2 s, then **502** | waits ≤ 1 s, then **201** from the cache with `degraded: true`, `X-Degraded: timeout`; once the breaker is open: **201 in a few ms** (`X-Degraded: circuit_open`) |
 | catalog unreachable, product seen before | **502** | **201** degraded |
@@ -190,16 +190,136 @@ An `EnvoyFilter` adds Envoy's local rate limit filter to `shop-gateway`. It is a
   4. collects breaker transitions from the orders logs and counters from Prometheus;
   5. checks the hypothesis (PASS/FAIL) and draws the timeline.
 
-E1_E2_E3_RESULTS
+## 6. Chaos experiments
+
+### 6.1 E1 — 3000 ms latency in catalog (the assignment's hypothesis)
+
+**Hypothesis** ([`e1-catalog-latency.yaml`](../../k8s/chaos/experiments/e1-catalog-latency.yaml)):
+> Injecting 3000 ms latency into catalog's answers to orders makes orders' circuit breaker open within 10 s. `POST /api/orders` keeps answering 201 from the last-known-good cache (flagged degraded) with p95 < 1.5 s and **0 % 5xx**. The breaker closes ≤ 30 s after the fault is removed.
+
+- **Steady state:** 10 orders/s, 0 % 5xx, `circuit_breaker_state{name="catalog"} = 0`.
+- **Fault:** `NetworkChaos` `delay` 3000 ms on packets from catalog pods (v1 ×2, v2 ×1) to orders pods only. The gateway → catalog and catalog → postgres paths are untouched.
+- **Duration:** 120 s, then removed. **Abort:** delete the object (Chaos Mesh removes the tc rules).
+
+E1 was run four times. Each rejected run found a different defect, the defect was fixed in a new orders release, and the experiment was re-run (§7). All runs are kept as evidence.
+
+| Run (orders) | Baseline | During the fault (1200 orders) | Breaker opened after | Closed after removal | Verdict |
+|---|---|---|---|---|---|
+| [run 1](evidence/e1-catalog-latency-run1/summary.txt) (1.2.0) | 600 × 201 | 1198 × 201 (1185 degraded), **2 × 502**, p95 1015 ms | 3.0 s | 12.0 / 11.8 s | rejected: orders → **PostgreSQL** connect reset |
+| [run 2](evidence/e1-catalog-latency-run2/summary.txt) (1.2.1) | 600 × 201, p95 354 ms | 1194 × 201, **6 × 503** (gateway `UO,UF`), p95 488 ms | 7.1 s | 15.6 / 15.5 s | rejected: host busy right after an image build, gateway → orders overflow before the trip |
+| [run 3](evidence/e1-catalog-latency-run3/summary.txt) (1.2.1) | 600 × 201 | 1199 × 201, **1 × 503** (sidecar `UC`), p95 1013 ms | 2.2 s | 10.6 / 10.7 s | rejected: keep-alive race between Envoy and Node |
+| [run 4](evidence/e1-catalog-latency-run4/summary.txt) (1.2.2) | 600 × 201 | **1200 × 201** (1187 degraded), **0 × 5xx**, p95 753 ms | 3.1 s | 11.0 / 12.8 s, then re-opened in a platform stall at t = 223 s | **confirmed for the fault window**; recovery errors caused by the platform (below) |
+
+![E1 run 4 (orders 1.2.2): orders per second by outcome and latency; shaded = fault active, dashed lines = breaker transitions](evidence/e1-catalog-latency-run4/timeline.png)
+
+Reading the run 4 chart:
+- **t = 60 s.** The fault starts. The first orders wait for the 1 s timeout, are served from the cache (yellow), and after 5 consecutive failures per pod the breakers open (t = 63 s).
+- **Every 15 s.** A half-open probe: up to 3 orders per pod wait ~1 s for the trial call, which times out. The breaker re-opens. These probes are the latency spikes.
+- **t = 180 s.** The fault is removed. The next probes succeed and the breakers close at t = 191/193 s. Live prices are back (green).
+- **t = 223–232 s.** 43 errors (33 × 503, 10 × 504 `UT`) and 7 s latencies. This was 40 s *after* the recovery, and it was not caused by the experiment. In the same seconds the kube-apiserver, Traefik, Argo CD, Jaeger, the OTel Collector and pods in `shop-dev` failed their probes ([`evidence/07`](evidence/07-platform-stalls.txt)). The kind VM was CPU-starved: PSI `some cpu` = 38 % over 5 min, 8 vCPU for three meshed environments plus the platform. The breakers re-opened (correctly) during that stall, so the runner's check "closed again" reports *never*. They had closed 11–13 s after the fault was removed.
+
+The breaker's own numbers in run 4 (Prometheus `increase()` over the run — extrapolated from 15 s scrapes, and including the stall at t = 223 s):
+- 1324 calls **rejected** without touching catalog;
+- 71 failures;
+- 67 orders answered from the cache after a timeout, 1324 after the breaker refused the call;
+- 3 retries (connection errors only; timeouts are not retried).
+
+### 6.2 E2 — network partition orders ⇹ catalog
+
+**Hypothesis** ([`e2-catalog-partition.yaml`](../../k8s/chaos/experiments/e2-catalog-partition.yaml)):
+> With catalog unreachable from orders, orders answers within 1.5 s. Products it has seen get 201 degraded; a product it has never seen gets 503 + `Retry-After`, never a hang and never a 502.
+
+During the 90 s partition the load also ordered product 4, which no orders pod had cached ([evidence](evidence/e2-catalog-partition/summary.txt), orders 1.2.0).
+
+| Phase | Orders | Result |
+|---|---|---|
+| baseline | 600 | 598 × 201, **2 × 502** — a platform stall at t = 38 s, before the fault (the same DB-connect defect as E1 run 1, fixed in 1.2.1) |
+| partition | 900 | 673 × 201 (669 degraded) for products 1–3: **0 errors**; 227 × **503 + Retry-After** for product 4; p95 41 ms after the first 10 s |
+| recovery | 600 | 600 × 201 |
+
+**Verdict: confirmed.**
+- The breakers opened 2.1 s after the partition and closed 2.8 s and 8.5 s after it was removed.
+- The 503s were all for the uncached product. None was a 502, and none took longer than 1.45 s.
+
+### 6.3 E3 — one catalog pod killed
+
+**Hypothesis** ([`e3-catalog-pod-kill.yaml`](../../k8s/chaos/experiments/e3-catalog-pod-kill.yaml)):
+> Losing one catalog replica is invisible to users: 0 failed orders, and the breaker stays closed.
+
+**Verdict: confirmed** ([evidence](evidence/e3-catalog-pod-kill/summary.txt)).
+- 1500 orders, all 201, no breaker transition.
+- During the minute after the kill, p95 rose to 1.7 s, and 11 orders were served from the cache: their catalog call hit the killed pod and timed out before the endpoint update reached orders' sidecar.
+- The breaker counted these failures but they never reached its thresholds. That is the intended behaviour: a single bad pod is the job of the mesh (retry on connect-failure, outlier detection), not of the breaker.
+
+## 7. Post-mortem PM-W11-02 — chaos experiment E1
+
+**Summary.** The experiment written for the slow-catalog scenario confirmed what it was designed to test: the breaker opened within 2–7 s and orders kept selling from the cache. But it was **rejected three times** by failures on paths the design had not looked at. Each one was a latent defect that a real slowdown would have turned into customer-visible errors.
+
+**Timeline (UTC, 2026-11-27)**
+| Time | Event |
+|---|---|
+| 11:40 | Reading the live ConfigMap shows that orders 1.2.0 ran without its CB_*/RETRY_* settings and with a 2 s timeout. The values edit had missed the orders block (fixed in 0265435) — so the first round of experiments on 11-26 tested the code defaults, not the documented configuration. All experiments were repeated |
+| 11:43 | **E1 run 1**: 2 × 502 during the fault. Traces show `pg-pool.connect` → `read ECONNRESET`, i.e. orders' *database* connection, not catalog |
+| 11:48 | E2 baseline (no fault yet): 2 × 502 with `Connection terminated due to connection timeout` on the DB connect, at the same second as Warning events across all namespaces — a platform stall |
+| 11:57 | **orders 1.2.1**: the PostgreSQL connect is retried (3 attempts, jittered). The query itself is never retried |
+| 11:59 | **E1 run 2**: 0 × 502, but 6 × 503 `UO,UF` at the gateway during the 7 s before the breakers opened. The run started 30 s after an image build; baseline p95 was already 354 ms |
+| 12:03 | **E1 run 3** on a quieter host: breakers open in 2.2 s, 1 × 503 with Envoy flag **`UC`** (upstream connection termination) inside orders' sidecar |
+| 12:09 | **orders 1.2.2**: Node's HTTP keep-alive raised from 5 s to 61 min, above Envoy's 1 h idle timeout |
+| 12:12 | **E1 run 4**: **0 errors in 1200 orders during the fault**. Errors 40 s after recovery coincide with a cluster-wide stall (kube-apiserver readiness 500) |
+
+### 7.1 Root causes
+
+| # | Defect | Why it was invisible before | Fix |
+|---|---|---|---|
+| R1 | Configuration not applied (orders ran on code defaults) | Helm rendered fine; the difference was only visible in the live ConfigMap | values fixed; evidence now captures the *live* config ([`evidence/06`](evidence/06-deployed-resilience-config.txt)) |
+| R2 | A failed **DB connect** became a 502. The resilience work covered only the catalog call | The DB is "local" and never failed in Weeks 7–10. A new pool connection is opened only when concurrency rises — exactly when a dependency is slow | 1.2.1: retry the connect (safe: no SQL sent yet); idle connections kept 60 s instead of 10 s |
+| R3 | **Keep-alive race**: Node closes idle connections after 5 s, Envoy reuses them for up to 1 h → 503 `UC` | Rare under steady load. The fault churns connections and makes it likely | 1.2.2: `server.keepAliveTimeout` 61 min, i.e. longer than the proxy's |
+| R4 | Load shedding at the gateway before the breaker trips (503 `UO,UF`) | Appears only when orders is CPU-starved in the first seconds of the fault | not changed: this is the bulkhead doing its job; see A9 |
+| R5 | **Platform stalls**: the kind VM is CPU-starved every few minutes | Weeks 7–10 never ran sustained load for minutes | not fixable in the lab; documented, separated from the results (A10) |
+
+### 7.2 What the experiments revealed
+
+- **The breaker protects one edge of the graph.** The order path also depends on PostgreSQL, the sidecars and the platform. E1 failed on each of them before it failed on the edge it was written for. A resilience review must cover every hop of the request, not only the one in the hypothesis.
+- **The half-open probe has a price.** Every 15 s, up to 3 orders per pod wait the full per-attempt timeout (1 s) for the trial call. These spikes are the p95 of ~1 s in runs 1, 3 and 4. A background health probe, or a shorter timeout for trial calls only, would hide them from users.
+- **Mesh and app must be configured together.**
+  - Envoy's connect timeout (1 s) fires before the app timeout when *new* connections are delayed: the SYN-ACK is delayed too. The app then sees 503 `UF` instead of a timeout, and retries it.
+  - Node's keep-alive must be longer than the sidecar's idle timeout.
+  - These rules exist only because of the sidecar.
+- **Metrics need to exist before the incident.** In the first run of 11-26, Prometheus' `increase()` reported 0 for `closed → open` because the counter series was created by that very transition. Recording-rule users should initialise label combinations at 0 (A8).
+
+### 7.3 Action items
+
+| # | Action | Owner / status |
+|---|---|---|
+| A5 | orders 1.2.1 — DB connect retry; 1.2.2 — keep-alive longer than the sidecar | done (d9414ae, cbdf163) |
+| A6 | Export `http_local_rate_limiter.*` (gateway) through `proxyStatsMatcher`, so that 429s are visible in Prometheus | open |
+| A7 | Same keep-alive rule for catalog (Node) and check nginx (`web`); catalog changes go with the Week 12 release | open → Week 12 |
+| A8 | Initialise `circuit_breaker_transitions_total` label combinations at 0 | open |
+| A9 | Half-open: probe with a shorter timeout (e.g. 300 ms) or out-of-band, so no user request pays for it | open |
+| A10 | Chaos runs on a quiet host: give the kind VM more CPU, or scale `shop-dev` down while experimenting; the runner should record PSI and mark seconds with a platform stall | open |
+
+## 8. Evaluation: design vs. observed
+
+| Design claim | Observed | |
+|---|---|---|
+| The breaker opens within 10 s of a slow catalog | 2.1–7.1 s in 5 runs (E1 ×4, E2) | ✔ |
+| While open, orders answer fast from the cache | E1 run 4: 1187 of 1200 orders degraded, p95 753 ms including probe spikes; p50 29 ms | ✔ |
+| The breaker closes ≤ 30 s after recovery | 2.8–15.6 s | ✔ |
+| A cache miss is a fast 503 + Retry-After, never a 502 | E2: 227 × 503, 0 × 502, max 1.45 s | ✔ |
+| Losing one catalog pod is invisible | E3: 0 errors in 1500 orders | ✔ |
+| Rate limit: 429 above the bucket, nothing below | 675 × 429 in a 770 req/s burst; 0 × 429 at 50 req/s | ✔ |
+| "0 % 5xx while catalog is slow" | only after two fixes outside the catalog path (1.2.1, 1.2.2) | ✔ after §7 |
+| Retries cannot amplify (≤ 6 attempts per order) | 0–4 retries per run in Prometheus (catalog + postgres connects), against 600–1500 orders | ✔ |
+| Certificate expiry cannot go unnoticed again | alerts loaded and tested with promtool; certificates now valid 7 days | ✔ (not yet fired for real) |
 
 ## 9. Reproduce
 
 ```bash
-# Argo CD tracks week11-resilience (gitops/bootstrap/root.yaml): orders 1.2.0, mesh rules,
+# Argo CD tracks week11-resilience (gitops/bootstrap/root.yaml): orders 1.2.2, mesh rules,
 # rate limit, Chaos Mesh, alerts — all from git.
 kubectl apply -f gitops/bootstrap/root.yaml
-docker build -t shoplite/orders:1.2.0 services/orders && kind load docker-image shoplite/orders:1.2.0 --name shoplite
-(cd services/orders && npm test)                          # 28 tests: breaker, retry, fallback, metrics
+docker build -t shoplite/orders:1.2.2 services/orders && kind load docker-image shoplite/orders:1.2.2 --name shoplite
+(cd services/orders && npm test)                          # 33 tests: breaker, retry, fallback, DB connect, metrics
 kubectl -n observability port-forward svc/prometheus 9090:9090 &
 ./scripts/chaos-run-all.sh                                # E1–E3 under load → docs/week11/evidence/e*/
 ./scripts/ratelimit-probe.py staging 1000 50              # burst → 429, steady → 200

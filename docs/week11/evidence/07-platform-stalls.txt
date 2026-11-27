@@ -1,0 +1,83 @@
+# 2026-11-27T12:17:02Z  platform stalls seen during the experiments (Warning events, all namespaces)
+# A stall = probes of unrelated components (kube-apiserver, Traefik, Argo CD, Jaeger, apps in dev)
+# time out in the same seconds. The kind nodes share one laptop (load average 8–25 during the runs).
+
+TIME                   NAMESPACE         OBJECT                                  REASON      MESSAGE
+2026-11-27T11:29:40Z   shop-dev          orders-67f4d7756d-dl9w7                 Unhealthy   Readiness probe failed: Get "http://10.244.2.37:15020/app-health/orders/readyz": context deadline
+2026-11-27T11:29:40Z   shop-dev          catalog-54c78bff96-wml2c                Unhealthy   Liveness probe failed: Get "http://10.244.1.31:15020/app-health/catalog/livez": context deadline 
+2026-11-27T11:29:41Z   shop-staging      catalog-84946c995b-qjvwg                Unhealthy   Readiness probe failed: Get "http://10.244.1.33:15020/app-health/catalog/readyz": context deadlin
+2026-11-27T11:29:41Z   shop-prod         catalog-75ddd69b88-lrlpk                Unhealthy   Liveness probe failed: Get "http://10.244.1.9:8080/healthz": context deadline exceeded (Client.Ti
+2026-11-27T11:29:41Z   shop-prod         catalog-75ddd69b88-k828g                Unhealthy   Readiness probe failed: Get "http://10.244.2.4:8080/readyz": context deadline exceeded (Client.Ti
+2026-11-27T11:29:41Z   shop              orders-7bf64477d6-zk82g                 Unhealthy   Liveness probe failed: Get "http://10.244.1.5:8080/healthz": context deadline exceeded (Client.Ti
+2026-11-27T11:29:41Z   shop-staging      web-5746797c48-4wnrs                    Unhealthy   Readiness probe failed: Get "http://10.244.2.34:15020/app-health/web/readyz": context deadline ex
+2026-11-27T11:29:41Z   shop-staging      postgres-0                              Unhealthy   Readiness probe failed: command timed out: "pg_isready -U postgres -h 127.0.0.1" timed out after 
+2026-11-27T11:29:41Z   shop-dev          postgres-0                              Unhealthy   Readiness probe failed: command timed out: "pg_isready -U postgres -h 127.0.0.1" timed out after 
+2026-11-27T11:29:42Z   shop              web-5bc5f9b587-7nww7                    Unhealthy   Readiness probe failed: Get "http://10.244.2.13:8080/healthz": context deadline exceeded (Client.
+2026-11-27T11:41:47Z   shop-dev          orders-5c9454f74-wxmc4                  Unhealthy   Startup probe failed: Get "http://10.244.2.42:15021/healthz/ready": dial tcp 10.244.2.42:15021: c
+2026-11-27T11:41:47Z   shop-staging      orders-9958c7597-zwwqz                  Unhealthy   Startup probe failed: Get "http://10.244.2.43:15021/healthz/ready": dial tcp 10.244.2.43:15021: c
+2026-11-27T11:41:49Z   shop-dev          orders-5c9454f74-wxmc4                  Unhealthy   Readiness probe failed: HTTP probe failed with statuscode: 500
+2026-11-27T11:41:50Z   shop-staging      orders-9958c7597-zwwqz                  Unhealthy   Readiness probe failed: HTTP probe failed with statuscode: 500
+2026-11-27T11:41:58Z   shop-staging      orders-9958c7597-492lf                  Unhealthy   Startup probe failed: Get "http://10.244.1.39:15021/healthz/ready": dial tcp 10.244.1.39:15021: c
+2026-11-27T11:46:00Z   observability     grafana-7f49689f9b-skphg                Unhealthy   Readiness probe failed: Get "http://10.244.2.10:3000/api/health": context deadline exceeded (Clie
+2026-11-27T11:48:16Z   shop-staging      orders-9958c7597-492lf                  Unhealthy   Liveness probe failed: Get "http://10.244.1.39:15020/app-health/orders/livez": context deadline e
+2026-11-27T11:52:32Z   shop-staging      catalog-84946c995b-jr2dj                Unhealthy   Startup probe failed: Get "http://10.244.1.40:15021/healthz/ready": dial tcp 10.244.1.40:15021: c
+2026-11-27T11:52:34Z   shop-staging      catalog-84946c995b-jr2dj                Unhealthy   Readiness probe failed: HTTP probe failed with statuscode: 500
+2026-11-27T11:54:11Z   shop-staging      orders-9958c7597-zwwqz                  Unhealthy   Readiness probe failed: Get "http://10.244.2.43:15020/app-health/orders/readyz": context deadline
+2026-11-27T11:55:18Z   shop-staging      orders-9958c7597-492lf                  Unhealthy   Readiness probe failed: Get "http://10.244.1.39:15020/app-health/orders/readyz": context deadline
+2026-11-27T11:56:01Z   ingress-traefik   traefik-6849c8785d-g772p                Unhealthy   Readiness probe failed: Get "http://10.244.1.18:9000/ping": context deadline exceeded (Client.Tim
+2026-11-27T11:56:10Z   shop-dev          orders-5c9454f74-wxmc4                  Unhealthy   Readiness probe failed: Get "http://10.244.2.42:15020/app-health/orders/readyz": context deadline
+2026-11-27T11:56:12Z   kube-system       kube-apiserver-shoplite-control-plane   Unhealthy   Liveness probe failed: HTTP probe failed with statuscode: 500
+2026-11-27T11:57:33Z   shop              web-5bc5f9b587-fvr7j                    Unhealthy   Readiness probe failed: Get "http://10.244.1.3:8080/healthz": context deadline exceeded (Client.T
+2026-11-27T11:57:50Z   shop-dev          orders-54c96987cb-jmqwz                 Unhealthy   Startup probe failed: Get "http://10.244.2.44:15021/healthz/ready": dial tcp 10.244.2.44:15021: c
+2026-11-27T11:57:50Z   shop-staging      orders-7665649f9-9jnqq                  Unhealthy   Startup probe failed: Get "http://10.244.2.45:15021/healthz/ready": dial tcp 10.244.2.45:15021: c
+2026-11-27T11:57:52Z   shop-dev          orders-54c96987cb-jmqwz                 Unhealthy   Liveness probe failed: HTTP probe failed with statuscode: 500
+2026-11-27T11:57:52Z   shop-dev          orders-54c96987cb-jmqwz                 Unhealthy   Readiness probe failed: HTTP probe failed with statuscode: 500
+2026-11-27T11:57:52Z   shop-staging      orders-7665649f9-9jnqq                  Unhealthy   Liveness probe failed: HTTP probe failed with statuscode: 500
+2026-11-27T11:58:02Z   shop-staging      orders-7665649f9-grs42                  Unhealthy   Startup probe failed: Get "http://10.244.1.41:15021/healthz/ready": dial tcp 10.244.1.41:15021: c
+2026-11-27T11:58:04Z   shop-staging      orders-7665649f9-grs42                  Unhealthy   Readiness probe failed: HTTP probe failed with statuscode: 500
+2026-11-27T11:58:12Z   shop-staging      orders-9958c7597-492lf                  Unhealthy   Readiness probe failed: HTTP probe failed with statuscode: 500
+2026-11-27T11:59:45Z   observability     jaeger-5dbd45cd66-l6cg7                 Unhealthy   Liveness probe failed: Get "http://10.244.1.13:13133/status": context deadline exceeded (Client.T
+2026-11-27T11:59:48Z   shop-staging      orders-7665649f9-9jnqq                  Unhealthy   Readiness probe failed: Get "http://10.244.2.45:15020/app-health/orders/readyz": context deadline
+2026-11-27T11:59:48Z   shop-dev          orders-54c96987cb-jmqwz                 Unhealthy   Readiness probe failed: Get "http://10.244.2.44:15020/app-health/orders/readyz": context deadline
+2026-11-27T11:59:50Z   shop-staging      orders-7665649f9-grs42                  Unhealthy   Liveness probe failed: Get "http://10.244.1.41:15020/app-health/orders/livez": context deadline e
+2026-11-27T12:06:01Z   shop-staging      orders-7665649f9-grs42                  Unhealthy   Readiness probe failed: Get "http://10.244.1.41:15020/app-health/orders/readyz": context deadline
+2026-11-27T12:10:06Z   shop-staging      orders-5c8f955f7c-fs7tq                 Unhealthy   Startup probe failed: Get "http://10.244.2.46:15021/healthz/ready": dial tcp 10.244.2.46:15021: c
+2026-11-27T12:10:12Z   shop-dev          orders-7c7659f858-zj55x                 Unhealthy   Startup probe failed: Get "http://10.244.1.42:15021/healthz/ready": dial tcp 10.244.1.42:15021: c
+2026-11-27T12:10:16Z   shop-staging      orders-5c8f955f7c-fs7tq                 Unhealthy   Readiness probe failed: HTTP probe failed with statuscode: 500
+2026-11-27T12:10:17Z   shop-dev          orders-7c7659f858-zj55x                 Unhealthy   Readiness probe failed: HTTP probe failed with statuscode: 500
+2026-11-27T12:10:19Z   shop-staging      orders-5c8f955f7c-fs7tq                 Unhealthy   Liveness probe failed: HTTP probe failed with statuscode: 500
+2026-11-27T12:10:19Z   shop-dev          orders-7c7659f858-zj55x                 Unhealthy   Liveness probe failed: HTTP probe failed with statuscode: 500
+2026-11-27T12:10:23Z   shop-dev          orders-7c7659f858-zj55x                 Unhealthy   Readiness probe failed: HTTP probe failed with statuscode: 503
+2026-11-27T12:10:28Z   shop-staging      orders-7665649f9-9jnqq                  Unhealthy   Readiness probe failed: HTTP probe failed with statuscode: 500
+2026-11-27T12:10:36Z   shop-dev          catalog-54c78bff96-fqjpl                Unhealthy   Liveness probe failed: Get "http://10.244.2.25:15020/app-health/catalog/livez": context deadline 
+2026-11-27T12:10:37Z   shop-dev          orders-54c96987cb-jmqwz                 Unhealthy   Readiness probe failed: Get "http://10.244.2.44:15020/app-health/orders/readyz": dial tcp 10.244.
+2026-11-27T12:10:37Z   shop-staging      orders-5c8f955f7c-5fxgq                 Unhealthy   Startup probe failed: Get "http://10.244.1.43:15021/healthz/ready": dial tcp 10.244.1.43:15021: c
+2026-11-27T12:10:43Z   shop-staging      orders-5c8f955f7c-5fxgq                 Unhealthy   Readiness probe failed: HTTP probe failed with statuscode: 500
+2026-11-27T12:10:43Z   shop-staging      orders-5c8f955f7c-5fxgq                 Unhealthy   Liveness probe failed: HTTP probe failed with statuscode: 500
+2026-11-27T12:11:00Z   shop-staging      orders-7665649f9-grs42                  Unhealthy   Readiness probe failed: Get "http://10.244.1.41:15020/app-health/orders/readyz": dial tcp 10.244.
+2026-11-27T12:14:13Z   shop-dev          orders-7c7659f858-zj55x                 Unhealthy   Readiness probe failed: Get "http://10.244.1.42:15020/app-health/orders/readyz": context deadline
+2026-11-27T12:15:13Z   observability     jaeger-5dbd45cd66-l6cg7                 Unhealthy   Readiness probe failed: Get "http://10.244.1.13:13133/status": context deadline exceeded (Client.
+2026-11-27T12:16:06Z   shop-staging      catalog-84946c995b-jr2dj                Unhealthy   Readiness probe failed: Get "http://10.244.1.40:15020/app-health/catalog/readyz": context deadlin
+2026-11-27T12:16:07Z   argocd            argocd-server-659d844b96-mw7g7          Unhealthy   Readiness probe failed: Get "http://10.244.2.12:8080/healthz": context deadline exceeded (Client.
+2026-11-27T12:16:08Z   shop              catalog-865f56b9d7-cntbb                Unhealthy   Readiness probe failed: Get "http://10.244.1.2:8080/readyz": context deadline exceeded (Client.Ti
+2026-11-27T12:16:08Z   observability     otel-collector-7684bb78c9-nhknf         Unhealthy   Readiness probe failed: Get "http://10.244.1.15:13133/": context deadline exceeded (Client.Timeou
+2026-11-27T12:16:09Z   ingress-traefik   traefik-6849c8785d-8n6md                Unhealthy   Readiness probe failed: Get "http://10.244.2.14:9000/ping": context deadline exceeded (Client.Tim
+2026-11-27T12:16:09Z   shop-staging      catalog-84946c995b-b4lln                Unhealthy   Liveness probe failed: Get "http://10.244.2.41:15020/app-health/catalog/livez": context deadline 
+2026-11-27T12:16:10Z   shop-staging      catalog-84946c995b-jr2dj                Unhealthy   Liveness probe failed: Get "http://10.244.1.40:15020/app-health/catalog/livez": context deadline 
+2026-11-27T12:16:10Z   shop-dev          catalog-54c78bff96-fqjpl                Unhealthy   Readiness probe failed: Get "http://10.244.2.25:15020/app-health/catalog/readyz": context deadlin
+2026-11-27T12:16:10Z   shop-staging      orders-5c8f955f7c-fs7tq                 Unhealthy   Liveness probe failed: Get "http://10.244.2.46:15020/app-health/orders/livez": context deadline e
+2026-11-27T12:16:11Z   shop-dev          catalog-54c78bff96-wml2c                Unhealthy   Readiness probe failed: Get "http://10.244.1.31:15020/app-health/catalog/readyz": context deadlin
+2026-11-27T12:16:11Z   shop-staging      catalog-v2-85bb8d4755-2rf69             Unhealthy   Readiness probe failed: Get "http://10.244.1.28:15020/app-health/catalog/readyz": context deadlin
+2026-11-27T12:16:12Z   shop-staging      orders-5c8f955f7c-fs7tq                 Unhealthy   Readiness probe failed: Get "http://10.244.2.46:15020/app-health/orders/readyz": context deadline
+2026-11-27T12:16:12Z   shop-staging      catalog-84946c995b-b4lln                Unhealthy   Readiness probe failed: Get "http://10.244.2.41:15020/app-health/catalog/readyz": context deadlin
+2026-11-27T12:16:12Z   kube-system       kube-apiserver-shoplite-control-plane   Unhealthy   Readiness probe failed: HTTP probe failed with statuscode: 500
+
+## pressure stall information of the kind VM at 12:17:31Z (identical on every node: one shared kernel)
+  cpu     some avg10=22.79 avg60=34.35 avg300=37.53 total=9523061021
+  memory  some avg10=0.03 avg60=0.58 avg300=1.07 total=222440731
+  io      some avg10=0.51 avg60=1.43 avg300=2.89 total=771292029
+                 total        used        free      shared  buff/cache   available
+  Mem:            7837        6656         191          67        1254        1180
+  → 'some cpu avg300=38' = for 38 % of the last 5 min at least one task was waiting for a CPU.
+    Docker Desktop VM: 8 vCPU / 7.8 GiB for 3 environments × (Istio sidecars + 100 % tracing),
+    Argo CD, Prometheus, Jaeger, Grafana, Chaos Mesh and istiod.

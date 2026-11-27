@@ -9,6 +9,7 @@ A small microservice shop used as the system under test for the Software Archite
 | **Week 8 · Lab 4** | GitOps delivery architecture & Helm package design (Helm chart, dev/staging/prod, Argo CD) | [docs/week8/README.md](docs/week8/README.md) · [.docx](docs/week8/Week8-Lab4-Report.docx) |
 | **Week 9 · Lab 5** | Distributed observability & telemetry data flow (Prometheus SDK, OpenTelemetry, Collector, Jaeger, Grafana RED) | [docs/week9/README.md](docs/week9/README.md) · [.docx](docs/week9/Week9-Lab5-Report.docx) |
 | **Week 10 · Lab 6** | Service mesh architecture & inter-service communication (Istio/Envoy sidecars, STRICT mTLS, identity-based authorization, 90/10 canary) | [docs/week10/README.md](docs/week10/README.md) · [.docx](docs/week10/Week10-Lab6-Report.docx) |
+| **Week 11 · Lab 7** | System resilience patterns & fault tree analysis (circuit breaker, retry + jitter, bulkhead, rate limit, Chaos Mesh, post-mortems) | [docs/week11/README.md](docs/week11/README.md) · [.docx](docs/week11/Week11-Lab7-Report.docx) |
 
 ## Repository layout
 
@@ -19,7 +20,7 @@ A small microservice shop used as the system under test for the Software Archite
 .semgrep/                    project-specific SAST rules
 .trivyignore.yaml            scoped, justified, expiring risk acceptances
 services/catalog             Node.js 24 · product API      · distroless image · /metrics + OTel traces (Week 9) · ?q= search (1.2.0, Week 10 canary)
-services/orders              Node.js 24 · order API        · distroless image (calls catalog) · /metrics + OTel traces
+services/orders              Node.js 24 · order API        · distroless image (calls catalog) · /metrics + OTel traces · circuit breaker, retry, fallback (1.2.x, Week 11)
 services/web                 nginx-unprivileged · static UI
 kind/cluster.yaml            3-node local cluster (Week 7)
 k8s/                         Kustomize manifests: platform (Traefik, env namespaces) + shop
@@ -29,6 +30,10 @@ gitops/                      Argo CD install, root app-of-apps, AppProjects, App
 k8s/observability/           OTel Collector, Prometheus (+ RED rules), Jaeger, Grafana (+ RED dashboard) (Week 9)
 k8s/mesh/                    Istio values (istiod, istio-cni) + mesh-wide STRICT PeerAuthentication, tracing Telemetry (Week 10)
 charts/shoplite/templates/mesh.yaml   per-env gateway, VirtualService, DestinationRule, PeerAuthentication, AuthorizationPolicy (Week 10)
+charts/shoplite/templates/resilience.yaml   gateway local rate limit (EnvoyFilter) (Week 11)
+gitops/apps/chaos.yaml       Chaos Mesh 2.8.8 via Argo CD, dev/staging only (Week 11)
+k8s/chaos/experiments/       NetworkChaos / PodChaos experiments E1–E3 (Week 11)
+ci/schemas/                  Chaos Mesh CRD JSON schemas for kubeconform (Week 11)
 scripts/
   ci-local.sh                run every CI gate locally with the same pinned tool images
   negative-tests.sh          prove the secret and SAST gates block bad changes
@@ -49,8 +54,12 @@ scripts/
   mesh-canary-check.sh       90/10 split counted by client, gateway access log and Envoy metrics
   mesh-diagnose.sh           istioctl proxy-status, analyze, describe, proxy-config, authz check
   mesh-export-manifests.sh   rendered Istio CRs per environment → docs/week10/manifests
+  chaos-experiment.py        hypothesis → load + fault → automatic PASS/FAIL, timeline chart (Week 11)
+  chaos-run-all.sh           run experiments E1–E3 in a row
+  ratelimit-probe.py         burst + steady load against the gateway rate limit
+  report/build-report.js     docs/weekN/README.md → WeekN-LabX-Report.docx
   render-diagrams.sh         render all diagrams-as-code (Mermaid + Python Diagrams)
-docs/week6 … docs/week10    reports, diagram sources (.mmd / .py) + renders, evidence
+docs/week6 … docs/week11    reports, diagram sources (.mmd / .py) + renders, evidence
 ```
 
 ## Quick start
@@ -70,6 +79,8 @@ curl -H 'Host: shop.local' http://127.0.0.1:8080/api/catalog/products
 ./scripts/telemetry-verify.py --export docs/week9/exports   # Week 9: 49 checks + JSON exports
 ./scripts/mesh-canary-check.sh staging 1000 400   # Week 10: canary split (more: docs/week10 §10)
 ./scripts/mesh-diagnose.sh staging  # Week 10: istioctl diagnostics
+./scripts/chaos-run-all.sh     # Week 11: chaos experiments E1–E3 (more: docs/week11 §9)
+./scripts/ratelimit-probe.py staging  # Week 11: gateway rate limit
 kind delete cluster --name shoplite   # clean up
 ```
 
