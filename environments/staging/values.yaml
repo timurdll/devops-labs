@@ -31,7 +31,7 @@ services:
   # rolled back automatically when the canary's 5xx share or p95 breaks the limits (chart values).
   catalog:
     image:
-      tag: "1.2.0"
+      tag: "1.3.0"
     canary:
       enabled: false
     rollout:
