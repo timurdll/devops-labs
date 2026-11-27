@@ -150,6 +150,26 @@ services:
         tag: ""
       replicas: 1
       weight: 10
+    # Week 12: progressive delivery with Argo Rollouts (needs mesh.enabled; replaces `canary`).
+    # The workload becomes an argoproj.io Rollout. A new image tag is shifted to steps[] % of
+    # the traffic (Istio VirtualService weights, at the gateway and east-west), with a pause of
+    # pauseSeconds after each step, then 100 %. From the first step on, an AnalysisRun asks
+    # Prometheus every analysis.interval about the canary pods only (pod label version = image
+    # tag); a failed analysis aborts the rollout: weight back to 0, canary scaled down.
+    rollout:
+      enabled: false
+      steps: [10, 25, 50]
+      pauseSeconds: 60
+      analysis:
+        interval: 30s
+        # 5xx share of the canary's requests over the last `window` (rollback rule of the lab:
+        # > 1 % over 3 min). failureLimit 1 = the 2nd failed sample aborts (one bad scrape does not).
+        window: 3m
+        maxErrorRate: 0.01
+        errorFailureLimit: 1
+        # p95 latency of the canary over the same window, from Istio's request histogram.
+        maxP95Ms: 500
+        latencyFailureLimit: 2
 
   orders:
     enabled: true

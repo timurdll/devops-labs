@@ -84,7 +84,21 @@ canary: two DestinationRule subsets, weight = services.<name>.canary.weight perc
 */}}
 {{- define "shoplite.meshRoute" -}}
 {{- $host := printf "%s.%s.svc.cluster.local" .name .ns -}}
-{{- if and .svc.canary .svc.canary.enabled -}}
+{{- if and .svc.rollout .svc.rollout.enabled -}}
+{{- /* Week 12: Argo Rollouts owns these weights at run time (Argo CD ignores them). */ -}}
+- destination:
+    host: {{ $host }}
+    subset: stable
+    port:
+      number: 80
+  weight: 100
+- destination:
+    host: {{ $host }}
+    subset: canary
+    port:
+      number: 80
+  weight: 0
+{{- else if and .svc.canary .svc.canary.enabled -}}
 - destination:
     host: {{ $host }}
     subset: {{ .svc.version | default "v1" }}
@@ -133,4 +147,43 @@ retries:
   attempts: {{ .retries.attempts }}
   perTryTimeout: {{ .retries.perTryTimeout }}
   retryOn: {{ .retries.retryOn }}
+{{- end }}
+
+{{- /*
+Week 12: canary strategy of an Argo Rollout. Traffic is shifted by rewriting the weights of the
+route named after the service in two VirtualServices: the east-west one (orders → catalog) and,
+for exposed services, the edge one (gateway → catalog). Argo Rollouts pins the DestinationRule
+subsets stable/canary to the pod-template hash of each ReplicaSet.
+*/ -}}
+{{- define "shoplite.rolloutStrategy" -}}
+{{- $ro := .svc.rollout -}}
+canary:
+  # Keep the aborted canary pods for 30 s (logs, traces) before scaling them down.
+  abortScaleDownDelaySeconds: 30
+  trafficRouting:
+    istio:
+      virtualServices:
+        - name: {{ .name }}
+          routes: [{{ .name }}]
+        {{- if and .svc.ingressPath .ctx.Values.ingress.enabled }}
+        - name: shop-edge
+          routes: [{{ .name }}]
+        {{- end }}
+      destinationRule:
+        name: {{ .name }}
+        stableSubsetName: stable
+        canarySubsetName: canary
+  # Background analysis from the first setWeight until 100 %: a failed AnalysisRun aborts.
+  analysis:
+    templates:
+      - templateName: {{ .name }}-canary-health
+    startingStep: 1
+    args:
+      - name: canary-version
+        value: {{ .tag | quote }}
+  steps:
+    {{- range $w := $ro.steps }}
+    - setWeight: {{ $w }}
+    - pause: { duration: {{ $ro.pauseSeconds }}s }
+    {{- end }}
 {{- end }}

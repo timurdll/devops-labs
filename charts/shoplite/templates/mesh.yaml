@@ -211,7 +211,16 @@ spec:
   host: {{ $name }}.{{ $ns }}.svc.cluster.local
   trafficPolicy:
     {{- include "shoplite.meshTrafficPolicy" $m.trafficPolicy | nindent 4 }}
-  {{- if and $svc.canary $svc.canary.enabled }}
+  {{- if and $svc.rollout $svc.rollout.enabled }}
+  # Week 12: Argo Rollouts adds rollouts-pod-template-hash to each subset's labels.
+  subsets:
+    - name: stable
+      labels:
+        app.kubernetes.io/name: {{ $name }}
+    - name: canary
+      labels:
+        app.kubernetes.io/name: {{ $name }}
+  {{- else if and $svc.canary $svc.canary.enabled }}
   subsets:
     - name: {{ $svc.version | default "v1" }}
       labels:

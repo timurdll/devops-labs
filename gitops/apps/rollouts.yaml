@@ -1,0 +1,59 @@
+# Week 12: Argo Rollouts — progressive delivery controller (docs/week12).
+# It owns the canary of every workload rendered as a Rollout (services.<name>.rollout in the
+# chart): it scales the canary ReplicaSet, rewrites the Istio VirtualService weights step by step
+# and runs the AnalysisTemplate against Prometheus; a failed analysis aborts and rolls back.
+#
+# Installed from the official chart, pinned. Least privilege: only the Istio traffic-router RBAC
+# (the chart grants SMI, Traefik, Gateway API, AWS … by default); no dashboard, no notifications.
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: argo-rollouts
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "0" # before the shoplite ApplicationSet uses its CRDs
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: delivery
+  source:
+    repoURL: https://argoproj.github.io/argo-helm
+    chart: argo-rollouts
+    targetRevision: 2.43.12 # app v1.10.2
+    helm:
+      releaseName: argo-rollouts
+      valuesObject:
+        controller:
+          replicas: 1 # lab: one replica (2 by default, leader election)
+          resources:
+            requests: { cpu: 20m, memory: 64Mi }
+            limits: { cpu: 500m, memory: 256Mi }
+        dashboard:
+          enabled: false # state is read with kubectl (scripts/rollout-experiment.py)
+        notifications:
+          secret:
+            create: false
+        providerRBAC:
+          enabled: true
+          providers:
+            istio: true
+            smi: false
+            ambassador: false
+            awsLoadBalancerController: false
+            awsAppMesh: false
+            traefik: false
+            apisix: false
+            contour: false
+            glooPlatform: false
+            gatewayAPI: false
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: argo-rollouts
+  syncPolicy:
+    automated: { prune: true, selfHeal: true }
+    managedNamespaceMetadata:
+      labels:
+        pod-security.kubernetes.io/enforce: restricted
+    syncOptions:
+      - CreateNamespace=true
+      - ServerSideApply=true # the Rollout CRD is larger than the client-side annotation limit

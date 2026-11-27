@@ -1,0 +1,56 @@
+{{- /*
+Week 12 — health check of a canary, run by Argo Rollouts as a background AnalysisRun for as long
+as a rollout of the service is in progress (services.<name>.rollout). Both metrics read Istio's
+server-side telemetry (reporter="destination": what the canary's own sidecar saw) and select the
+canary pods only, by destination_version = pod label version = image tag of the new release.
+
+Rollback rule (docs/week12, decision tree): a measurement fails when the canary's 5xx share over
+the last `window` is above maxErrorRate, or its p95 above maxP95Ms. More than failureLimit failed
+measurements → the AnalysisRun fails → the Rollout aborts: canary weight 0, canary pods scaled down.
+*/ -}}
+{{- range $name, $svc := .Values.services }}
+{{- if and $svc.enabled $svc.rollout $svc.rollout.enabled }}
+{{- $a := $svc.rollout.analysis }}
+{{- $sel := printf `reporter="destination", destination_workload_namespace=%q, destination_service_name=%q, destination_version="{{args.canary-version}}"` $.Release.Namespace $name }}
+---
+apiVersion: argoproj.io/v1alpha1
+kind: AnalysisTemplate
+metadata:
+  name: {{ $name }}-canary-health
+  labels:
+    {{- include "shoplite.labels" $ | nindent 4 }}
+    app.kubernetes.io/name: {{ $name }}
+spec:
+  args:
+    - name: canary-version
+  metrics:
+    - name: error-rate
+      interval: {{ $a.interval }}
+      failureLimit: {{ $a.errorFailureLimit }}
+      # No canary traffic yet → 0 (the latency metric and the pauses give it time to arrive).
+      successCondition: result[0] <= {{ $a.maxErrorRate }}
+      provider:
+        prometheus:
+          address: http://prometheus.observability.svc.cluster.local:9090
+          timeout: 10
+          query: |
+            (
+              (sum(rate(istio_requests_total{ {{- $sel }}, response_code=~"5.."}[{{ $a.window }}])) or vector(0))
+              /
+              sum(rate(istio_requests_total{ {{- $sel }}}[{{ $a.window }}]))
+            ) or vector(0)
+    - name: latency-p95
+      interval: {{ $a.interval }}
+      failureLimit: {{ $a.latencyFailureLimit }}
+      # NaN = no request in the window yet: not a failure.
+      successCondition: isNaN(result[0]) || result[0] <= {{ $a.maxP95Ms }}
+      provider:
+        prometheus:
+          address: http://prometheus.observability.svc.cluster.local:9090
+          timeout: 10
+          query: |
+            histogram_quantile(0.95,
+              sum by (le) (rate(istio_request_duration_milliseconds_bucket{ {{- $sel }}}[{{ $a.window }}]))
+            )
+{{- end }}
+{{- end }}

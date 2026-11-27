@@ -31,7 +31,7 @@ spec:
       project: shoplite
       source:
         repoURL: https://github.com/timurdll/devops-labs.git
-        targetRevision: week11-resilience
+        targetRevision: week12-progressive-delivery
         path: charts/shoplite
         helm:
           releaseName: shoplite
@@ -50,6 +50,16 @@ spec:
           kind: Deployment
           jsonPointers:
             - /spec/template/metadata/annotations/kubectl.kubernetes.io~1restartedAt
+        # Week 12: during a canary Argo Rollouts owns the route weights and pins the subsets to
+        # ReplicaSet hashes. Git holds 100/0 and the bare subsets; self-heal must not revert them.
+        - group: networking.istio.io
+          kind: VirtualService
+          jqPathExpressions:
+            - .spec.http[]?.route[]?.weight
+        - group: networking.istio.io
+          kind: DestinationRule
+          jqPathExpressions:
+            - .spec.subsets[]?.labels["rollouts-pod-template-hash"]
       syncPolicy:
         syncOptions:
           - CreateNamespace=false # namespaces come from the platform Application

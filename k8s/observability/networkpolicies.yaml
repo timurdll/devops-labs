@@ -70,5 +70,12 @@ spec:
               - key: app.kubernetes.io/name
                 operator: In
                 values: [otel-collector, grafana]
+        # Week 12: Argo Rollouts AnalysisRuns query the canary's error rate and latency.
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: argo-rollouts
+          podSelector:
+            matchLabels:
+              app.kubernetes.io/name: argo-rollouts
       ports:
         - { port: 9090, protocol: TCP }

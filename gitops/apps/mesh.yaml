@@ -67,7 +67,7 @@ spec:
         releaseName: istio-cni
         valueFiles: [$values/k8s/mesh/cni-values.yaml]
     - repoURL: https://github.com/timurdll/devops-labs.git
-      targetRevision: week11-resilience
+      targetRevision: week12-progressive-delivery
       ref: values
   destination:
     server: https://kubernetes.default.svc
@@ -95,7 +95,7 @@ spec:
         releaseName: istiod
         valueFiles: [$values/k8s/mesh/istiod-values.yaml]
     - repoURL: https://github.com/timurdll/devops-labs.git
-      targetRevision: week11-resilience
+      targetRevision: week12-progressive-delivery
       ref: values
   destination:
     server: https://kubernetes.default.svc
@@ -128,7 +128,7 @@ spec:
   project: mesh
   source:
     repoURL: https://github.com/timurdll/devops-labs.git
-    targetRevision: week11-resilience
+    targetRevision: week12-progressive-delivery
     path: k8s/mesh
   destination:
     server: https://kubernetes.default.svc

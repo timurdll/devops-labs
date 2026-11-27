@@ -5,12 +5,21 @@ ConfigMap and the ServiceAccount; they differ in name, replica count, image tag 
 */ -}}
 {{- define "shoplite.deployment" -}}
 {{- $name := .name }}{{ $svc := .svc }}{{ $deploy := .deploy }}{{ $version := .version }}
-{{- $replicas := .replicas }}{{ $canary := .canary }}{{ $env := .env }}
+{{- $replicas := .replicas }}{{ $canary := .canary }}{{ $env := .env }}{{ $rollout := .rollout }}
 {{- $root := .ctx }}{{ $pd := $root.Values.podDefaults }}{{ $mesh := $root.Values.mesh.enabled }}
 {{- $tag := $svc.image.tag | default $root.Values.image.tag | default $root.Chart.AppVersion }}
+{{- /* Week 12: under Argo Rollouts the `version` label is the image tag, so Istio metrics
+       (destination_version) tell the canary pods from the stable ones. */}}
+{{- if $rollout }}{{ $version = $tag }}{{ end }}
 ---
+{{- if $rollout }}
+# Week 12: Argo Rollouts canary instead of a Deployment rolling update (same pod template).
+apiVersion: argoproj.io/v1alpha1
+kind: Rollout
+{{- else }}
 apiVersion: apps/v1
 kind: Deployment
+{{- end }}
 metadata:
   name: {{ $deploy }}
   labels:
@@ -23,11 +32,17 @@ metadata:
 spec:
   replicas: {{ $replicas }}
   revisionHistoryLimit: {{ $pd.revisionHistoryLimit }}
+  {{- if $rollout }}
+  progressDeadlineSeconds: 600
+  strategy:
+    {{- include "shoplite.rolloutStrategy" (dict "name" $name "svc" $svc "tag" $tag "ctx" $root) | nindent 4 }}
+  {{- else }}
   strategy:
     type: RollingUpdate
     rollingUpdate:
       maxSurge: 1
       maxUnavailable: 0
+  {{- end }}
   selector:
     matchLabels:
       app.kubernetes.io/name: {{ $name }}
@@ -85,7 +100,7 @@ spec:
           topologyKey: kubernetes.io/hostname
           whenUnsatisfiable: {{ $pd.topologySpread.whenUnsatisfiable }}
           nodeTaintsPolicy: Honor
-          matchLabelKeys: ["pod-template-hash"]
+          matchLabelKeys: [{{ if $rollout }}"rollouts-pod-template-hash"{{ else }}"pod-template-hash"{{ end }}]
           labelSelector:
             matchLabels:
               app.kubernetes.io/name: {{ $name }}
@@ -166,11 +181,14 @@ Hardening is identical for every service and is not configurable on purpose: the
 {{- $env := include "shoplite.serviceEnv" (dict "name" $name "svc" $svc "ctx" $) | fromYaml }}
 {{- $mesh := $.Values.mesh.enabled }}
 {{- $stableVersion := $svc.version | default "v1" }}
-{{ include "shoplite.deployment" (dict "name" $name "svc" $svc "deploy" $name "version" $stableVersion "replicas" $svc.replicas "canary" false "env" $env "ctx" $) }}
+{{- $rollout := and $svc.rollout $svc.rollout.enabled }}
+{{- if and $rollout (not $mesh) }}{{ fail (printf "services.%s.rollout needs mesh.enabled (Istio traffic routing)" $name) }}{{ end }}
+{{- if and $rollout $svc.canary $svc.canary.enabled }}{{ fail (printf "services.%s: rollout and the Week 10 canary are mutually exclusive" $name) }}{{ end }}
+{{ include "shoplite.deployment" (dict "name" $name "svc" $svc "deploy" $name "version" $stableVersion "replicas" $svc.replicas "canary" false "rollout" $rollout "env" $env "ctx" $) }}
 {{- if and $svc.canary $svc.canary.enabled }}
 {{- $c := $svc.canary }}
 {{- $csvc := deepCopy $svc }}{{ $_ := set $csvc.image "tag" $c.image.tag }}
-{{ include "shoplite.deployment" (dict "name" $name "svc" $csvc "deploy" (printf "%s-%s" $name $c.version) "version" $c.version "replicas" $c.replicas "canary" true "env" $env "ctx" $) }}
+{{ include "shoplite.deployment" (dict "name" $name "svc" $csvc "deploy" (printf "%s-%s" $name $c.version) "version" $c.version "replicas" $c.replicas "canary" true "rollout" false "env" $env "ctx" $) }}
 {{- end }}
 {{- if $mesh }}
 ---

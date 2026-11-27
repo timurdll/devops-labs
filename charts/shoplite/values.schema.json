@@ -278,6 +278,78 @@
               }
             }
           }
+        },
+        "rollout": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "enabled",
+            "steps",
+            "pauseSeconds",
+            "analysis"
+          ],
+          "description": "Week 12: Argo Rollouts canary with Prometheus analysis (needs mesh.enabled; excludes canary.enabled)",
+          "properties": {
+            "enabled": {
+              "type": "boolean"
+            },
+            "steps": {
+              "type": "array",
+              "minItems": 1,
+              "maxItems": 10,
+              "items": {
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 99
+              },
+              "description": "canary weights in %, ascending; 100 is implied at the end"
+            },
+            "pauseSeconds": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 3600
+            },
+            "analysis": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "interval",
+                "window",
+                "maxErrorRate",
+                "errorFailureLimit",
+                "maxP95Ms",
+                "latencyFailureLimit"
+              ],
+              "properties": {
+                "interval": {
+                  "$ref": "#/$defs/duration"
+                },
+                "window": {
+                  "type": "string",
+                  "pattern": "^[0-9]+(s|m)$"
+                },
+                "maxErrorRate": {
+                  "type": "number",
+                  "exclusiveMinimum": 0,
+                  "maximum": 1
+                },
+                "errorFailureLimit": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 10
+                },
+                "maxP95Ms": {
+                  "type": "integer",
+                  "minimum": 1
+                },
+                "latencyFailureLimit": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 10
+                }
+              }
+            }
+          }
         }
       }
     },
