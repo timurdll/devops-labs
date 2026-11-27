@@ -29,7 +29,12 @@ function routeOf(path) {
  * Builds the HTTP request handler for the catalog service.
  * `repo` is injected so the handler can be unit-tested without PostgreSQL.
  */
-function createHandler({ repo, logger = console, metrics = createMetrics({ service: 'catalog' }) }) {
+function createHandler({ repo, currency, logger = console, metrics = createMetrics({ service: 'catalog' }) }) {
+  // 1.3.0: every product carries a display price for the UI ("$89.00").
+  const formatPrice = (cents) =>
+    new Intl.NumberFormat('en-US', { style: 'currency', currency }).format(cents / 100);
+  const withDisplayPrice = (p) => ({ ...p, priceDisplay: formatPrice(p.priceCents) });
+
   return async function handler(req, res) {
     const url = new URL(req.url, 'http://localhost');
     const path = url.pathname.replace(/\/+$/, '') || '/';
@@ -61,7 +66,7 @@ function createHandler({ repo, logger = console, metrics = createMetrics({ servi
         // 1.2.0: optional case-insensitive search over name and SKU (?q=keyb).
         const q = (url.searchParams.get('q') || '').trim().toLowerCase();
         if (q.length > MAX_QUERY_LENGTH) return send(res, 400, { error: `q must be at most ${MAX_QUERY_LENGTH} characters` });
-        const products = await repo.list();
+        const products = (await repo.list()).map(withDisplayPrice);
         if (!q) return send(res, 200, { servedBy: POD_NAME, items: products });
         const items = products.filter((p) => p.name.toLowerCase().includes(q) || p.sku.toLowerCase().includes(q));
         return send(res, 200, { servedBy: POD_NAME, query: q, items });
@@ -71,7 +76,7 @@ function createHandler({ repo, logger = console, metrics = createMetrics({ servi
       if (req.method === 'GET' && match) {
         const product = await repo.get(Number(match[1]));
         if (!product) return send(res, 404, { error: 'product not found' });
-        return send(res, 200, { servedBy: POD_NAME, item: product });
+        return send(res, 200, { servedBy: POD_NAME, item: withDisplayPrice(product) });
       }
 
       return send(res, 404, { error: 'not found' });

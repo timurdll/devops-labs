@@ -24,7 +24,7 @@ const repo = {
 let server;
 let base;
 before(async () => {
-  server = http.createServer(createHandler({ repo, logger: { error() {} } }));
+  server = http.createServer(createHandler({ repo, currency: 'USD', logger: { error() {} } }));
   await new Promise((resolve) => server.listen(0, resolve));
   base = `http://127.0.0.1:${server.address().port}`;
 });
@@ -98,4 +98,11 @@ test('GET /metrics exposes RED series labelled by route template', async () => {
   assert.match(text, /http_route="\/api\/catalog\/products\/:id",http_response_status_code="200"/);
   assert.match(text, /http_route="unmatched",http_response_status_code="404"/);
   assert.doesNotMatch(text, /http_route="\/metrics"/);
+});
+
+test('products carry a formatted display price (1.3.0)', async () => {
+  const list = await (await fetch(`${base}/api/catalog/products`)).json();
+  assert.deepEqual(list.items.map((p) => p.priceDisplay), ['$89.00', '$129.00']);
+  const one = await (await fetch(`${base}/api/catalog/products/1`)).json();
+  assert.equal(one.item.priceDisplay, '$89.00');
 });

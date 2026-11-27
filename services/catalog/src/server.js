@@ -8,7 +8,7 @@ const { createRepo } = require('./repo');
 
 const PORT = Number(process.env.PORT || 8080);
 const repo = createRepo();
-const server = http.createServer(createHandler({ repo }));
+const server = http.createServer(createHandler({ repo, currency: process.env.CURRENCY }));
 
 // The pod starts serving /healthz immediately; /readyz stays 503 until the
 // database answers, so the Service only routes traffic to ready endpoints.
