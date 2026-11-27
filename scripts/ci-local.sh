@@ -95,6 +95,9 @@ PY
   kubectl kustomize k8s/mesh > "$EVIDENCE/rendered-mesh.yaml"
   docker run --rm -v "$PWD/$EVIDENCE:/work" "$KUBECONFORM_IMAGE" -strict -summary -kubernetes-version "$K8S_VERSION" \
     -schema-location default -schema-location "$CRD_SCHEMAS" /work/rendered-mesh.yaml || rc=1
+  echo "• kubeconform k8s/chaos/experiments (Week 11, Chaos Mesh schemas in ci/schemas)"
+  docker run --rm -v "$PWD:/w" "$KUBECONFORM_IMAGE" -strict -summary \
+    -schema-location '/w/ci/schemas/{{.Group}}/{{.ResourceKind}}_{{.ResourceAPIVersion}}.json' /w/k8s/chaos/experiments || rc=1
   echo "• kubeconform + config check k8s/observability (Week 9)"
   kubectl kustomize k8s/observability > "$EVIDENCE/rendered-observability.yaml"
   docker run --rm -v "$PWD/$EVIDENCE:/work" "$KUBECONFORM_IMAGE" \

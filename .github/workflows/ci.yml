@@ -145,6 +145,11 @@ jobs:
             -schema-location default \
             -schema-location 'https://raw.githubusercontent.com/datreeio/CRDs-catalog/main/{{.Group}}/{{.ResourceKind}}_{{.ResourceAPIVersion}}.json' \
             /work/mesh.yaml
+      - name: Chaos experiments (kubeconform, Chaos Mesh CRD schemas from ci/schemas) — Week 11
+        run: |
+          docker run --rm -v "$PWD:/w" "$KUBECONFORM_IMAGE" -strict -summary \
+            -schema-location '/w/ci/schemas/{{.Group}}/{{.ResourceKind}}_{{.ResourceAPIVersion}}.json' \
+            /w/k8s/chaos/experiments
       - name: Observability stack (kubeconform + Collector / Jaeger / Prometheus config check) — Week 9
         run: |
           kubectl kustomize k8s/observability > /tmp/observability.yaml

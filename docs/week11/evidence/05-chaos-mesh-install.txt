@@ -1,0 +1,52 @@
+# 2026-11-27T11:36:48Z  Chaos Mesh installation and blast-radius guardrail (read-only)
+
+## Argo CD
+NAME         PROJECT   CHART        VERSION   SYNC     HEALTH
+chaos-mesh   chaos     chaos-mesh   2.8.8     Synced   Healthy
+
+## pods (namespace chaos-mesh, PSA privileged)
+NAME                                        STATUS    NODE
+chaos-controller-manager-5ddf78c5c8-8qnmn   Running   shoplite-worker2
+chaos-daemon-7gf4w                          Running   shoplite-worker2
+chaos-daemon-c9wvx                          Running   shoplite-worker
+   (no daemon on the control-plane node: its NoSchedule taint; no workloads run there)
+
+## controller flags (the guardrail)
+   TARGET_NAMESPACE = chaos-mesh
+   CLUSTER_SCOPED = true
+   ENABLE_FILTER_NAMESPACE = true
+
+## which namespaces Chaos Mesh may inject into (annotation chaos-mesh.org/inject)
+NAMESPACE      CHAOS-INJECT
+shop-dev       enabled
+shop-staging   enabled
+shop-prod      <none>
+   → shop-prod has no annotation: the controller filters its pods out of every selector.
+
+## chaos daemon runtime
+   --runtime --runtime-socket-path containerd.sock 
+
+## CRDs
+  customresourcedefinition.apiextensions.k8s.io/awschaos.chaos-mesh.org
+  customresourcedefinition.apiextensions.k8s.io/azurechaos.chaos-mesh.org
+  customresourcedefinition.apiextensions.k8s.io/blockchaos.chaos-mesh.org
+  customresourcedefinition.apiextensions.k8s.io/dnschaos.chaos-mesh.org
+  customresourcedefinition.apiextensions.k8s.io/gcpchaos.chaos-mesh.org
+  customresourcedefinition.apiextensions.k8s.io/httpchaos.chaos-mesh.org
+  customresourcedefinition.apiextensions.k8s.io/iochaos.chaos-mesh.org
+  customresourcedefinition.apiextensions.k8s.io/jvmchaos.chaos-mesh.org
+  customresourcedefinition.apiextensions.k8s.io/kernelchaos.chaos-mesh.org
+  customresourcedefinition.apiextensions.k8s.io/networkchaos.chaos-mesh.org
+  customresourcedefinition.apiextensions.k8s.io/physicalmachinechaos.chaos-mesh.org
+  customresourcedefinition.apiextensions.k8s.io/physicalmachines.chaos-mesh.org
+  customresourcedefinition.apiextensions.k8s.io/podchaos.chaos-mesh.org
+  customresourcedefinition.apiextensions.k8s.io/podhttpchaos.chaos-mesh.org
+  customresourcedefinition.apiextensions.k8s.io/podiochaos.chaos-mesh.org
+  customresourcedefinition.apiextensions.k8s.io/podnetworkchaos.chaos-mesh.org
+  customresourcedefinition.apiextensions.k8s.io/remoteclusters.chaos-mesh.org
+  customresourcedefinition.apiextensions.k8s.io/schedules.chaos-mesh.org
+  customresourcedefinition.apiextensions.k8s.io/statuschecks.chaos-mesh.org
+  customresourcedefinition.apiextensions.k8s.io/stresschaos.chaos-mesh.org
+  customresourcedefinition.apiextensions.k8s.io/timechaos.chaos-mesh.org
+  customresourcedefinition.apiextensions.k8s.io/workflownodes.chaos-mesh.org
+  customresourcedefinition.apiextensions.k8s.io/workflows.chaos-mesh.org

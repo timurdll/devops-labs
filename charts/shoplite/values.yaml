@@ -171,9 +171,23 @@ services:
     database:
       name: orders
       passwordKey: ORDERS_DB_PASSWORD
+    # Week 11 (orders 1.2.0): resilience of the orders → catalog call (services/orders/src).
+    #   per-attempt timeout · retry 3× exp. backoff + full jitter (not on timeout)
+    #   circuit breaker: open at ≥ 50 % failures of the last 20 calls (min 10) or 5 in a row,
+    #   stay open 15 s, then 3 trial calls · fallback: last-known-good product (10 min)
     env:
       # CATALOG_URL is derived from the release namespace by the chart.
-      CATALOG_TIMEOUT_MS: "2000"
+      CATALOG_TIMEOUT_MS: "1000"
+      RETRY_ATTEMPTS: "3"
+      RETRY_BASE_MS: "50"
+      RETRY_MAX_MS: "500"
+      CB_WINDOW_SIZE: "20"
+      CB_MINIMUM_CALLS: "10"
+      CB_FAILURE_RATE: "0.5"
+      CB_CONSECUTIVE_FAILURES: "5"
+      CB_OPEN_MS: "15000"
+      CB_HALF_OPEN_CALLS: "3"
+      CATALOG_CACHE_TTL_MS: "600000"
     allowFrom: []
 
   web:
