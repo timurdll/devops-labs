@@ -38,10 +38,11 @@ services:
       replicas: 1
       weight: 10
   # Week 11: orders 1.2.0 — circuit breaker + retry + cache fallback for the catalog call;
-  # 1.2.1 — retry of the PostgreSQL connect (post-mortem PM-W11-02).
+  # 1.2.1 — retry of the PostgreSQL connect; 1.2.2 — HTTP keep-alive longer than Envoy's
+  # (post-mortem PM-W11-02).
   orders:
     image:
-      tag: "1.2.1"
+      tag: "1.2.2"
   web:
     uiConfig:
       shopName: ShopLite STAGING

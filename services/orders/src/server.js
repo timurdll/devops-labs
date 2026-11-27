@@ -44,6 +44,12 @@ const catalog = createCatalogClient({
   onFallback: (reason, result) => metrics.observeFallback('catalog', reason, result),
 });
 const server = http.createServer(createHandler({ repo, catalog, metrics }));
+// Week 11 (1.2.2, PM-W11-02 finding 3): the only client of this server is the local Envoy sidecar,
+// which keeps idle upstream connections for 1 h. Node's default keep-alive is 5 s, so Node closed
+// idle connections that Envoy was about to reuse → 503 "UC" (upstream connection termination).
+// Rule: the server must keep idle connections longer than its proxy, so the proxy closes first.
+server.keepAliveTimeout = Number(process.env.HTTP_KEEPALIVE_TIMEOUT_MS || 3_660_000); // 61 min
+server.headersTimeout = server.keepAliveTimeout + 1000;
 
 async function migrateWithRetry(attempt = 1) {
   try {

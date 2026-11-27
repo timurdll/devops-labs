@@ -30,7 +30,7 @@ services:
   orders:
     replicas: 1
     image:
-      tag: "1.2.1" # Week 11: circuit breaker + retry + cache fallback; 1.2.1: DB connect retry (PM-W11-02)
+      tag: "1.2.2" # Week 11: breaker + retry + cache fallback; 1.2.1 DB connect retry; 1.2.2 keep-alive > Envoy (PM-W11-02)
     resources:
       requests: { cpu: 25m, memory: 48Mi }
     env:
